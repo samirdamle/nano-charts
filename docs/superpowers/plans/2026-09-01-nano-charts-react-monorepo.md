@@ -1971,7 +1971,7 @@ Expected: PASS, 2 tests.
 pnpm --filter @samirdamle/nano-charts-react run test
 ```
 
-Expected: PASS, all test files (Marks, PointHitTargets, 8 chart components, index) — 29 tests total.
+Expected: PASS, all test files (Marks: 5, PointHitTargets: 4, ChartSvg: 3, 8 chart components: 3 each = 24, index: 2) — 38 tests total.
 
 - [ ] **Step 6: Add the size budget config**
 
