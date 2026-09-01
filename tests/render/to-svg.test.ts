@@ -46,4 +46,25 @@ describe('toSVG', () => {
     const svg = toSVG({ ...scene, a11y: { title: 'A & B <x>', desc: 'd' } });
     expect(svg).toContain('<title>A &amp; B &lt;x&gt;</title>');
   });
+
+  it('escapes attribute values to prevent injection', () => {
+    const malicious: Scene = {
+      ...scene,
+      marks: [{ type: 'circle', cx: 1, cy: 1, r: 1, fill: 'red" onload="alert(1)' }],
+    };
+    const svg = toSVG(malicious);
+    expect(svg).not.toContain('onload="alert(1)"');
+    expect(svg).toContain('fill="red&quot; onload=&quot;alert(1)"');
+  });
+
+  it('escapes className/style and drops invalid attr names', () => {
+    const svg = toSVG(scene, {
+      className: 'a"><b',
+      attrs: { 'data-ok': 1, 'bad name': 2, 'x"><y': 3 },
+    });
+    expect(svg).toContain('class="a&quot;&gt;&lt;b"');
+    expect(svg).toContain('data-ok="1"');
+    expect(svg).not.toContain('bad name');
+    expect(svg).not.toContain('x"><y');
+  });
 });

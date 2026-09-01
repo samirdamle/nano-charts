@@ -1,30 +1,36 @@
 import type { Mark, Scene } from '../types';
 
+/** Escape text content and attribute values. Covers the five XML significant chars,
+ * so the result is safe both between tags and inside double/single-quoted attributes. */
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
+const ATTR_NAME = /^[A-Za-z_][A-Za-z0-9_:-]*$/;
+
 function attr(name: string, value: string | number | undefined): string {
-  return value === undefined ? '' : ` ${name}="${value}"`;
+  return value === undefined ? '' : ` ${name}="${esc(String(value))}"`;
 }
 
 function renderMark(m: Mark): string {
   switch (m.type) {
     case 'polyline': {
       const pts = m.points.map(([x, y]) => `${x},${y}`).join(' ');
-      return `<polyline points="${pts}"${attr('fill', m.fill)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
+      return `<polyline points="${esc(pts)}"${attr('fill', m.fill)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
     }
     case 'path':
-      return `<path d="${m.d}"${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
+      return `<path d="${esc(m.d)}"${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
     case 'rect':
-      return `<rect x="${m.x}" y="${m.y}" width="${m.width}" height="${m.height}"${attr('rx', m.rx)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}/>`;
+      return `<rect${attr('x', m.x)}${attr('y', m.y)}${attr('width', m.width)}${attr('height', m.height)}${attr('rx', m.rx)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}/>`;
     case 'circle':
-      return `<circle cx="${m.cx}" cy="${m.cy}" r="${m.r}"${attr('fill', m.fill)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
+      return `<circle${attr('cx', m.cx)}${attr('cy', m.cy)}${attr('r', m.r)}${attr('fill', m.fill)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
     case 'line':
-      return `<line x1="${m.x1}" y1="${m.y1}" x2="${m.x2}" y2="${m.y2}"${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
+      return `<line${attr('x1', m.x1)}${attr('y1', m.y1)}${attr('x2', m.x2)}${attr('y2', m.y2)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
   }
 }
 
@@ -34,14 +40,15 @@ export function toSVG(
 ): string {
   const extra = opts.attrs
     ? Object.entries(opts.attrs)
+        .filter(([k]) => ATTR_NAME.test(k))
         .map(([k, v]) => attr(k, v))
         .join('')
     : '';
-  const cls = opts.className ? ` class="${opts.className}"` : '';
-  const style = opts.style ? ` style="${opts.style}"` : '';
+  const cls = attr('class', opts.className);
+  const style = attr('style', opts.style);
   const body = scene.marks.map(renderMark).join('');
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${scene.viewBox}" ` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${esc(scene.viewBox)}" ` +
     `role="img" fill="currentColor" stroke="currentColor"${cls}${style}${extra}>` +
     `<title>${esc(scene.a11y.title)}</title><desc>${esc(scene.a11y.desc)}</desc>` +
     `${body}</svg>`
