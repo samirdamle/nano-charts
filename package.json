@@ -1,0 +1,31 @@
+{
+  "name": "@samirdamle/nano-charts",
+  "version": "0.0.0",
+  "description": "Extremely lightweight, zero-dependency TypeScript library for tiny SVG charts.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": { "node": ">=18" },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write .",
+    "size": "size-limit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^11.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "size-limit": "^11.1.6",
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}
