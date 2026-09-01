@@ -4,7 +4,7 @@
 
 **Goal:** Restructure the single-package `nano-charts` repo into a pnpm monorepo (`packages/core`, `packages/react`) and add `@samirdamle/nano-charts-react`, a set of React components (one per chart) that wrap the existing core `Scene`-producing functions with hover/click interactivity.
 
-**Architecture:** Each React component destructures `data` plus the same options its core function counterpart takes, calls that core function to get a `Scene`, and renders `scene.marks` via a shared `<Marks>` renderer and `scene.points` via a shared `<PointHitTargets>` overlay (transparent hit circles wired to `onPointHover`/`onPointClick`). No internal component state is needed — handlers fire directly on DOM events — so there is no hover-state hook; this is a deliberate simplification of the approved design spec's sketch, since no visual behavior depends on "currently hovered," only the callback firing.
+**Architecture:** Each React component destructures `data` plus the same options its core function counterpart takes, calls that core function to get a `Scene`, and renders it via a shared `<ChartSvg>` component (the single place that owns the `<svg role="img">` wrapper, `<title>`/`<desc>`, `<Marks>` for `scene.marks`, and `<PointHitTargets>` for `scene.points` — transparent hit circles wired to `onPointHover`/`onPointClick`). This keeps all 8 chart components to a few lines each: compute the scene, hand it to `ChartSvg`. No internal component state is needed — handlers fire directly on DOM events — so there is no hover-state hook; this is a deliberate simplification of the approved design spec's sketch, since no visual behavior depends on "currently hovered," only the callback firing.
 
 **Tech Stack:** pnpm workspaces, TypeScript 5.5, tsup (dual ESM/CJS + `.d.ts`), Vitest (+ `jsdom`, `@testing-library/react` for the React package), ESLint, Changesets.
 
@@ -323,7 +323,7 @@ If Step 1 or 2 found the files already matched (no diff), skip the commit for th
     hitRadius?: number;
   }
   ```
-- Produces: `Marks` component (`packages/react/src/render/Marks.tsx`) — `function Marks({ marks }: { marks: Mark[] }): JSX.Element`, used by every chart component from Task 5 onward.
+- Produces: `Marks` component (`packages/react/src/render/Marks.tsx`) — `function Marks({ marks }: { marks: Mark[] }): JSX.Element`, used by `ChartSvg` (Task 4), which every chart component from Task 5 onward renders.
 - Produces: `SeriesInput<T>` now importable from `@samirdamle/nano-charts` — used by `LineChart`, `AreaChart`, `WinLossChart` (Tasks 5, 6, 8).
 
 - [ ] **Step 1: Export `SeriesInput` from core's public API**
@@ -691,15 +691,18 @@ EOF
 
 ---
 
-### Task 4: Shared `PointHitTargets`
+### Task 4: Shared `PointHitTargets` and `ChartSvg`
 
 **Files:**
 - Create: `packages/react/src/render/PointHitTargets.tsx`
 - Create: `packages/react/tests/PointHitTargets.test.tsx`
+- Create: `packages/react/src/render/ChartSvg.tsx`
+- Create: `packages/react/tests/ChartSvg.test.tsx`
 
 **Interfaces:**
-- Consumes: `ScenePoint` from `@samirdamle/nano-charts`; `InteractionProps` shape conventions from Task 3.
-- Produces: `PointHitTargets` component — `function PointHitTargets(props: { points: ScenePoint[]; hitRadius: number; onPointHover?: (p: ScenePoint | null) => void; onPointClick?: (p: ScenePoint) => void }): JSX.Element | null`, used by every chart component from Task 5 onward. Hit targets are `<circle fill="transparent" .../>` elements — this is also the selector (`circle[fill="transparent"]`) every chart component's tests use to find them, since some charts' visual marks are also circles.
+- Consumes: `ScenePoint`, `Scene` from `@samirdamle/nano-charts`; `InteractionProps` shape conventions from Task 3; `Marks` from Task 3.
+- Produces: `PointHitTargets` component — `function PointHitTargets(props: { points: ScenePoint[]; hitRadius: number; onPointHover?: (p: ScenePoint | null) => void; onPointClick?: (p: ScenePoint) => void }): JSX.Element | null`. Hit targets are `<circle fill="transparent" .../>` elements — this is also the selector (`circle[fill="transparent"]`) every chart component's tests use to find them, since some charts' visual marks are also circles.
+- Produces: `ChartSvg` component — `function ChartSvg(props: { scene: Scene } & InteractionProps): JSX.Element`. This is the single place that renders the `<svg role="img">` wrapper with `<title>`/`<desc>` (from `scene.a11y`), `<Marks>`, and `<PointHitTargets>`. Every chart component from Task 5 onward computes a `Scene` and renders `<ChartSvg scene={scene} .../>` — it is the shared piece that keeps all 8 chart components from duplicating the same wrapper JSX. `hitRadius` defaults to `4` here (not in each chart component).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -816,16 +819,121 @@ pnpm --filter @samirdamle/nano-charts-react exec vitest run tests/PointHitTarget
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Write the failing test for `ChartSvg`**
+
+Create `packages/react/tests/ChartSvg.test.tsx`:
+
+```tsx
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
+import { ChartSvg } from '../src/render/ChartSvg';
+import type { Scene } from '@samirdamle/nano-charts';
+
+const scene: Scene = {
+  width: 100,
+  height: 20,
+  viewBox: '0 0 100 20',
+  marks: [{ type: 'circle', cx: 10, cy: 10, r: 1, fill: 'currentColor' }],
+  points: [{ id: 0, label: 'a', value: 1, index: 0, x: 10, y: 10 }],
+  a11y: { title: 'test chart', desc: 'a test chart' },
+};
+
+describe('ChartSvg', () => {
+  it('renders the svg wrapper with viewBox, role, title, desc, and marks', () => {
+    const { container } = render(<ChartSvg scene={scene} />);
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 100 20');
+    expect(svg?.getAttribute('role')).toBe('img');
+    expect(container.querySelector('title')?.textContent).toBe('test chart');
+    expect(container.querySelector('desc')?.textContent).toBe('a test chart');
+    expect(container.querySelectorAll('svg > circle')).toHaveLength(1);
+  });
+
+  it('passes className and style to the root svg', () => {
+    const { container } = render(<ChartSvg scene={scene} className="my-chart" style={{ color: 'red' }} />);
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('class')).toBe('my-chart');
+    expect(svg?.getAttribute('style')).toBe('color: red;');
+  });
+
+  it('wires onPointHover/onPointClick through to hit targets, defaulting hitRadius to 4', () => {
+    const onPointHover = vi.fn();
+    const { container } = render(<ChartSvg scene={scene} onPointHover={onPointHover} />);
+    const hitTarget = container.querySelector('circle[fill="transparent"]');
+    expect(hitTarget?.getAttribute('r')).toBe('4');
+    fireEvent.mouseEnter(hitTarget!);
+    expect(onPointHover).toHaveBeenCalledWith(scene.points[0]);
+  });
+});
+```
+
+- [ ] **Step 6: Run to verify it fails**
 
 ```bash
-git add packages/react/src/render/PointHitTargets.tsx packages/react/tests/PointHitTargets.test.tsx
-git commit -m "$(cat <<'EOF'
-feat: add shared PointHitTargets component for chart interactivity
+pnpm --filter @samirdamle/nano-charts-react exec vitest run tests/ChartSvg.test.tsx
+```
 
-Renders one invisible, transparent-fill hit circle per ScenePoint, wired
-to onPointHover/onPointClick. Every chart component (Tasks 5-12) composes
-this alongside Marks to get consistent hover/click behavior for free.
+Expected: FAIL — `Cannot find module '../src/render/ChartSvg'`.
+
+- [ ] **Step 7: Implement `ChartSvg`**
+
+Create `packages/react/src/render/ChartSvg.tsx`:
+
+```tsx
+'use client';
+
+import type { Scene } from '@samirdamle/nano-charts';
+import { Marks } from './Marks';
+import { PointHitTargets } from './PointHitTargets';
+import type { InteractionProps } from '../types';
+
+export interface ChartSvgProps extends InteractionProps {
+  scene: Scene;
+}
+
+export function ChartSvg({ scene, onPointHover, onPointClick, className, style, hitRadius = 4 }: ChartSvgProps) {
+  return (
+    <svg
+      viewBox={scene.viewBox}
+      role="img"
+      fill="currentColor"
+      stroke="currentColor"
+      className={className}
+      style={style}
+    >
+      <title>{scene.a11y.title}</title>
+      <desc>{scene.a11y.desc}</desc>
+      <Marks marks={scene.marks} />
+      <PointHitTargets
+        points={scene.points}
+        hitRadius={hitRadius}
+        onPointHover={onPointHover}
+        onPointClick={onPointClick}
+      />
+    </svg>
+  );
+}
+```
+
+- [ ] **Step 8: Run to verify it passes**
+
+```bash
+pnpm --filter @samirdamle/nano-charts-react exec vitest run tests/ChartSvg.test.tsx
+```
+
+Expected: PASS, 3 tests.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add packages/react/src/render/PointHitTargets.tsx packages/react/tests/PointHitTargets.test.tsx packages/react/src/render/ChartSvg.tsx packages/react/tests/ChartSvg.test.tsx
+git commit -m "$(cat <<'EOF'
+feat: add shared PointHitTargets and ChartSvg components
+
+PointHitTargets renders one invisible, transparent-fill hit circle per
+ScenePoint, wired to onPointHover/onPointClick. ChartSvg composes it with
+Marks into the single <svg role="img"> wrapper every chart component
+(Tasks 5-12) renders, so the wrapper JSX exists in exactly one place.
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 EOF
@@ -841,7 +949,7 @@ EOF
 - Create: `packages/react/tests/LineChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `line`, `LineOptions<T>`, `SeriesInput<T>` from `@samirdamle/nano-charts`; `Marks` and `PointHitTargets` from Task 3/4; `InteractionProps` from Task 3.
+- Consumes: `line`, `LineOptions<T>`, `SeriesInput<T>` from `@samirdamle/nano-charts`; `ChartSvg` from Task 4; `InteractionProps` from Task 3.
 - Produces: `LineChart<T = number>(props: LineChartProps<T>)` and `LineChartProps<T>` — re-exported from the barrel in Task 13.
 
 - [ ] **Step 1: Write the failing tests**
@@ -905,8 +1013,7 @@ Create `packages/react/src/charts/LineChart.tsx`:
 'use client';
 
 import { line, type LineOptions, type SeriesInput } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface LineChartProps<T = number> extends LineOptions<T>, InteractionProps {
@@ -914,27 +1021,17 @@ export interface LineChartProps<T = number> extends LineOptions<T>, InteractionP
 }
 
 export function LineChart<T = number>(props: LineChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = line(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
@@ -968,7 +1065,7 @@ EOF
 - Create: `packages/react/tests/AreaChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `area`, `AreaOptions<T>`, `SeriesInput<T>` from `@samirdamle/nano-charts`; `Marks`/`PointHitTargets`/`InteractionProps` as in Task 5.
+- Consumes: `area`, `AreaOptions<T>`, `SeriesInput<T>` from `@samirdamle/nano-charts`; `ChartSvg`/`InteractionProps` as in Task 5.
 - Produces: `AreaChart<T = number>(props: AreaChartProps<T>)` and `AreaChartProps<T>`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1031,8 +1128,7 @@ Create `packages/react/src/charts/AreaChart.tsx`:
 'use client';
 
 import { area, type AreaOptions, type SeriesInput } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface AreaChartProps<T = number> extends AreaOptions<T>, InteractionProps {
@@ -1040,27 +1136,17 @@ export interface AreaChartProps<T = number> extends AreaOptions<T>, InteractionP
 }
 
 export function AreaChart<T = number>(props: AreaChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = area(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
@@ -1094,7 +1180,7 @@ EOF
 - Create: `packages/react/tests/BarChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `bar`, `BarOptions<T>`, `BarInput<T>` from `@samirdamle/nano-charts`; `Marks`/`PointHitTargets`/`InteractionProps` as in Task 5.
+- Consumes: `bar`, `BarOptions<T>`, `BarInput<T>` from `@samirdamle/nano-charts`; `ChartSvg`/`InteractionProps` as in Task 5.
 - Produces: `BarChart<T = number>(props: BarChartProps<T>)` and `BarChartProps<T>`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1165,8 +1251,7 @@ Create `packages/react/src/charts/BarChart.tsx`:
 'use client';
 
 import { bar, type BarOptions, type BarInput } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface BarChartProps<T = number> extends BarOptions<T>, InteractionProps {
@@ -1174,27 +1259,17 @@ export interface BarChartProps<T = number> extends BarOptions<T>, InteractionPro
 }
 
 export function BarChart<T = number>(props: BarChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = bar(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
@@ -1228,7 +1303,7 @@ EOF
 - Create: `packages/react/tests/WinLossChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `winLoss`, `WinLossOptions<T>`, `SeriesInput<T>` from `@samirdamle/nano-charts`; `Marks`/`PointHitTargets`/`InteractionProps` as in Task 5.
+- Consumes: `winLoss`, `WinLossOptions<T>`, `SeriesInput<T>` from `@samirdamle/nano-charts`; `ChartSvg`/`InteractionProps` as in Task 5.
 - Produces: `WinLossChart<T = number>(props: WinLossChartProps<T>)` and `WinLossChartProps<T>`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1288,8 +1363,7 @@ Create `packages/react/src/charts/WinLossChart.tsx`:
 'use client';
 
 import { winLoss, type WinLossOptions, type SeriesInput } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface WinLossChartProps<T = number> extends WinLossOptions<T>, InteractionProps {
@@ -1297,27 +1371,17 @@ export interface WinLossChartProps<T = number> extends WinLossOptions<T>, Intera
 }
 
 export function WinLossChart<T = number>(props: WinLossChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = winLoss(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
@@ -1351,7 +1415,7 @@ EOF
 - Create: `packages/react/tests/BulletChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `bullet`, `BulletOptions`, `BulletData` from `@samirdamle/nano-charts`; `Marks`/`PointHitTargets`/`InteractionProps` as in Task 5. Not generic (core's `bullet` isn't generic).
+- Consumes: `bullet`, `BulletOptions`, `BulletData` from `@samirdamle/nano-charts`; `ChartSvg`/`InteractionProps` as in Task 5. Not generic (core's `bullet` isn't generic).
 - Produces: `BulletChart(props: BulletChartProps)` and `BulletChartProps`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1416,8 +1480,7 @@ Create `packages/react/src/charts/BulletChart.tsx`:
 'use client';
 
 import { bullet, type BulletOptions, type BulletData } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface BulletChartProps extends BulletOptions, InteractionProps {
@@ -1425,27 +1488,17 @@ export interface BulletChartProps extends BulletOptions, InteractionProps {
 }
 
 export function BulletChart(props: BulletChartProps) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = bullet(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
@@ -1479,7 +1532,7 @@ EOF
 - Create: `packages/react/tests/DonutChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `donut`, `DonutOptions<T>`, `DonutInput<T>` from `@samirdamle/nano-charts`; `Marks`/`PointHitTargets`/`InteractionProps` as in Task 5.
+- Consumes: `donut`, `DonutOptions<T>`, `DonutInput<T>` from `@samirdamle/nano-charts`; `ChartSvg`/`InteractionProps` as in Task 5.
 - Produces: `DonutChart<T = number>(props: DonutChartProps<T>)` and `DonutChartProps<T>`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1543,8 +1596,7 @@ Create `packages/react/src/charts/DonutChart.tsx`:
 'use client';
 
 import { donut, type DonutOptions, type DonutInput } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface DonutChartProps<T = number> extends DonutOptions<T>, InteractionProps {
@@ -1552,27 +1604,17 @@ export interface DonutChartProps<T = number> extends DonutOptions<T>, Interactio
 }
 
 export function DonutChart<T = number>(props: DonutChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = donut(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
@@ -1606,7 +1648,7 @@ EOF
 - Create: `packages/react/tests/ScatterChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `scatter`, `ScatterOptions<T>`, `ScatterInput<T>`, `ScatterPoint` from `@samirdamle/nano-charts`; `Marks`/`PointHitTargets`/`InteractionProps` as in Task 5.
+- Consumes: `scatter`, `ScatterOptions<T>`, `ScatterInput<T>`, `ScatterPoint` from `@samirdamle/nano-charts`; `ChartSvg`/`InteractionProps` as in Task 5.
 - Produces: `ScatterChart<T = ScatterPoint>(props: ScatterChartProps<T>)` and `ScatterChartProps<T>`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1678,8 +1720,7 @@ Create `packages/react/src/charts/ScatterChart.tsx`:
 'use client';
 
 import { scatter, type ScatterOptions, type ScatterInput, type ScatterPoint } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface ScatterChartProps<T = ScatterPoint> extends ScatterOptions<T>, InteractionProps {
@@ -1687,27 +1728,17 @@ export interface ScatterChartProps<T = ScatterPoint> extends ScatterOptions<T>, 
 }
 
 export function ScatterChart<T = ScatterPoint>(props: ScatterChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = scatter(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
@@ -1741,7 +1772,7 @@ EOF
 - Create: `packages/react/tests/HeatmapChart.test.tsx`
 
 **Interfaces:**
-- Consumes: `heatmap`, `HeatmapOptions<T>` from `@samirdamle/nano-charts`; `Marks`/`PointHitTargets`/`InteractionProps` as in Task 5.
+- Consumes: `heatmap`, `HeatmapOptions<T>` from `@samirdamle/nano-charts`; `ChartSvg`/`InteractionProps` as in Task 5.
 - Produces: `HeatmapChart<T = number>(props: HeatmapChartProps<T>)` and `HeatmapChartProps<T>`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1810,8 +1841,7 @@ Create `packages/react/src/charts/HeatmapChart.tsx`:
 'use client';
 
 import { heatmap, type HeatmapOptions } from '@samirdamle/nano-charts';
-import { Marks } from '../render/Marks';
-import { PointHitTargets } from '../render/PointHitTargets';
+import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
 export interface HeatmapChartProps<T = number> extends HeatmapOptions<T>, InteractionProps {
@@ -1819,27 +1849,17 @@ export interface HeatmapChartProps<T = number> extends HeatmapOptions<T>, Intera
 }
 
 export function HeatmapChart<T = number>(props: HeatmapChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius = 4, ...options } = props;
+  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = heatmap(data, options);
   return (
-    <svg
-      viewBox={scene.viewBox}
-      role="img"
-      fill="currentColor"
-      stroke="currentColor"
+    <ChartSvg
+      scene={scene}
+      onPointHover={onPointHover}
+      onPointClick={onPointClick}
       className={className}
       style={style}
-    >
-      <title>{scene.a11y.title}</title>
-      <desc>{scene.a11y.desc}</desc>
-      <Marks marks={scene.marks} />
-      <PointHitTargets
-        points={scene.points}
-        hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
-      />
-    </svg>
+      hitRadius={hitRadius}
+    />
   );
 }
 ```
