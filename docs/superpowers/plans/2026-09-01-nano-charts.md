@@ -1182,8 +1182,8 @@ export interface BarOptions<T = number>
   radius?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BarInput<T = number> = any[];
+type BarSegment<T> = number | { id?: string | number; label?: string; value: number } | T;
+export type BarInput<T = number> = Array<BarSegment<T> | BarSegment<T>[]>;
 
 export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}): Scene {
   const width = options.width ?? 100;
@@ -1196,9 +1196,9 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     : undefined;
 
   // Normalize into columns of segment-datums.
-  const columns: Datum[][] = data.map((d: unknown, col: number) => {
-    const segs = Array.isArray(d) ? d : [d];
-    return normalizeSeries(segs as SeriesInput<T>, accessors).map((s) => ({ ...s, index: col }));
+  const columns: Datum[][] = data.map((d, col) => {
+    const segs = (Array.isArray(d) ? d : [d]) as SeriesInput<T>;
+    return normalizeSeries(segs, accessors).map((s) => ({ ...s, index: col }));
   });
 
   const totals = columns.map((segs) => segs.reduce((sum, s) => sum + s.value, 0));
@@ -1221,7 +1221,6 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   });
   const slot = (layout.right - layout.left) / columns.length;
   const barW = slot * (1 - gap);
-  const baseY = layout.y(0);
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
@@ -1259,7 +1258,6 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     });
   });
 
-  void baseY;
   return { ...base, marks, points };
 }
 ```
