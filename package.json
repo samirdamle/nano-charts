@@ -7,6 +7,21 @@
   "sideEffects": false,
   "engines": { "node": ">=18" },
   "files": ["dist"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
+    "./line": { "types": "./dist/line.d.ts", "import": "./dist/line.js", "require": "./dist/line.cjs" },
+    "./area": { "types": "./dist/area.d.ts", "import": "./dist/area.js", "require": "./dist/area.cjs" },
+    "./bar": { "types": "./dist/bar.d.ts", "import": "./dist/bar.js", "require": "./dist/bar.cjs" },
+    "./win-loss": { "types": "./dist/win-loss.d.ts", "import": "./dist/win-loss.js", "require": "./dist/win-loss.cjs" },
+    "./bullet": { "types": "./dist/bullet.d.ts", "import": "./dist/bullet.js", "require": "./dist/bullet.cjs" },
+    "./donut": { "types": "./dist/donut.d.ts", "import": "./dist/donut.js", "require": "./dist/donut.cjs" },
+    "./scatter": { "types": "./dist/scatter.d.ts", "import": "./dist/scatter.js", "require": "./dist/scatter.cjs" },
+    "./heatmap": { "types": "./dist/heatmap.d.ts", "import": "./dist/heatmap.js", "require": "./dist/heatmap.cjs" },
+    "./to-svg": { "types": "./dist/to-svg.d.ts", "import": "./dist/to-svg.js", "require": "./dist/to-svg.cjs" }
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
