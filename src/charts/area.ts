@@ -43,24 +43,31 @@ export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> =
     y: round(layout.y(d.value)),
   }));
 
-  const bottom = round(layout.bottom);
-  const first = points[0]!;
-  const last = points[points.length - 1]!;
-  const d =
-    `M${first.x},${bottom} ` +
-    points.map((p) => `L${p.x},${p.y}`).join(' ') +
-    ` L${last.x},${bottom} Z`;
+  const marks: Mark[] = [];
 
-  const marks: Mark[] = [
-    { type: 'path', d, fill: color, fillOpacity },
-    {
-      type: 'polyline',
-      points: points.map((p) => [p.x, p.y] as [number, number]),
-      fill: 'none',
-      stroke: color,
-      strokeWidth,
-    },
-  ];
+  if (points.length >= 2) {
+    const bottom = round(layout.bottom);
+    const first = points[0]!;
+    const last = points[points.length - 1]!;
+    const d =
+      `M${first.x},${bottom} ` +
+      points.map((p) => `L${p.x},${p.y}`).join(' ') +
+      ` L${last.x},${bottom} Z`;
+    marks.push(
+      { type: 'path', d, fill: color, fillOpacity },
+      {
+        type: 'polyline',
+        points: points.map((p) => [p.x, p.y] as [number, number]),
+        fill: 'none',
+        stroke: color,
+        strokeWidth,
+      },
+    );
+  } else {
+    // A single point has no area to fill; render it as a dot so it's visible.
+    const p = points[0]!;
+    marks.push({ type: 'circle', cx: p.x, cy: p.y, r: Math.max(1, strokeWidth + 0.5), fill: color });
+  }
 
   return { ...base, marks, points };
 }

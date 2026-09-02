@@ -42,19 +42,24 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
     y: round(layout.y(d.value)),
   }));
 
-  const marks: Mark[] = [
-    {
+  const marks: Mark[] = [];
+
+  if (points.length >= 2) {
+    marks.push({
       type: 'polyline',
       points: points.map((p) => [p.x, p.y] as [number, number]),
       fill: 'none',
       stroke: color,
       strokeWidth,
-    },
-  ];
-
-  if (options.dot && options.dot !== 'none') {
-    const dotted = options.dot === 'last' ? points.slice(-1) : points;
-    for (const p of dotted) marks.push({ type: 'circle', cx: p.x, cy: p.y, r: 1, fill: color });
+    });
+    if (options.dot && options.dot !== 'none') {
+      const dotted = options.dot === 'last' ? points.slice(-1) : points;
+      for (const p of dotted) marks.push({ type: 'circle', cx: p.x, cy: p.y, r: 1, fill: color });
+    }
+  } else {
+    // A single point has no line to draw; render it as a dot so it's visible.
+    const p = points[0]!;
+    marks.push({ type: 'circle', cx: p.x, cy: p.y, r: Math.max(1, strokeWidth + 0.5), fill: color });
   }
 
   return { ...base, marks, points };
