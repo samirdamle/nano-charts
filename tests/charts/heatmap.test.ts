@@ -32,4 +32,18 @@ describe('heatmap', () => {
   it('renders an empty scene for empty data', () => {
     expect(heatmap([]).marks).toEqual([]);
   });
+
+  it('handles ragged rows: skips missing cells and never emits a NaN fill', () => {
+    const scene = heatmap([[1, 2, 3], [4]], {
+      cellSize: 6,
+      gap: 0,
+      colorScale: ['#000000', '#ffffff'],
+    });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(4); // 3 + 1, missing cells skipped
+    // grid sized to widest row (3 cols)
+    expect(scene.width).toBe(18);
+    expect(scene.height).toBe(12);
+    for (const r of rects) expect(r.fill).not.toContain('NaN');
+  });
 });
