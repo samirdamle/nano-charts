@@ -72,7 +72,11 @@ New file `src/charts/lines.ts`, exported from `src/index.ts` alongside `line`.
 ```ts
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
-  label?: string;           // series name, carried onto points as seriesLabel
+  name?: string;            // series display name, carried onto points as seriesLabel
+                             // (named `name`, not `label`, because `label` on this
+                             // interface is already `Partial<SeriesAccessors<T>>`'s
+                             // per-point label *accessor* function — same-name string
+                             // field would conflict with it)
   color?: string;
   strokeWidth?: number;
   strokeDasharray?: string | number[];

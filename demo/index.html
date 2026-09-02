@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>nano-charts</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --border: #e8e6e2;
+    --border-soft: #f0efec;
+    --text: #1c1b1a;
+    --text-muted: #6b6862;
+    --text-faint: #a6a29a;
+    --accent: #3a5dae;
+    --accent-soft: #ecf0fa;
+    --new-badge-bg: #eef2fb;
+    --new-badge-text: #3a5dae;
+    --shadow: 0 1px 2px rgba(20, 18, 14, 0.04), 0 1px 1px rgba(20, 18, 14, 0.03);
+    --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161513;
+      --surface: #1e1d1a;
+      --border: #302e2a;
+      --border-soft: #26251f;
+      --text: #f3f1ec;
+      --text-muted: #a19d94;
+      --text-faint: #6f6c64;
+      --accent: #8ea6e0;
+      --accent-soft: #23283a;
+      --new-badge-bg: #23283a;
+      --new-badge-text: #8ea6e0;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 72px 32px 120px;
+  }
+
+  header.hero {
+    margin-bottom: 64px;
+  }
+  header.hero .kicker {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+  header.hero h1 {
+    font-size: 34px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+  }
+  header.hero p {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    margin: 0;
+    max-width: 46em;
+  }
+
+  section.group {
+    margin-bottom: 56px;
+  }
+  section.group + section.group {
+    padding-top: 8px;
+  }
+  .group-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .group-heading h2 {
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin: 0;
+  }
+  .group-heading .count {
+    font-size: 12px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .card-head h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.4;
+  }
+  .card-head .badge {
+    flex: none;
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--new-badge-text);
+    background: var(--new-badge-bg);
+    border-radius: 999px;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+
+  .chart {
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 96px;
+  }
+  .chart svg {
+    width: 100%;
+    height: auto;
+    max-height: 96px;
+    display: block;
+    overflow: visible;
+  }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+  footer code {
+    background: var(--border-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="hero">
+    <p class="kicker">nano-charts</p>
+    <h1>Chart gallery</h1>
+    <p>Every chart type rendered from representative sample data, for visually spot-checking output while developing. Cards marked <strong>fixed</strong> cover the edge cases addressed on this branch.</p>
+  </header>
+  <div id="root"></div>
+  <footer>Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with <code>pnpm build</code> to refresh.</footer>
+</div>
+
+<script type="module">
+  import { line, area, bar, winLoss, bullet, donut, scatter, heatmap, toSVG } from '../dist/index.js';
+
+  const root = document.getElementById('root');
+
+  function group(title, entries) {
+    const section = document.createElement('section');
+    section.className = 'group';
+
+    const heading = document.createElement('div');
+    heading.className = 'group-heading';
+    const h2 = document.createElement('h2');
+    h2.textContent = title;
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = entries.length;
+    heading.append(h2, count);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    for (const { title: cardTitle, scene, fixed } of entries) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const head = document.createElement('div');
+      head.className = 'card-head';
+      const h3 = document.createElement('h3');
+      h3.textContent = cardTitle;
+      head.append(h3);
+      if (fixed) {
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = 'Fixed';
+        head.append(badge);
+      }
+
+      const chart = document.createElement('div');
+      chart.className = 'chart';
+      chart.innerHTML = toSVG(scene);
+
+      card.append(head, chart);
+      grid.append(card);
+    }
+
+    section.append(heading, grid);
+    root.append(section);
+  }
+
+  group('Line', [
+    { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
+    { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
+    { title: 'Single point — renders as a dot', scene: line([5]), fixed: true },
+  ]);
+
+  group('Area', [
+    { title: 'Basic', scene: area([1, 4, 2, 8, 3]) },
+    { title: 'Single point — renders as a dot', scene: area([5]), fixed: true },
+  ]);
+
+  group('Bar', [
+    { title: 'Basic', scene: bar([4, 9, 2, 7]) },
+    { title: 'Negative values', scene: bar([4, -3, 6, -2, 1]) },
+  ]);
+
+  group('Win / Loss', [
+    { title: 'Basic', scene: winLoss([1, -2, 3, -1, 2, -3]) },
+  ]);
+
+  group('Bullet', [
+    { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
+  ]);
+
+  group('Donut', [
+    { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
+    { title: 'Full circle', scene: donut({ value: 100, max: 100 }) },
+  ]);
+
+  group('Scatter', [
+    { title: 'Basic', scene: scatter([[0, 0], [3, 8], [6, 2], [10, 10]]) },
+  ]);
+
+  group('Heatmap', [
+    { title: 'Basic', scene: heatmap([[1, 4, 2], [3, 0, 5], [2, 6, 1]], { cellSize: 20, gap: 2 }) },
+    { title: 'Ragged rows — no longer throws', scene: heatmap([[1, 4, 2], [3, 0], [2, 6, 1, 5]], { cellSize: 20, gap: 2 }), fixed: true },
+  ]);
+</script>
+</body>
+</html>
