@@ -16,13 +16,18 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const getValue = options.value ?? ((c: T) => c as unknown as number);
 
   const rows = matrix.length;
-  const cols = rows > 0 ? matrix[0]!.length : 0;
+  // Size the grid to the widest row so ragged input still lays out consistently.
+  const cols = rows > 0 ? Math.max(...matrix.map((row) => row.length)) : 0;
   const width = cols * cell;
   const height = rows * cell;
 
   const flat: number[] = [];
   for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) flat.push(getValue(matrix[r]![c]!, r, c));
+    for (let c = 0; c < cols; c++) {
+      const cellRaw = matrix[r]?.[c];
+      if (cellRaw === undefined) continue; // skip missing cells in ragged rows
+      flat.push(getValue(cellRaw, r, c));
+    }
   }
 
   const base: Scene = {
@@ -43,10 +48,11 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
-  let i = 0;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const value = flat[i++]!;
+      const cellRaw = matrix[r]?.[c];
+      if (cellRaw === undefined) continue; // skip missing cells in ragged rows
+      const value = getValue(cellRaw, r, c);
       const x = round(c * cell + gap / 2);
       const y = round(r * cell + gap / 2);
       const size = round(cell - gap);
