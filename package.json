@@ -4,6 +4,7 @@
   "description": "Extremely lightweight, zero-dependency TypeScript library for tiny SVG charts.",
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@11.12.0",
   "sideEffects": false,
   "engines": { "node": ">=18" },
   "files": ["dist"],
