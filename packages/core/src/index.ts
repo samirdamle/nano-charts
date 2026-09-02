@@ -9,3 +9,4 @@ export { heatmap, type HeatmapOptions } from './charts/heatmap';
 export { toSVG } from './render/to-svg';
 export type { Scene, Mark, ScenePoint, BaseOptions, Datum } from './types';
 export type { ColorScale } from './core/color-scale';
+export type { SeriesInput } from './core/normalize';
