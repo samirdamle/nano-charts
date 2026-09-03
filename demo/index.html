@@ -164,6 +164,12 @@
     display: block;
     overflow: visible;
   }
+  .chart-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    min-height: 16px;
+    font-variant-numeric: tabular-nums;
+  }
 
   footer {
     margin-top: 80px;
@@ -209,7 +215,7 @@
     const grid = document.createElement('div');
     grid.className = 'grid';
 
-    for (const { title: cardTitle, scene, fixed } of entries) {
+    for (const { title: cardTitle, scene, fixed, interactive } of entries) {
       const card = document.createElement('div');
       card.className = 'card';
 
@@ -230,6 +236,43 @@
       chart.innerHTML = toSVG(scene);
 
       card.append(head, chart);
+
+      if (interactive) {
+        const info = document.createElement('div');
+        info.className = 'chart-info';
+        const idleText = 'Hover or click a point';
+        info.textContent = idleText;
+
+        let selectedText = null;
+        const describePoint = (indexAttr) => {
+          const point = scene.points[Number(indexAttr)];
+          return point ? `index ${point.index} — value ${point.value}` : null;
+        };
+
+        chart.addEventListener('pointermove', (event) => {
+          const indexAttr = event.target?.dataset?.index;
+          if (indexAttr === undefined) return;
+          const desc = describePoint(indexAttr);
+          if (desc) info.textContent = `Hovering: ${desc}`;
+        });
+
+        chart.addEventListener('pointerleave', () => {
+          info.textContent = selectedText ?? idleText;
+        });
+
+        chart.addEventListener('click', (event) => {
+          const indexAttr = event.target?.dataset?.index;
+          if (indexAttr === undefined) return;
+          const desc = describePoint(indexAttr);
+          if (desc) {
+            selectedText = `Selected: ${desc}`;
+            info.textContent = selectedText;
+          }
+        });
+
+        card.append(info);
+      }
+
       grid.append(card);
     }
 
@@ -248,6 +291,11 @@
         { data: [4, 4, 5, 6, 6, 7], name: 'Target', color: 'var(--series-2)', strokeDasharray: [3, 2] },
         { data: [2, 5, 6, 5, 8, 9], name: 'Forecast', color: 'var(--series-3)', strokeWidth: 2.5 },
       ]),
+    },
+    {
+      title: 'Hover & click',
+      scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
+      interactive: true,
     },
   ]);
 
