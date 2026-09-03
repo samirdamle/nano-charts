@@ -1,5 +1,5 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
-import { extent, round } from '../core/geometry';
+import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { resolvePadding, seriesLayout } from '../core/plot';
 import { seriesSummary } from '../core/a11y';
@@ -12,10 +12,6 @@ export interface LineOptions<T = number>
   dotRadius?: number;
   strokeDasharray?: string | number[];
   strokeLinecap?: 'butt' | 'round' | 'square';
-}
-
-function toDasharray(d: string | number[] | undefined): string | undefined {
-  return Array.isArray(d) ? d.join(' ') : d;
 }
 
 export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> = {}): Scene {

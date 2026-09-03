@@ -69,4 +69,11 @@ describe('lines', () => {
     expect(circles).toHaveLength(1);
     expect(circles[0]).toMatchObject({ seriesIndex: 0 });
   });
+
+  it('skips an empty series without disturbing later series indices', () => {
+    const scene = lines([{ data: [] }, { data: [1, 2], dot: 'all' }]);
+    const circles = scene.marks.filter((m) => m.type === 'circle');
+    expect(circles.map((c) => [c.index, c.seriesIndex])).toEqual([[0, 1], [1, 1]]);
+    expect(scene.points).toHaveLength(2);
+  });
 });

@@ -251,9 +251,8 @@
 
         chart.addEventListener('pointermove', (event) => {
           const indexAttr = event.target?.dataset?.index;
-          if (indexAttr === undefined) return;
-          const desc = describePoint(indexAttr);
-          if (desc) info.textContent = `Hovering: ${desc}`;
+          const desc = indexAttr === undefined ? null : describePoint(indexAttr);
+          info.textContent = desc ? `Hovering: ${desc}` : (selectedText ?? idleText);
         });
 
         chart.addEventListener('pointerleave', () => {

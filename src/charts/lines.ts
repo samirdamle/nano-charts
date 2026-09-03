@@ -1,5 +1,5 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
-import { extent, round } from '../core/geometry';
+import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { resolvePadding, seriesLayout } from '../core/plot';
 
@@ -16,10 +16,6 @@ export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
 }
 
 export type LinesOptions = BaseOptions;
-
-function toDasharray(d: string | number[] | undefined): string | undefined {
-  return Array.isArray(d) ? d.join(' ') : d;
-}
 
 export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions = {}): Scene {
   const width = options.width ?? 100;
