@@ -1,10 +1,28 @@
 export type Datum = { id: string | number; label: string; value: number; index: number };
 
 export type Mark =
-  | { type: 'polyline'; points: [number, number][]; stroke?: string; strokeWidth?: number; fill?: 'none' }
+  | {
+      type: 'polyline';
+      points: [number, number][];
+      stroke?: string;
+      strokeWidth?: number;
+      fill?: 'none';
+      strokeDasharray?: string;
+      strokeLinecap?: 'butt' | 'round' | 'square';
+    }
   | { type: 'path'; d: string; fill?: string; fillOpacity?: number; stroke?: string; strokeWidth?: number }
   | { type: 'rect'; x: number; y: number; width: number; height: number; fill?: string; fillOpacity?: number; rx?: number }
-  | { type: 'circle'; cx: number; cy: number; r: number; fill?: string; stroke?: string; strokeWidth?: number }
+  | {
+      type: 'circle';
+      cx: number;
+      cy: number;
+      r: number;
+      fill?: string;
+      stroke?: string;
+      strokeWidth?: number;
+      index?: number;
+      seriesIndex?: number;
+    }
   | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number };
 
 export interface ScenePoint {
