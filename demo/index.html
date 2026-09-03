@@ -100,11 +100,6 @@
     color: var(--text);
     margin: 0;
   }
-  .group-heading .count {
-    font-size: 12px;
-    color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
-  }
 
   .grid {
     display: grid;
@@ -205,10 +200,7 @@
     heading.className = 'group-heading';
     const h2 = document.createElement('h2');
     h2.textContent = title;
-    const count = document.createElement('span');
-    count.className = 'count';
-    count.textContent = entries.length;
-    heading.append(h2, count);
+    heading.append(h2);
 
     const grid = document.createElement('div');
     grid.className = 'grid';
@@ -244,7 +236,7 @@
   group('Line', [
     { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
     { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
-    { title: 'Single point — renders as a dot', scene: line([5]), fixed: true },
+    { title: 'Single point — renders as a dot', scene: line([5]) },
   ]);
 
   group('Area', [
