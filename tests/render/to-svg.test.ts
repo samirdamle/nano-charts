@@ -67,4 +67,37 @@ describe('toSVG', () => {
     expect(svg).not.toContain('bad name');
     expect(svg).not.toContain('x"><y');
   });
+
+  it('serializes stroke-dasharray and stroke-linecap on a polyline', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [
+        {
+          type: 'polyline',
+          points: [[0, 0], [10, 10]],
+          strokeDasharray: '4 2',
+          strokeLinecap: 'round',
+        },
+      ],
+    });
+    expect(svg).toContain('stroke-dasharray="4 2"');
+    expect(svg).toContain('stroke-linecap="round"');
+  });
+
+  it('serializes data-index and data-series on a circle', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [{ type: 'circle', cx: 5, cy: 5, r: 2, index: 3, seriesIndex: 1 }],
+    });
+    expect(svg).toContain('data-index="3"');
+    expect(svg).toContain('data-series="1"');
+  });
+
+  it('omits stroke-dasharray/stroke-linecap/data-index/data-series when not set', () => {
+    const svg = toSVG(scene);
+    expect(svg).not.toContain('stroke-dasharray');
+    expect(svg).not.toContain('stroke-linecap');
+    expect(svg).not.toContain('data-index');
+    expect(svg).not.toContain('data-series');
+  });
 });

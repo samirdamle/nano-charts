@@ -53,4 +53,34 @@ describe('line', () => {
     expect(circles).toHaveLength(1);
     expect(scene.points).toHaveLength(1);
   });
+
+  it('applies strokeDasharray (array form) and strokeLinecap to the polyline', () => {
+    const scene = line([0, 10, 5], { strokeDasharray: [4, 2], strokeLinecap: 'round' });
+    const poly = scene.marks.find((m) => m.type === 'polyline');
+    expect(poly).toMatchObject({ strokeDasharray: '4 2', strokeLinecap: 'round' });
+  });
+
+  it('passes a raw string strokeDasharray through unchanged', () => {
+    const scene = line([0, 10, 5], { strokeDasharray: '4 2 1' });
+    const poly = scene.marks.find((m) => m.type === 'polyline');
+    expect(poly).toMatchObject({ strokeDasharray: '4 2 1' });
+  });
+
+  it('uses dotRadius for dot circles', () => {
+    const scene = line([0, 10, 5], { dot: 'all', dotRadius: 3 });
+    const circles = scene.marks.filter((m) => m.type === 'circle');
+    expect(circles.every((c) => c.r === 3)).toBe(true);
+  });
+
+  it('tags each dot circle with its point index', () => {
+    const scene = line([0, 10, 5], { dot: 'all' });
+    const circles = scene.marks.filter((m) => m.type === 'circle');
+    expect(circles.map((c) => c.index)).toEqual([0, 1, 2]);
+  });
+
+  it('uses dotRadius for the single-point fallback dot', () => {
+    const scene = line([5], { dotRadius: 4 });
+    const circle = scene.marks.find((m) => m.type === 'circle');
+    expect(circle).toMatchObject({ r: 4, index: 0 });
+  });
 });

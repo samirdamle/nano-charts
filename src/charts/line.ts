@@ -1,5 +1,5 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
-import { extent, round } from '../core/geometry';
+import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { resolvePadding, seriesLayout } from '../core/plot';
 import { seriesSummary } from '../core/a11y';
@@ -9,6 +9,9 @@ export interface LineOptions<T = number>
     Partial<SeriesAccessors<T>> {
   dot?: 'none' | 'last' | 'all';
   strokeWidth?: number;
+  dotRadius?: number;
+  strokeDasharray?: string | number[];
+  strokeLinecap?: 'butt' | 'round' | 'square';
 }
 
 export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> = {}): Scene {
@@ -16,6 +19,8 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
   const height = options.height ?? 20;
   const color = options.color ?? 'currentColor';
   const strokeWidth = options.strokeWidth ?? 1;
+  const dotRadius = options.dotRadius ?? 1;
+  const strokeDasharray = toDasharray(options.strokeDasharray);
   const padding = resolvePadding(options.padding);
   const accessors = options.value
     ? { value: options.value, label: options.label, id: options.id }
@@ -51,15 +56,27 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
       fill: 'none',
       stroke: color,
       strokeWidth,
+      ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
+      ...(options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {}),
     });
     if (options.dot && options.dot !== 'none') {
-      const dotted = options.dot === 'last' ? points.slice(-1) : points;
-      for (const p of dotted) marks.push({ type: 'circle', cx: p.x, cy: p.y, r: 1, fill: color });
+      const dottedIndices = options.dot === 'last' ? [points.length - 1] : points.map((_, i) => i);
+      for (const i of dottedIndices) {
+        const p = points[i]!;
+        marks.push({ type: 'circle', cx: p.x, cy: p.y, r: dotRadius, fill: color, index: i });
+      }
     }
   } else {
     // A single point has no line to draw; render it as a dot so it's visible.
     const p = points[0]!;
-    marks.push({ type: 'circle', cx: p.x, cy: p.y, r: Math.max(1, strokeWidth + 0.5), fill: color });
+    marks.push({
+      type: 'circle',
+      cx: p.x,
+      cy: p.y,
+      r: Math.max(dotRadius, strokeWidth + 0.5),
+      fill: color,
+      index: 0,
+    });
   }
 
   return { ...base, marks, points };
