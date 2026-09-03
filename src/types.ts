@@ -36,6 +36,8 @@ export interface ScenePoint {
   col?: number;
   w?: number;
   h?: number;
+  seriesIndex?: number;
+  seriesLabel?: string;
 }
 
 export interface Scene {

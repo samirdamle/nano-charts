@@ -17,6 +17,7 @@
   "exports": {
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
     "./line": { "types": "./dist/line.d.ts", "import": "./dist/line.js", "require": "./dist/line.cjs" },
+    "./lines": { "types": "./dist/lines.d.ts", "import": "./dist/lines.js", "require": "./dist/lines.cjs" },
     "./area": { "types": "./dist/area.d.ts", "import": "./dist/area.js", "require": "./dist/area.cjs" },
     "./bar": { "types": "./dist/bar.d.ts", "import": "./dist/bar.js", "require": "./dist/bar.cjs" },
     "./win-loss": { "types": "./dist/win-loss.d.ts", "import": "./dist/win-loss.js", "require": "./dist/win-loss.cjs" },
