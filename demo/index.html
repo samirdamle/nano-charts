@@ -18,6 +18,8 @@
     --accent-soft: #ecf0fa;
     --new-badge-bg: #eef2fb;
     --new-badge-text: #3a5dae;
+    --series-2: #3f9d76;
+    --series-3: #b8555f;
     --shadow: 0 1px 2px rgba(20, 18, 14, 0.04), 0 1px 1px rgba(20, 18, 14, 0.03);
     --radius: 12px;
   }
@@ -34,6 +36,8 @@
       --accent-soft: #23283a;
       --new-badge-bg: #23283a;
       --new-badge-text: #8ea6e0;
+      --series-2: #7cc9a7;
+      --series-3: #e08a91;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
     }
   }
@@ -188,7 +192,7 @@
 </div>
 
 <script type="module">
-  import { line, area, bar, winLoss, bullet, donut, scatter, heatmap, toSVG } from '../dist/index.js';
+  import { line, lines, area, bar, winLoss, bullet, donut, scatter, heatmap, toSVG } from '../dist/index.js';
 
   const root = document.getElementById('root');
 
@@ -237,6 +241,14 @@
     { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
     { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
     { title: 'Single point — renders as a dot', scene: line([5]) },
+    {
+      title: 'Multiple series',
+      scene: lines([
+        { data: [3, 7, 2, 9, 5, 6], name: 'Revenue', color: 'var(--accent)' },
+        { data: [4, 4, 5, 6, 6, 7], name: 'Target', color: 'var(--series-2)', strokeDasharray: [3, 2] },
+        { data: [2, 5, 6, 5, 8, 9], name: 'Forecast', color: 'var(--series-3)', strokeWidth: 2.5 },
+      ]),
+    },
   ]);
 
   group('Area', [
