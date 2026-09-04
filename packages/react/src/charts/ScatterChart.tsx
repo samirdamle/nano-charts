@@ -1,6 +1,11 @@
 'use client';
 
-import { scatter, type ScatterOptions, type ScatterInput, type ScatterPoint } from '@samirdamle/nano-charts';
+import {
+  scatter,
+  type ScatterOptions,
+  type ScatterInput,
+  type ScatterPoint,
+} from '@samirdamle/nano-charts';
 import { ChartSvg } from '../render/ChartSvg';
 import type { InteractionProps } from '../types';
 
