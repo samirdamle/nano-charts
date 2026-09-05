@@ -10,7 +10,15 @@ export type Mark =
       strokeDasharray?: string;
       strokeLinecap?: 'butt' | 'round' | 'square';
     }
-  | { type: 'path'; d: string; fill?: string; fillOpacity?: number; stroke?: string; strokeWidth?: number }
+  | {
+      type: 'path';
+      d: string;
+      fill?: string;
+      fillOpacity?: number;
+      stroke?: string;
+      strokeWidth?: number;
+      strokeOpacity?: number;
+    }
   | { type: 'rect'; x: number; y: number; width: number; height: number; fill?: string; fillOpacity?: number; rx?: number }
   | {
       type: 'circle';

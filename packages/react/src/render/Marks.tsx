@@ -24,6 +24,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 fillOpacity={mark.fillOpacity}
                 stroke={mark.stroke}
                 strokeWidth={mark.strokeWidth}
+                strokeOpacity={mark.strokeOpacity}
               />
             );
           case 'rect':
@@ -37,6 +38,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 rx={mark.rx}
                 fill={mark.fill}
                 fillOpacity={mark.fillOpacity}
+                stroke="none"
               />
             );
           case 'circle':

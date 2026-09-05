@@ -30,6 +30,18 @@ describe('Marks', () => {
     expect(el?.getAttribute('fill-opacity')).toBe('0.5');
   });
 
+  it('renders stroke-opacity on a path mark', () => {
+    const marks: Mark[] = [
+      { type: 'path', d: 'M0,0 A1,1 0 0 1 1,1', fill: 'none', stroke: 'red', strokeOpacity: 0.4 },
+    ];
+    const { container } = render(
+      <svg>
+        <Marks marks={marks} />
+      </svg>,
+    );
+    expect(container.querySelector('path')?.getAttribute('stroke-opacity')).toBe('0.4');
+  });
+
   it('renders a rect mark', () => {
     const marks: Mark[] = [{ type: 'rect', x: 1, y: 2, width: 3, height: 4, fill: 'green', rx: 1 }];
     const { container } = render(
@@ -41,6 +53,16 @@ describe('Marks', () => {
     expect(el?.getAttribute('x')).toBe('1');
     expect(el?.getAttribute('width')).toBe('3');
     expect(el?.getAttribute('rx')).toBe('1');
+  });
+
+  it('always renders rect marks with stroke="none"', () => {
+    const marks: Mark[] = [{ type: 'rect', x: 0, y: 0, width: 3, height: 4, fill: 'green' }];
+    const { container } = render(
+      <svg>
+        <Marks marks={marks} />
+      </svg>,
+    );
+    expect(container.querySelector('rect')?.getAttribute('stroke')).toBe('none');
   });
 
   it('renders a circle mark', () => {
