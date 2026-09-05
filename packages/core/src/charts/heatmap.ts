@@ -1,6 +1,7 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round } from '../core/geometry';
 import { makeColorScale, type ColorScale } from '../core/color-scale';
+import { paddedBox, resolvePadding } from '../core/plot';
 
 export interface HeatmapOptions<T = number> extends BaseOptions {
   value?: (cell: T, row: number, col: number) => number;
@@ -15,11 +16,13 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const gap = options.gap ?? 1;
   const getValue = options.value ?? ((c: T) => c as unknown as number);
 
+  const padding = resolvePadding(options.padding, 0);
   const rows = matrix.length;
   // Size the grid to the widest row so ragged input still lays out consistently.
   const cols = rows > 0 ? Math.max(...matrix.map((row) => row.length)) : 0;
-  const width = cols * cell;
-  const height = rows * cell;
+  const width = cols * cell + padding.left + padding.right;
+  const height = rows * cell + padding.top + padding.bottom;
+  const box = paddedBox({ width, height, padding });
 
   const flat: number[] = [];
   for (let r = 0; r < rows; r++) {
@@ -53,8 +56,8 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
       const cellRaw = matrix[r]?.[c];
       if (cellRaw === undefined) continue; // skip missing cells in ragged rows
       const value = getValue(cellRaw, r, c);
-      const x = round(c * cell + gap / 2);
-      const y = round(r * cell + gap / 2);
+      const x = round(box.left + c * cell + gap / 2);
+      const y = round(box.top + r * cell + gap / 2);
       const size = round(cell - gap);
       marks.push({
         type: 'rect',

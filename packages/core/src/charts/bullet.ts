@@ -1,6 +1,6 @@
 import type { BaseOptions, Mark, Scene } from '../types';
 import { linearScale, round } from '../core/geometry';
-import { resolvePadding } from '../core/plot';
+import { paddedBox, resolvePadding } from '../core/plot';
 
 export interface BulletData {
   value: number;
@@ -21,10 +21,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const ranges = (data.ranges ?? []).slice().sort((a, b) => a - b);
   const max = data.max ?? Math.max(data.value, data.target, ...ranges, 0);
 
-  const left = padding.left;
-  const right = width - padding.right;
-  const top = padding.top;
-  const bottom = height - padding.bottom;
+  const { left, right, top, bottom } = paddedBox({ width, height, padding });
   const xScale = linearScale([0, max], [left, right]);
 
   const marks: Mark[] = [];

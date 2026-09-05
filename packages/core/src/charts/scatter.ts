@@ -1,6 +1,6 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, linearScale, round } from '../core/geometry';
-import { resolvePadding } from '../core/plot';
+import { paddedBox, resolvePadding } from '../core/plot';
 
 export interface ScatterPoint {
   id?: string | number;
@@ -84,8 +84,9 @@ export function scatter<T = ScatterPoint>(
   const base: Scene = { width, height, viewBox: `0 0 ${width} ${height}`, marks: [], points: [], a11y };
   if (pts.length === 0) return base;
 
-  const xScale = linearScale(extent(pts.map((p) => p.x)), [padding.left, width - padding.right]);
-  const yScale = linearScale(extent(pts.map((p) => p.y)), [height - padding.bottom, padding.top]);
+  const box = paddedBox({ width, height, padding });
+  const xScale = linearScale(extent(pts.map((p) => p.x)), [box.left, box.right]);
+  const yScale = linearScale(extent(pts.map((p) => p.y)), [box.bottom, box.top]);
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];

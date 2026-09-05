@@ -33,6 +33,22 @@ describe('heatmap', () => {
     expect(heatmap([]).marks).toEqual([]);
   });
 
+  it('insets the grid by padding, growing the scene box to fit', () => {
+    const scene = heatmap([[1, 2]], { cellSize: 6, gap: 0, padding: 2 });
+    // 2 cols x 6 = 12 wide + 2+2 padding = 16; 1 row x 6 = 6 tall + 2+2 = 10
+    expect(scene.width).toBe(16);
+    expect(scene.height).toBe(10);
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects[0]).toMatchObject({ x: 2, y: 2 });
+    expect(rects[1]).toMatchObject({ x: 8, y: 2 });
+  });
+
+  it('defaults to no padding, so the grid still fills the scene exactly', () => {
+    const scene = heatmap([[1, 2]], { cellSize: 6, gap: 0 });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects[0]).toMatchObject({ x: 0, y: 0 });
+  });
+
   it('handles ragged rows: skips missing cells and never emits a NaN fill', () => {
     const scene = heatmap([[1, 2, 3], [4]], {
       cellSize: 6,
