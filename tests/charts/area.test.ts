@@ -11,6 +11,7 @@ describe('area', () => {
       d: 'M1,19 L1,19 L50,1 L99,10 L99,19 Z',
       fill: 'currentColor',
       fillOpacity: 0.2,
+      stroke: 'none',
     });
     expect(poly).toMatchObject({ type: 'polyline', points: [[1, 19], [50, 1], [99, 10]] });
   });
@@ -28,5 +29,19 @@ describe('area', () => {
     expect(scene.marks.filter((m) => m.type === 'path')).toHaveLength(0);
     expect(scene.marks.filter((m) => m.type === 'circle')).toHaveLength(1);
     expect(scene.points).toHaveLength(1);
+  });
+
+  it('uses fillColor for the fill when provided, independent of the line color', () => {
+    const scene = area([0, 10, 5], { color: 'blue', fillColor: 'green' });
+    const path = scene.marks.find((m) => m.type === 'path');
+    const poly = scene.marks.find((m) => m.type === 'polyline');
+    expect(path).toMatchObject({ fill: 'green', stroke: 'none' });
+    expect(poly).toMatchObject({ stroke: 'blue' });
+  });
+
+  it('defaults fillColor to color when not provided', () => {
+    const scene = area([0, 10, 5], { color: 'purple' });
+    const path = scene.marks.find((m) => m.type === 'path');
+    expect(path).toMatchObject({ fill: 'purple' });
   });
 });

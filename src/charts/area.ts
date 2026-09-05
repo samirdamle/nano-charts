@@ -9,12 +9,14 @@ export interface AreaOptions<T = number>
     Partial<SeriesAccessors<T>> {
   strokeWidth?: number;
   fillOpacity?: number;
+  fillColor?: string;
 }
 
 export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> = {}): Scene {
   const width = options.width ?? 100;
   const height = options.height ?? 20;
   const color = options.color ?? 'currentColor';
+  const fillColor = options.fillColor ?? color;
   const strokeWidth = options.strokeWidth ?? 1;
   const fillOpacity = options.fillOpacity ?? 0.2;
   const padding = resolvePadding(options.padding);
@@ -54,7 +56,7 @@ export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> =
       points.map((p) => `L${p.x},${p.y}`).join(' ') +
       ` L${last.x},${bottom} Z`;
     marks.push(
-      { type: 'path', d, fill: color, fillOpacity },
+      { type: 'path', d, fill: fillColor, fillOpacity, stroke: 'none' },
       {
         type: 'polyline',
         points: points.map((p) => [p.x, p.y] as [number, number]),
