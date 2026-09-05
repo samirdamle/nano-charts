@@ -11,6 +11,7 @@ describe('area', () => {
       d: 'M1,19 L1,19 L50,1 L99,10 L99,19 Z',
       fill: 'currentColor',
       fillOpacity: 0.2,
+      stroke: 'none',
     });
     expect(poly).toMatchObject({ type: 'polyline', points: [[1, 19], [50, 1], [99, 10]] });
   });
