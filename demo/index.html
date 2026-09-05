@@ -319,6 +319,15 @@
   group('Donut', [
     { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
     { title: 'Full circle', scene: donut({ value: 100, max: 100 }) },
+    { title: 'Segments (categorical palette)', scene: donut([4, 3, 2, 1, 1]) },
+    {
+      title: 'Segments (explicit colors)',
+      scene: donut([
+        { value: 4, label: 'Chrome', color: 'var(--accent)' },
+        { value: 3, label: 'Safari', color: 'var(--series-2)' },
+        { value: 2, label: 'Firefox', color: 'var(--series-3)' },
+      ]),
+    },
   ]);
 
   group('Scatter', [
