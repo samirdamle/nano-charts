@@ -32,6 +32,14 @@ describe('toSVG', () => {
     expect(svg).toContain('<circle cx="99" cy="10" r="1"');
   });
 
+  it('serializes a path with fill, fill-opacity and stroke', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [{ type: 'path', d: 'M0,0 L1,1 Z', fill: 'blue', fillOpacity: 0.2, stroke: 'none' }],
+    });
+    expect(svg).toContain('<path d="M0,0 L1,1 Z" fill="blue" fill-opacity="0.2" stroke="none"');
+  });
+
   it('is deterministic', () => {
     expect(toSVG(scene)).toBe(toSVG(scene));
   });
