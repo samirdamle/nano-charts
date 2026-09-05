@@ -23,6 +23,7 @@ export function PointHitTargets({
           cy={point.y}
           r={hitRadius}
           fill="transparent"
+          stroke="none"
           onMouseEnter={onPointHover ? () => onPointHover(point) : undefined}
           onMouseLeave={onPointHover ? () => onPointHover(null) : undefined}
           onClick={onPointClick ? () => onPointClick(point) : undefined}

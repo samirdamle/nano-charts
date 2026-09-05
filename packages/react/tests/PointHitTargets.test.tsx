@@ -29,6 +29,22 @@ describe('PointHitTargets', () => {
     expect(circles[0]?.getAttribute('r')).toBe('4');
   });
 
+  it('stays invisible even when an ancestor sets a visible stroke', () => {
+    // ChartSvg's root <svg> sets stroke="currentColor" for the chart's own marks.
+    // stroke is an inherited SVG presentation property, so a hit circle with no
+    // stroke of its own would otherwise paint a visible ring at fill="transparent".
+    const { container } = render(
+      <svg stroke="currentColor">
+        <PointHitTargets points={points} hitRadius={4} onPointHover={() => {}} />
+      </svg>,
+    );
+    const circles = container.querySelectorAll('circle[fill="transparent"]');
+    expect(circles).toHaveLength(2);
+    for (const circle of circles) {
+      expect(circle.getAttribute('stroke')).toBe('none');
+    }
+  });
+
   it('fires onPointHover with the point on enter and null on leave', () => {
     const onPointHover = vi.fn();
     const { container } = render(
