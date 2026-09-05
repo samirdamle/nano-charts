@@ -15,6 +15,7 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: true,
   clean: true,
+  minify: true,
   external: ['react', 'react-dom'],
   outDir: 'dist',
   // Every entry in this package is a client component, so the 'use client'

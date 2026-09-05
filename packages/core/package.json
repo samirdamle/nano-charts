@@ -9,7 +9,7 @@
   "files": ["dist"],
   "repository": { "type": "git", "url": "git+https://github.com/samirdamle/nano-charts.git", "directory": "packages/core" },
   "homepage": "https://github.com/samirdamle/nano-charts#readme",
-  "publishConfig": { "access": "public" },
+  "publishConfig": { "access": "public", "provenance": true },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,11 +28,13 @@
   },
   "scripts": {
     "build": "tsup",
+    "postbuild": "node ../../scripts/verify-dist.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
-    "size": "size-limit"
+    "size": "size-limit",
+    "prepublishOnly": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && pnpm run size"
   },
   "dependencies": {},
   "devDependencies": {
