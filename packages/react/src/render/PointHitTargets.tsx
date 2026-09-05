@@ -7,7 +7,12 @@ export interface PointHitTargetsProps {
   onPointClick?: (point: ScenePoint) => void;
 }
 
-export function PointHitTargets({ points, hitRadius, onPointHover, onPointClick }: PointHitTargetsProps) {
+export function PointHitTargets({
+  points,
+  hitRadius,
+  onPointHover,
+  onPointClick,
+}: PointHitTargetsProps) {
   if (!onPointHover && !onPointClick) return null;
   return (
     <>

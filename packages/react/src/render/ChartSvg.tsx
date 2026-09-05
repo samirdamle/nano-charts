@@ -9,7 +9,14 @@ export interface ChartSvgProps extends InteractionProps {
   scene: Scene;
 }
 
-export function ChartSvg({ scene, onPointHover, onPointClick, className, style, hitRadius = 4 }: ChartSvgProps) {
+export function ChartSvg({
+  scene,
+  onPointHover,
+  onPointClick,
+  className,
+  style,
+  hitRadius = 4,
+}: ChartSvgProps) {
   return (
     <svg
       viewBox={scene.viewBox}
