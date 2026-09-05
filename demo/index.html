@@ -301,6 +301,14 @@
   group('Area', [
     { title: 'Basic', scene: area([1, 4, 2, 8, 3]) },
     { title: 'Single point — renders as a dot', scene: area([5]) },
+    {
+      title: 'Custom fill color',
+      scene: area([1, 4, 2, 8, 3], {
+        color: 'var(--accent)',
+        fillColor: 'var(--series-2)',
+        fillOpacity: 0.35,
+      }),
+    },
   ]);
 
   group('Bar', [
