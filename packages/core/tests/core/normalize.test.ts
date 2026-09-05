@@ -32,4 +32,20 @@ describe('normalizeSeries', () => {
   it('returns an empty array for empty input', () => {
     expect(normalizeSeries([])).toEqual([]);
   });
+
+  it('form 3: object color field is carried onto the datum', () => {
+    const out = normalizeSeries([{ value: 5, color: 'red' }]);
+    expect(out).toEqual([{ id: 0, label: '5', value: 5, index: 0, color: 'red' }]);
+  });
+
+  it('form 2: color accessor pulls color from arbitrary objects', () => {
+    const rows = [{ sku: 'x', rev: 12, hex: '#fff' }];
+    const out = normalizeSeries(rows, { value: (r) => r.rev, colorAccessor: (r) => r.hex });
+    expect(out).toEqual([{ id: 0, label: '12', value: 12, index: 0, color: '#fff' }]);
+  });
+
+  it('omits color when none is given', () => {
+    const out = normalizeSeries([{ value: 7 }]);
+    expect(out[0]).not.toHaveProperty('color');
+  });
 });

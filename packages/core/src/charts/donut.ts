@@ -1,6 +1,12 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { round } from '../core/geometry';
-import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
+import {
+  normalizeSeries,
+  type SeriesAccessors,
+  type SeriesColorAccessor,
+  type SeriesInput,
+} from '../core/normalize';
+import { categoricalColor } from '../core/palette';
 
 export interface DonutGauge {
   value: number;
@@ -11,9 +17,12 @@ export type DonutInput<T = number> = DonutGauge | SeriesInput<T>;
 
 export interface DonutOptions<T = number>
   extends BaseOptions,
-    Partial<SeriesAccessors<T>> {
+    Partial<SeriesAccessors<T>>,
+    Partial<SeriesColorAccessor<T>> {
   thickness?: number;
   startAngle?: number;
+  /** Per-segment colors, index-matched to the input data. */
+  colors?: string[];
 }
 
 function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
@@ -99,7 +108,12 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   }
 
   const accessors = options.value
-    ? { value: options.value, label: options.label, id: options.id }
+    ? {
+        value: options.value,
+        label: options.label,
+        id: options.id,
+        colorAccessor: options.colorAccessor,
+      }
     : undefined;
   const datums = normalizeSeries(data as SeriesInput<T>, accessors);
   const total = datums.reduce((sum, d) => sum + d.value, 0);
@@ -118,16 +132,23 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   };
   if (datums.length === 0 || total === 0) return base;
 
+  // Precedence: explicit per-segment color (field/accessor) > options.colors[i]
+  // > uniform options.color (only if the caller passed it) > categorical palette.
+  const hasUniformColor = options.color !== undefined;
   let angle = startAngle;
   datums.forEach((d, i) => {
     const sweep = (d.value / total) * 360;
+    const explicitColor = d.color ?? options.colors?.[i];
+    const segmentColor =
+      explicitColor ?? (hasUniformColor ? color : categoricalColor(i, datums.length));
+    const useStripe = explicitColor === undefined && hasUniformColor;
     marks.push({
       type: 'path',
       d: arcPath(cx, cy, rMid, angle, angle + sweep),
       fill: 'none',
-      stroke: color,
+      stroke: segmentColor,
       strokeWidth: round(thickness),
-      strokeOpacity: i % 2 === 0 ? 1 : 0.55,
+      strokeOpacity: useStripe ? (i % 2 === 0 ? 1 : 0.55) : 1,
     });
     const [px, py] = polar(cx, cy, rMid, angle + sweep / 2);
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x: round(px), y: round(py) });
