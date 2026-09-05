@@ -28,12 +28,16 @@ import { bar } from '@samirdamle/nano-charts/bar';
 
 Every chart is `(data, options?) => Scene`. `scene.points` exposes each data point's
 computed `{ id, label, value, x, y }` so UI wrappers can attach hover/click handlers.
+Rendered dot circles also carry `data-index`/`data-series` attributes in the `toSVG`
+output, so hit-testing a specific point no longer requires reverse-mapping coordinates —
+the DOM node names its own point index.
 
 ## Charts
 
 | Function | Encodes | Data |
 |----------|---------|------|
 | `line` / `area` | trend | `number[]`, `{id,label,value}[]`, or accessors |
+| `lines` | multi-series trend overlay | `LineSeries[]` — each series is `{ data, name?, color?, strokeWidth?, strokeDasharray?, strokeLinecap?, dot?, dotRadius? }` |
 | `bar` | magnitude (simple or **stacked**) | series, or nested arrays for stacks |
 | `winLoss` | direction/sign | series |
 | `bullet` | value vs target | `{ value, target, ranges? }` |

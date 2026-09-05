@@ -3,8 +3,8 @@ import * as api from '../src/index';
 import { toSVG, line, bar, donut, heatmap } from '../src/index';
 
 describe('public API', () => {
-  it('exports all eight charts plus toSVG', () => {
-    for (const name of ['line', 'area', 'bar', 'winLoss', 'bullet', 'donut', 'scatter', 'heatmap', 'toSVG']) {
+  it('exports all nine charts plus toSVG', () => {
+    for (const name of ['line', 'lines', 'area', 'bar', 'winLoss', 'bullet', 'donut', 'scatter', 'heatmap', 'toSVG']) {
       expect(typeof (api as Record<string, unknown>)[name]).toBe('function');
     }
   });

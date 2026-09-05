@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     line: 'src/charts/line.ts',
+    lines: 'src/charts/lines.ts',
     area: 'src/charts/area.ts',
     bar: 'src/charts/bar.ts',
     'win-loss': 'src/charts/win-loss.ts',

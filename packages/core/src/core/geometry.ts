@@ -3,6 +3,10 @@ export function round(n: number, precision = 2): number {
   return Math.round(n * f) / f;
 }
 
+export function toDasharray(d: string | number[] | undefined): string | undefined {
+  return Array.isArray(d) ? d.join(' ') : d;
+}
+
 export function extent(values: number[]): [number, number] {
   if (values.length === 0) return [0, 0];
   let min = values[0]!;
