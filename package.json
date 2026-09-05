@@ -10,10 +10,16 @@
     "typecheck": "pnpm -r run typecheck",
     "lint": "pnpm -r run lint",
     "format": "prettier --write .",
-    "size": "pnpm -r run size"
+    "size": "pnpm -r run size",
+    "build:demo": "node scripts/build-demo.mjs",
+    "dev:demo": "node scripts/build-demo.mjs && vite demo",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run size && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.7",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "vite": "^6.0.0"
   }
 }

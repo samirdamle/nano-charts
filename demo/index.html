@@ -194,11 +194,11 @@
     <p>Every chart type rendered from representative sample data, for visually spot-checking output while developing. Cards marked <strong>fixed</strong> cover the edge cases addressed on this branch.</p>
   </header>
   <div id="root"></div>
-  <footer>Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with <code>pnpm build</code> to refresh.</footer>
+  <footer>Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with <code>pnpm build:demo</code> to refresh.</footer>
 </div>
 
 <script type="module">
-  import { line, lines, area, bar, winLoss, bullet, donut, scatter, heatmap, toSVG } from '../dist/index.js';
+  import { line, lines, area, bar, winLoss, bullet, donut, scatter, heatmap, toSVG } from './dist/index.js';
 
   const root = document.getElementById('root');
 

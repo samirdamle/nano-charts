@@ -18,7 +18,8 @@
   },
   "homepage": "https://github.com/samirdamle/nano-charts#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -72,12 +73,13 @@
   },
   "scripts": {
     "build": "tsup",
-    "postbuild": "node scripts/check-use-client.mjs",
+    "postbuild": "node scripts/check-use-client.mjs && node ../../scripts/verify-dist.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
-    "size": "size-limit"
+    "size": "size-limit",
+    "prepublishOnly": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && pnpm run size"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
