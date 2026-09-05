@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolvePadding, seriesLayout } from '../../src/core/plot';
+import { paddedBox, resolvePadding, seriesLayout, slotLayout } from '../../src/core/plot';
 
 describe('resolvePadding', () => {
   it('expands a number to all sides', () => {
@@ -10,6 +10,17 @@ describe('resolvePadding', () => {
   });
   it('uses the default of 1 when undefined', () => {
     expect(resolvePadding(undefined)).toEqual({ top: 1, right: 1, bottom: 1, left: 1 });
+  });
+});
+
+describe('paddedBox', () => {
+  it('insets a box by its padding on every side', () => {
+    expect(paddedBox({ width: 100, height: 20, padding: { top: 1, right: 1, bottom: 1, left: 1 } })).toEqual({
+      left: 1,
+      right: 99,
+      top: 1,
+      bottom: 19,
+    });
   });
 });
 
@@ -27,5 +38,19 @@ describe('seriesLayout', () => {
   it('centers a single point horizontally', () => {
     const l = seriesLayout(1, [0, 10], box);
     expect(l.x(0)).toBe(50);
+  });
+});
+
+describe('slotLayout', () => {
+  it('divides the box into equal slots and shrinks each by the gap', () => {
+    // matches bar.test.ts's worked example: left=1, right=99, 4 slots, gap 0.2
+    const l = slotLayout(4, 1, 99, 0.2);
+    expect(l.slot).toBe(24.5);
+    expect(l.barWidth).toBeCloseTo(19.6, 10);
+  });
+
+  it('centers each bar within its slot', () => {
+    const l = slotLayout(4, 1, 99, 0.2);
+    expect(l.x(0)).toBeCloseTo(3.45, 10);
   });
 });

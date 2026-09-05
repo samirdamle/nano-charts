@@ -1,8 +1,8 @@
 import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
 import { extent, round } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
-import { resolvePadding, seriesLayout } from '../core/plot';
-import { seriesSummary } from '../core/a11y';
+import { seriesLayout, slotLayout } from '../core/plot';
+import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 
 export interface BarOptions<T = number>
   extends BaseOptions,
@@ -15,11 +15,8 @@ type BarSegment<T> = number | { id?: string | number; label?: string; value: num
 export type BarInput<T = number> = Array<BarSegment<T> | BarSegment<T>[]>;
 
 export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}): Scene {
-  const width = options.width ?? 100;
-  const height = options.height ?? 20;
-  const color = options.color ?? 'currentColor';
+  const { width, height, color, padding } = resolveChartShell(options);
   const gap = options.gap ?? 0.2;
-  const padding = resolvePadding(options.padding);
   const accessors = options.value
     ? { value: options.value, label: options.label, id: options.id }
     : undefined;
@@ -37,9 +34,8 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     value: totals[col]!,
     index: col,
   }));
-  const summary = seriesSummary('bar', flat);
-  const a11y = { title: options.title ?? summary.title, desc: options.desc ?? summary.desc };
-  const base: Scene = { width, height, viewBox: `0 0 ${width} ${height}`, marks: [], points: [], a11y };
+  const a11y = resolveA11y('bar', flat, options);
+  const base = sceneShell({ width, height }, a11y);
   if (columns.length === 0) return base;
 
   const [minT, maxT] = extent(totals);
@@ -48,14 +44,13 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     height,
     padding,
   });
-  const slot = (layout.right - layout.left) / columns.length;
-  const barW = slot * (1 - gap);
+  const { barWidth: barW, x: slotX } = slotLayout(columns.length, layout.left, layout.right, gap);
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
   columns.forEach((segs, col) => {
-    const x = round(layout.left + col * slot + (slot - barW) / 2);
+    const x = round(slotX(col));
     let cursor = 0; // running stacked value
     segs.forEach((seg, row) => {
       // Handle negative values: the segment spans between the two mapped y's,
