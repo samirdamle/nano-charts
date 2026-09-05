@@ -100,4 +100,20 @@ describe('toSVG', () => {
     expect(svg).not.toContain('data-index');
     expect(svg).not.toContain('data-series');
   });
+
+  it('always renders rect marks with stroke="none", overriding the inherited root stroke', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [{ type: 'rect', x: 0, y: 0, width: 10, height: 5, fill: 'blue' }],
+    });
+    expect(svg).toContain('<rect x="0" y="0" width="10" height="5" fill="blue" stroke="none"/>');
+  });
+
+  it('serializes stroke-opacity on a path', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [{ type: 'path', d: 'M0,0 A1,1 0 0 1 1,1', fill: 'none', stroke: 'red', strokeOpacity: 0.4 }],
+    });
+    expect(svg).toContain('stroke-opacity="0.4"');
+  });
 });
