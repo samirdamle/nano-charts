@@ -1,7 +1,8 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
-import { resolvePadding, seriesLayout } from '../core/plot';
+import { seriesLayout } from '../core/plot';
+import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -18,10 +19,7 @@ export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
 export type LinesOptions = BaseOptions;
 
 export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions = {}): Scene {
-  const width = options.width ?? 100;
-  const height = options.height ?? 20;
-  const defaultColor = options.color ?? 'currentColor';
-  const padding = resolvePadding(options.padding);
+  const { width, height, color: defaultColor, padding } = resolveChartShell(options);
 
   const perSeries = series.map((s) => {
     const accessors = s.value ? { value: s.value, label: s.label, id: s.id } : undefined;
@@ -31,8 +29,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const count = perSeries.length ? Math.max(...perSeries.map((s) => s.datums.length)) : 0;
   const title = options.title ?? 'line chart';
   const desc = options.desc ?? `${title}, ${perSeries.length} series, up to ${count} points`;
-  const a11y = { title, desc };
-  const base: Scene = { width, height, viewBox: `0 0 ${width} ${height}`, marks: [], points: [], a11y };
+  const base = sceneShell({ width, height }, { title, desc });
 
   const allValues = perSeries.flatMap((s) => s.datums.map((d) => d.value));
   if (allValues.length === 0) return base;
@@ -86,17 +83,12 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
         }
       }
     } else if (seriesPoints.length === 1) {
-      // A lone point in a series has no line to draw; render it as a dot so it's visible.
-      const p = seriesPoints[0]!;
-      marks.push({
-        type: 'circle',
-        cx: p.x,
-        cy: p.y,
-        r: Math.max(dotRadius, strokeWidth + 0.5),
-        fill: color,
-        index: points.length,
-        seriesIndex,
-      });
+      marks.push(
+        singlePointDot(seriesPoints[0]!, Math.max(dotRadius, strokeWidth + 0.5), color, {
+          index: points.length,
+          seriesIndex,
+        }),
+      );
     }
 
     points.push(...seriesPoints);
