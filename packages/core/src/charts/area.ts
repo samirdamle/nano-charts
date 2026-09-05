@@ -54,7 +54,7 @@ export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> =
       points.map((p) => `L${p.x},${p.y}`).join(' ') +
       ` L${last.x},${bottom} Z`;
     marks.push(
-      { type: 'path', d, fill: color, fillOpacity },
+      { type: 'path', d, fill: color, fillOpacity, stroke: 'none' },
       {
         type: 'polyline',
         points: points.map((p) => [p.x, p.y] as [number, number]),
