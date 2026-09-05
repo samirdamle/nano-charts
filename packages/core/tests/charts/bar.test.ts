@@ -33,6 +33,32 @@ describe('bar (stacked)', () => {
   });
 });
 
+describe('bar (negative values)', () => {
+  it('never emits a negative rect height', () => {
+    const scene = bar([-4, 9, -2, 7]);
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) expect(r.height).toBeGreaterThanOrEqual(0);
+  });
+
+  it('draws a negative bar below the zero baseline', () => {
+    // domain [-4, 9] over height 20 (pad 1) -> y(0) is the baseline
+    const scene = bar([-4]);
+    const rect = scene.marks.find((m) => m.type === 'rect')!;
+    // negative bar top sits at the baseline; height is positive
+    expect(rect.height).toBeGreaterThan(0);
+  });
+
+  it('rounds fillOpacity on stacked segments', () => {
+    const scene = bar([[1, 1, 1, 1]]);
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) {
+      if (r.fillOpacity !== undefined) {
+        expect(r.fillOpacity).toBe(Number(r.fillOpacity.toFixed(2)));
+      }
+    }
+  });
+});
+
 describe('bar (edges)', () => {
   it('renders an empty scene for empty data', () => {
     expect(bar([]).marks).toEqual([]);

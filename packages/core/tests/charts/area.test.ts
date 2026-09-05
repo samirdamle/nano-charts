@@ -22,4 +22,11 @@ describe('area', () => {
   it('renders an empty scene for empty data', () => {
     expect(area([]).marks).toEqual([]);
   });
+
+  it('renders a single data point as a dot', () => {
+    const scene = area([5]);
+    expect(scene.marks.filter((m) => m.type === 'path')).toHaveLength(0);
+    expect(scene.marks.filter((m) => m.type === 'circle')).toHaveLength(1);
+    expect(scene.points).toHaveLength(1);
+  });
 });

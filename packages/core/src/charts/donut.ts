@@ -21,6 +21,9 @@ function polar(cx: number, cy: number, r: number, deg: number): [number, number]
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
 }
 
+// Draw each arc as two half-sweeps so that even a full 360° ring has distinct
+// intermediate endpoints — a single ~360° arc collapses (start == end after
+// rounding) and SVG renders nothing.
 function ringSegmentPath(
   cx: number,
   cy: number,
@@ -29,16 +32,22 @@ function ringSegmentPath(
   startDeg: number,
   endDeg: number,
 ): string {
-  const large = endDeg - startDeg > 180 ? 1 : 0;
+  const midDeg = (startDeg + endDeg) / 2;
   const [ox1, oy1] = polar(cx, cy, rOuter, startDeg);
+  const [oxm, oym] = polar(cx, cy, rOuter, midDeg);
   const [ox2, oy2] = polar(cx, cy, rOuter, endDeg);
   const [ix2, iy2] = polar(cx, cy, rInner, endDeg);
+  const [ixm, iym] = polar(cx, cy, rInner, midDeg);
   const [ix1, iy1] = polar(cx, cy, rInner, startDeg);
+  const ro = round(rOuter);
+  const ri = round(rInner);
   return (
     `M${round(ox1)},${round(oy1)} ` +
-    `A${round(rOuter)},${round(rOuter)} 0 ${large} 1 ${round(ox2)},${round(oy2)} ` +
+    `A${ro},${ro} 0 0 1 ${round(oxm)},${round(oym)} ` +
+    `A${ro},${ro} 0 0 1 ${round(ox2)},${round(oy2)} ` +
     `L${round(ix2)},${round(iy2)} ` +
-    `A${round(rInner)},${round(rInner)} 0 ${large} 0 ${round(ix1)},${round(iy1)} Z`
+    `A${ri},${ri} 0 0 0 ${round(ixm)},${round(iym)} ` +
+    `A${ri},${ri} 0 0 0 ${round(ix1)},${round(iy1)} Z`
   );
 }
 
@@ -64,7 +73,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     const frac = data.max === 0 ? 0 : Math.max(0, Math.min(1, data.value / data.max));
     marks.push({
       type: 'path',
-      d: ringSegmentPath(cx, cy, rOuter, rInner, startAngle, startAngle + 359.999),
+      d: ringSegmentPath(cx, cy, rOuter, rInner, startAngle, startAngle + 360),
       fill: color,
       fillOpacity: 0.15,
     });

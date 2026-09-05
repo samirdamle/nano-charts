@@ -45,4 +45,12 @@ describe('line', () => {
     expect(scene.marks).toEqual([]);
     expect(scene.points).toEqual([]);
   });
+
+  it('renders a single data point as a dot (no invisible polyline)', () => {
+    const scene = line([5]);
+    expect(scene.marks.filter((m) => m.type === 'polyline')).toHaveLength(0);
+    const circles = scene.marks.filter((m) => m.type === 'circle');
+    expect(circles).toHaveLength(1);
+    expect(scene.points).toHaveLength(1);
+  });
 });

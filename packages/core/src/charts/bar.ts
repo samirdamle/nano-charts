@@ -58,9 +58,13 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     const x = round(layout.left + col * slot + (slot - barW) / 2);
     let cursor = 0; // running stacked value
     segs.forEach((seg, row) => {
-      const yTop = round(layout.y(cursor + seg.value));
-      const yBottom = round(layout.y(cursor));
-      const h = round(yBottom - yTop);
+      // Handle negative values: the segment spans between the two mapped y's,
+      // so take min/max rather than assuming value >= 0 (else height goes negative).
+      const yStart = layout.y(cursor);
+      const yEnd = layout.y(cursor + seg.value);
+      const topRaw = Math.min(yStart, yEnd);
+      const yTop = round(topRaw);
+      const h = round(Math.max(yStart, yEnd) - topRaw);
       marks.push({
         type: 'rect',
         x,
@@ -68,7 +72,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         width: round(barW),
         height: h,
         fill: color,
-        fillOpacity: row === 0 ? 1 : Math.max(0.4, 1 - row * 0.3),
+        fillOpacity: round(row === 0 ? 1 : Math.max(0.4, 1 - row * 0.3)),
         rx: options.radius,
       });
       points.push({
