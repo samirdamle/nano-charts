@@ -117,3 +117,24 @@ describe('donut (segment color)', () => {
     expect(paths.map((p) => p.strokeOpacity)).toEqual([1, 0.55, 1]);
   });
 });
+
+describe('donut (round caps)', () => {
+  it('applies strokeLinecap to every segment arc when set', () => {
+    const scene = donut([1, 1, 1], { strokeLinecap: 'round' });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.every((p) => p.strokeLinecap === 'round')).toBe(true);
+  });
+
+  it('applies strokeLinecap to both gauge arcs when set', () => {
+    const scene = donut({ value: 75, max: 100 }, { strokeLinecap: 'round' });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(2);
+    expect(paths.every((p) => p.strokeLinecap === 'round')).toBe(true);
+  });
+
+  it('omits strokeLinecap when not set', () => {
+    const scene = donut([1, 1, 1]);
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.every((p) => p.strokeLinecap === undefined)).toBe(true);
+  });
+});

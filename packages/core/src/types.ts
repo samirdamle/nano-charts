@@ -24,6 +24,7 @@ export type Mark =
       stroke?: string;
       strokeWidth?: number;
       strokeOpacity?: number;
+      strokeLinecap?: 'butt' | 'round' | 'square';
     }
   | { type: 'rect'; x: number; y: number; width: number; height: number; fill?: string; fillOpacity?: number; rx?: number }
   | {

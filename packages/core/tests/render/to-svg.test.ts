@@ -116,4 +116,20 @@ describe('toSVG', () => {
     });
     expect(svg).toContain('stroke-opacity="0.4"');
   });
+
+  it('serializes stroke-linecap on a path', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [{ type: 'path', d: 'M0,0 A1,1 0 0 1 1,1', fill: 'none', stroke: 'red', strokeLinecap: 'round' }],
+    });
+    expect(svg).toContain('stroke-linecap="round"');
+  });
+
+  it('omits stroke-linecap on a path when not set', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [{ type: 'path', d: 'M0,0 A1,1 0 0 1 1,1', fill: 'none', stroke: 'red' }],
+    });
+    expect(svg).not.toContain('stroke-linecap');
+  });
 });
