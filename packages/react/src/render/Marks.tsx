@@ -10,9 +10,11 @@ export function Marks({ marks }: { marks: Mark[] }) {
               <polyline
                 key={i}
                 points={mark.points.map(([x, y]) => `${x},${y}`).join(' ')}
-                fill={mark.fill ?? 'none'}
+                fill={mark.fill}
                 stroke={mark.stroke}
                 strokeWidth={mark.strokeWidth}
+                strokeDasharray={mark.strokeDasharray}
+                strokeLinecap={mark.strokeLinecap}
               />
             );
           case 'path':
@@ -51,6 +53,8 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 fill={mark.fill}
                 stroke={mark.stroke}
                 strokeWidth={mark.strokeWidth}
+                data-index={mark.index}
+                data-series={mark.seriesIndex}
               />
             );
           case 'line':

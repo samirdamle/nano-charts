@@ -60,3 +60,60 @@ describe('donut (edges)', () => {
     expect(donut([]).marks).toEqual([]);
   });
 });
+
+describe('donut (segment color)', () => {
+  it('assigns each segment a categorical palette color when none is specified', () => {
+    const scene = donut([1, 1, 1, 1]);
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.map((p) => p.stroke)).toEqual([
+      'hsl(0, 60%, 30%)',
+      'hsl(90, 60%, 70%)',
+      'hsl(180, 60%, 30%)',
+      'hsl(270, 60%, 70%)',
+    ]);
+  });
+
+  it('suppresses the opacity stripe when segments use palette colors', () => {
+    const scene = donut([1, 1]);
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.every((p) => p.strokeOpacity === undefined || p.strokeOpacity === 1)).toBe(true);
+  });
+
+  it('uses the object literal color field when provided', () => {
+    const scene = donut([
+      { value: 1, color: 'red' },
+      { value: 1, color: 'blue' },
+    ]);
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.map((p) => p.stroke)).toEqual(['red', 'blue']);
+  });
+
+  it('uses a color accessor for generic row data', () => {
+    const rows = [
+      { rev: 1, hex: '#111' },
+      { rev: 1, hex: '#222' },
+    ];
+    const scene = donut(rows, { value: (r) => r.rev, colorAccessor: (r) => r.hex });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.map((p) => p.stroke)).toEqual(['#111', '#222']);
+  });
+
+  it('applies options.colors[] by index when no per-segment color is given', () => {
+    const scene = donut([1, 1, 1], { colors: ['red', 'green', 'blue'] });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.map((p) => p.stroke)).toEqual(['red', 'green', 'blue']);
+  });
+
+  it('lets an explicit per-segment color win over options.colors[i]', () => {
+    const scene = donut([{ value: 1, color: 'red' }, { value: 1 }], { colors: ['ignored', 'green'] });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.map((p) => p.stroke)).toEqual(['red', 'green']);
+  });
+
+  it('falls back to a uniform options.color with the opacity stripe when no per-segment color is given', () => {
+    const scene = donut([1, 1, 1], { color: 'purple' });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths.every((p) => p.stroke === 'purple')).toBe(true);
+    expect(paths.map((p) => p.strokeOpacity)).toEqual([1, 0.55, 1]);
+  });
+});

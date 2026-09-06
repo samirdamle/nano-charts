@@ -17,6 +17,30 @@ describe('Marks', () => {
     expect(el?.getAttribute('stroke-width')).toBe('2');
   });
 
+  it('renders stroke-dasharray and stroke-linecap on a polyline mark', () => {
+    const marks: Mark[] = [
+      { type: 'polyline', points: [[0, 0], [10, 10]], strokeDasharray: '4 2', strokeLinecap: 'round' },
+    ];
+    const { container } = render(
+      <svg>
+        <Marks marks={marks} />
+      </svg>,
+    );
+    const el = container.querySelector('polyline');
+    expect(el?.getAttribute('stroke-dasharray')).toBe('4 2');
+    expect(el?.getAttribute('stroke-linecap')).toBe('round');
+  });
+
+  it('omits fill on a polyline mark when not set, instead of defaulting to none', () => {
+    const marks: Mark[] = [{ type: 'polyline', points: [[0, 0], [10, 10]] }];
+    const { container } = render(
+      <svg>
+        <Marks marks={marks} />
+      </svg>,
+    );
+    expect(container.querySelector('polyline')?.hasAttribute('fill')).toBe(false);
+  });
+
   it('renders a path mark', () => {
     const marks: Mark[] = [{ type: 'path', d: 'M0,0 L10,10 Z', fill: 'blue', fillOpacity: 0.5 }];
     const { container } = render(
@@ -75,6 +99,18 @@ describe('Marks', () => {
     const el = container.querySelector('circle');
     expect(el?.getAttribute('cx')).toBe('5');
     expect(el?.getAttribute('r')).toBe('2');
+  });
+
+  it('renders data-index and data-series on a circle mark', () => {
+    const marks: Mark[] = [{ type: 'circle', cx: 5, cy: 5, r: 2, index: 3, seriesIndex: 1 }];
+    const { container } = render(
+      <svg>
+        <Marks marks={marks} />
+      </svg>,
+    );
+    const el = container.querySelector('circle');
+    expect(el?.getAttribute('data-index')).toBe('3');
+    expect(el?.getAttribute('data-series')).toBe('1');
   });
 
   it('renders a line mark', () => {

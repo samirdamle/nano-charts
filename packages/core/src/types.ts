@@ -1,4 +1,10 @@
-export type Datum = { id: string | number; label: string; value: number; index: number };
+export type Datum = {
+  id: string | number;
+  label: string;
+  value: number;
+  index: number;
+  color?: string;
+};
 
 export type Mark =
   | {

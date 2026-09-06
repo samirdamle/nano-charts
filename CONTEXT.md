@@ -13,5 +13,5 @@ One entire dataset among several drawn in the *same* chart instance (e.g. one li
 _Avoid_: Segment, dataset (when "series" is meant)
 
 **Categorical palette**:
-An algorithmically generated set of colors (`core/palette.ts`'s `categoricalColor(index, total)`) used to distinguish segments or series when the caller supplies no explicit color. Positional: a pure function of `(index, total)` for the current render, not tied to a segment/series' identity — see [ADR 0002](docs/adr/0002-donut-categorical-palette.md).
+An algorithmically generated set of colors (`core/palette.ts`'s `categoricalColor(index, total)`) used to distinguish segments or series when the caller supplies no explicit color. Positional: a pure function of `(index, total)` for the current render, not tied to a segment/series' identity — see [ADR 0003](docs/adr/0003-donut-categorical-palette.md).
 _Avoid_: Color scale (that term is reserved for `heatmap`'s continuous 2-color interpolation in `core/color-scale.ts`, a different mechanism)
