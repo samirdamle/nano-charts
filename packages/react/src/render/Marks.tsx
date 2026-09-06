@@ -27,6 +27,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 stroke={mark.stroke}
                 strokeWidth={mark.strokeWidth}
                 strokeOpacity={mark.strokeOpacity}
+                strokeLinecap={mark.strokeLinecap}
               />
             );
           case 'rect':

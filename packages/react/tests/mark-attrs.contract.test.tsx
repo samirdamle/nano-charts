@@ -83,6 +83,7 @@ describe('to-svg.ts / Marks.tsx attribute-set contract', () => {
         stroke: 'red',
         strokeWidth: 2,
         strokeOpacity: 0.4,
+        strokeLinecap: 'round',
       },
       'path',
     );

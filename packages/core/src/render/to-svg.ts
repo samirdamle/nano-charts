@@ -24,7 +24,7 @@ function renderMark(m: Mark): string {
       return `<polyline points="${esc(pts)}"${attr('fill', m.fill)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}${attr('stroke-dasharray', m.strokeDasharray)}${attr('stroke-linecap', m.strokeLinecap)}/>`;
     }
     case 'path':
-      return `<path d="${esc(m.d)}"${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}${attr('stroke-opacity', m.strokeOpacity)}/>`;
+      return `<path d="${esc(m.d)}"${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}${attr('stroke-opacity', m.strokeOpacity)}${attr('stroke-linecap', m.strokeLinecap)}/>`;
     case 'rect':
       // rect marks are fill-only; stroke="none" overrides the root svg's inherited
       // stroke="currentColor" so plain rects never pick up an unwanted border.

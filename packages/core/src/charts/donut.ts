@@ -23,6 +23,7 @@ export interface DonutOptions<T = number>
   startAngle?: number;
   /** Per-segment colors, index-matched to the input data. */
   colors?: string[];
+  strokeLinecap?: 'butt' | 'round' | 'square';
 }
 
 function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
@@ -67,6 +68,9 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
+  const strokeLinecap =
+    options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {};
+
   if (isGauge(data)) {
     const frac = data.max === 0 ? 0 : Math.max(0, Math.min(1, data.value / data.max));
     marks.push({
@@ -76,6 +80,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       stroke: color,
       strokeWidth: round(thickness),
       strokeOpacity: 0.15,
+      ...strokeLinecap,
     });
     if (frac > 0) {
       marks.push({
@@ -84,6 +89,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
         fill: 'none',
         stroke: color,
         strokeWidth: round(thickness),
+        ...strokeLinecap,
       });
     }
     points.push({
@@ -149,6 +155,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       stroke: segmentColor,
       strokeWidth: round(thickness),
       strokeOpacity: useStripe ? (i % 2 === 0 ? 1 : 0.55) : 1,
+      ...strokeLinecap,
     });
     const [px, py] = polar(cx, cy, rMid, angle + sweep / 2);
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x: round(px), y: round(py) });
