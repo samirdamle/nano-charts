@@ -1,5 +1,5 @@
 import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
-import { extent, round } from '../core/geometry';
+import { extent, linearScale, round } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { seriesLayout, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
@@ -9,6 +9,7 @@ export interface BarOptions<T = number>
     Partial<SeriesAccessors<T>> {
   gap?: number;
   radius?: number;
+  horizontal?: boolean;
 }
 
 type BarSegment<T> = number | { id?: string | number; label?: string; value: number } | T;
@@ -17,6 +18,7 @@ export type BarInput<T = number> = Array<BarSegment<T> | BarSegment<T>[]>;
 export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}): Scene {
   const { width, height, color, padding } = resolveChartShell(options);
   const gap = options.gap ?? 0.2;
+  const horizontal = options.horizontal ?? false;
   const accessors = options.value
     ? { value: options.value, label: options.label, id: options.id }
     : undefined;
@@ -39,32 +41,45 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   if (columns.length === 0) return base;
 
   const [minT, maxT] = extent(totals);
-  const layout = seriesLayout(columns.length, [Math.min(0, minT), Math.max(0, maxT)], {
-    width,
-    height,
-    padding,
-  });
-  const { barWidth: barW, x: slotX } = slotLayout(columns.length, layout.left, layout.right, gap);
+  const domain: [number, number] = [Math.min(0, minT), Math.max(0, maxT)];
+  const layout = seriesLayout(columns.length, domain, { width, height, padding });
+
+  // Value axis runs along x when horizontal, y otherwise; the category
+  // ("slot") axis runs along the other one. slotLayout is axis-agnostic —
+  // it just divides a numeric span into gapped slots — so the horizontal
+  // case reuses it unchanged, just fed the vertical bounds instead.
+  const valueScale = horizontal ? linearScale(domain, [layout.left, layout.right]) : layout.y;
+  const slot = horizontal
+    ? slotLayout(columns.length, layout.top, layout.bottom, gap)
+    : slotLayout(columns.length, layout.left, layout.right, gap);
+  const barW = round(slot.barWidth);
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
   columns.forEach((segs, col) => {
-    const x = round(slotX(col));
+    const slotPos = round(slot.x(col));
     let cursor = 0; // running stacked value
     segs.forEach((seg, row) => {
-      // Handle negative values: the segment spans between the two mapped y's,
-      // so take min/max rather than assuming value >= 0 (else height goes negative).
-      const yStart = layout.y(cursor);
-      const yEnd = layout.y(cursor + seg.value);
-      const topRaw = Math.min(yStart, yEnd);
-      const yTop = round(topRaw);
-      const h = round(Math.max(yStart, yEnd) - topRaw);
+      // Handle negative values: the segment spans between the two mapped
+      // scale outputs, so take min/max rather than assuming value >= 0
+      // (else length goes negative).
+      const vStart = valueScale(cursor);
+      const vEnd = valueScale(cursor + seg.value);
+      const posRaw = Math.min(vStart, vEnd);
+      const pos = round(posRaw);
+      const len = round(Math.max(vStart, vEnd) - posRaw);
+
+      const x = horizontal ? pos : slotPos;
+      const y = horizontal ? slotPos : pos;
+      const w = horizontal ? len : barW;
+      const h = horizontal ? barW : len;
+
       marks.push({
         type: 'rect',
         x,
-        y: yTop,
-        width: round(barW),
+        y,
+        width: w,
         height: h,
         fill: color,
         fillOpacity: round(row === 0 ? 1 : Math.max(0.4, 1 - row * 0.3)),
@@ -78,8 +93,8 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         col,
         row,
         x,
-        y: yTop,
-        w: round(barW),
+        y,
+        w,
         h,
       });
       cursor += seg.value;

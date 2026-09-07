@@ -306,6 +306,12 @@
   group('Bar', [
     { title: 'Basic', scene: bar([4, 9, 2, 7]) },
     { title: 'Negative values', scene: bar([4, -3, 6, -2, 1]) },
+    { title: 'Horizontal, single bar (stacked)', scene: bar([[3, 5, 2]], { horizontal: true }) },
+    { title: 'Horizontal, multiple bars', scene: bar([4, 9, 2, 7], { horizontal: true }) },
+    {
+      title: 'Horizontal, multiple bars (stacked)',
+      scene: bar([[3, 2], [5, 1], [2, 4], [6, 3]], { horizontal: true }),
+    },
   ]);
 
   group('Win / Loss', [

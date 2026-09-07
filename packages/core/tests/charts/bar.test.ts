@@ -64,3 +64,49 @@ describe('bar (edges)', () => {
     expect(bar([]).marks).toEqual([]);
   });
 });
+
+describe('bar (horizontal)', () => {
+  it('runs bar length along x and stacks a single row of segments', () => {
+    const scene = bar([[3, 5, 2]], { horizontal: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(3);
+    // one column -> all segments share the same y/height (slot thickness)
+    const [first, ...rest] = rects;
+    for (const r of rest) {
+      expect(r.y).toBe(first!.y);
+      expect(r.height).toBe(first!.height);
+    }
+    // stacked left-to-right: each segment's x picks up where the previous one ended
+    expect(rects[1]!.x).toBeCloseTo(rects[0]!.x + rects[0]!.width, 5);
+    expect(rects[2]!.x).toBeCloseTo(rects[1]!.x + rects[1]!.width, 5);
+  });
+
+  it('lays out multiple horizontal bars as one segment per row', () => {
+    const scene = bar([4, 9, 2, 7], { horizontal: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(4);
+    // rows stack top-to-bottom in index order: first bar's y is smallest
+    const ys = rects.map((r) => r.y);
+    expect(ys).toEqual([...ys].sort((a, b) => a - b));
+    expect(ys[0]).toBeLessThan(ys[1]!);
+    // longer value -> longer bar
+    expect(rects[1]!.width).toBeGreaterThan(rects[0]!.width);
+  });
+
+  it('stacks segments within each horizontal row', () => {
+    const scene = bar([[3, 2], [5, 1]], { horizontal: true });
+    expect(scene.points).toHaveLength(4);
+    expect(scene.points[0]).toMatchObject({ col: 0, row: 0, value: 3 });
+    expect(scene.points[1]).toMatchObject({ col: 0, row: 1, value: 2 });
+    // second row (col 1) sits below the first (larger y)
+    expect(scene.points[2]!.y).toBeGreaterThan(scene.points[0]!.y);
+  });
+
+  it('draws a negative horizontal bar to the left of the zero baseline', () => {
+    const scene = bar([-4, 6], { horizontal: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) expect(r.width).toBeGreaterThanOrEqual(0);
+    // negative value's bar sits left of the positive value's bar
+    expect(rects[0]!.x).toBeLessThan(rects[1]!.x);
+  });
+});
