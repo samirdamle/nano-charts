@@ -49,13 +49,64 @@ describe('bar (negative values)', () => {
   });
 
   it('rounds fillOpacity on stacked segments', () => {
-    const scene = bar([[1, 1, 1, 1]]);
+    const scene = bar([[1, 1, 1, 1]], { color: 'purple' });
     const rects = scene.marks.filter((m) => m.type === 'rect');
     for (const r of rects) {
       if (r.fillOpacity !== undefined) {
         expect(r.fillOpacity).toBe(Number(r.fillOpacity.toFixed(2)));
       }
     }
+  });
+});
+
+describe('bar (segment color)', () => {
+  it('assigns each stacked segment a categorical palette color when none is specified', () => {
+    const scene = bar([[1, 1, 1]]);
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(new Set(rects.map((r) => r.fill)).size).toBe(3);
+    for (const r of rects) expect(r.fillOpacity).toBe(1);
+  });
+
+  it('does not apply the palette to a non-stacked column', () => {
+    const scene = bar([4, 9]);
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) expect(r.fill).toBe('currentColor');
+  });
+
+  it('uses the object literal color field when provided', () => {
+    const scene = bar([
+      [
+        { value: 3, color: 'red' },
+        { value: 2, color: 'blue' },
+      ],
+    ]);
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects.map((r) => r.fill)).toEqual(['red', 'blue']);
+  });
+
+  it('uses a color accessor for generic row data', () => {
+    const rows = [
+      { n: 3, hex: '#f00' },
+      { n: 2, hex: '#00f' },
+    ];
+    const scene = bar([rows], { value: (r) => r.n, colorAccessor: (r) => r.hex });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects.map((r) => r.fill)).toEqual(['#f00', '#00f']);
+  });
+
+  it('falls back to a uniform options.color with the opacity stripe when no per-segment color is given', () => {
+    const scene = bar([[1, 1, 1]], { color: 'purple' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) expect(r.fill).toBe('purple');
+    expect(rects[0]!.fillOpacity).toBe(1);
+    expect(rects[1]!.fillOpacity).toBeLessThan(1);
+  });
+
+  it('lets an explicit per-segment color win over a uniform options.color', () => {
+    const scene = bar([[{ value: 3, color: 'red' }, { value: 2 }]], { color: 'purple' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects[0]!.fill).toBe('red');
+    expect(rects[1]!.fill).toBe('purple');
   });
 });
 
