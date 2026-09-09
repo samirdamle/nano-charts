@@ -8,39 +8,44 @@
   :root {
     color-scheme: light dark;
     --bg: #fbfbfa;
-    --surface: #ffffff;
-    --border: #e8e6e2;
     --border-soft: #f0efec;
     --text: #1c1b1a;
     --text-muted: #6b6862;
     --text-faint: #a6a29a;
-    --accent: #3a5dae;
-    --accent-soft: #ecf0fa;
     --new-badge-bg: #eef2fb;
     --new-badge-text: #3a5dae;
-    --series-2: #3f9d76;
-    --series-3: #b8555f;
-    --shadow: 0 1px 2px rgba(20, 18, 14, 0.04), 0 1px 1px rgba(20, 18, 14, 0.03);
-    --radius: 12px;
+
+    /* chalk theme: chart foreground colors on a blackboard chart area */
+    --chalk-green: #8fe6c4;
+    --chalk-cyan: #7fd8e6;
+    --chalk-pink: #f3a8c7;
+    --chalk-lilac: #c6a6e8;
+    --chalk-yellow: #f0dd82;
+
+    /* alternating light/dark pastel pair for stacked-bar segments */
+    --chalk-stack-a: #f6c9dd;
+    --chalk-stack-b: #7c6a99;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #161513;
-      --surface: #1e1d1a;
-      --border: #302e2a;
       --border-soft: #26251f;
       --text: #f3f1ec;
       --text-muted: #a19d94;
       --text-faint: #6f6c64;
-      --accent: #8ea6e0;
-      --accent-soft: #23283a;
       --new-badge-bg: #23283a;
       --new-badge-text: #8ea6e0;
-      --series-2: #7cc9a7;
-      --series-3: #e08a91;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
     }
   }
+
+  /* chalk color theme utility classes */
+  .chalk-green { color: var(--chalk-green); }
+  .chalk-cyan { color: var(--chalk-cyan); }
+  .chalk-pink { color: var(--chalk-pink); }
+  .chalk-lilac { color: var(--chalk-lilac); }
+  .chalk-yellow { color: var(--chalk-yellow); }
+  .chalk-stack-a { color: var(--chalk-stack-a); }
+  .chalk-stack-b { color: var(--chalk-stack-b); }
 
   * { box-sizing: border-box; }
   body {
@@ -54,19 +59,11 @@
   .page {
     max-width: 1080px;
     margin: 0 auto;
-    padding: 72px 32px 120px;
+    padding: 40px 32px 64px;
   }
 
   header.hero {
-    margin-bottom: 64px;
-  }
-  header.hero .kicker {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 12px;
+    margin-bottom: 32px;
   }
   header.hero h1 {
     font-size: 34px;
@@ -83,17 +80,14 @@
   }
 
   section.group {
-    margin-bottom: 56px;
-  }
-  section.group + section.group {
-    padding-top: 8px;
+    margin-bottom: 28px;
   }
   .group-heading {
     display: flex;
     align-items: baseline;
     gap: 10px;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border-soft);
   }
   .group-heading h2 {
@@ -101,25 +95,19 @@
     font-weight: 650;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: var(--text);
     margin: 0;
   }
 
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
+    gap: 12px;
   }
 
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
   }
   .card-head {
     display: flex;
@@ -148,8 +136,8 @@
   }
 
   .chart {
-    color: var(--accent);
-    background: var(--accent-soft);
+    color: var(--chalk-green);
+    background: #000000;
     border-radius: 8px;
     padding: 16px;
     display: flex;
@@ -189,9 +177,8 @@
 <body>
 <div class="page">
   <header class="hero">
-    <p class="kicker">nano-charts</p>
-    <h1>Chart gallery</h1>
-    <p>Every chart type rendered from representative sample data, for visually spot-checking output while developing. Cards marked <strong>fixed</strong> cover the edge cases addressed on this branch.</p>
+    <h1 class="chalk-pink">Nano Charts - Tiny Minimal Charts</h1>
+    <p>This is a demo of all the nano chart types with their variations. Nano charts is an open source, very light weight, pure JavaScript + SVG data visualization library.</p>
   </header>
   <div id="root"></div>
   <footer>Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with <code>pnpm build:demo</code> to refresh.</footer>
@@ -209,6 +196,7 @@
     const heading = document.createElement('div');
     heading.className = 'group-heading';
     const h2 = document.createElement('h2');
+    h2.className = 'chalk-yellow';
     h2.textContent = title;
     heading.append(h2);
 
@@ -286,9 +274,9 @@
     {
       title: 'Multiple series',
       scene: lines([
-        { data: [3, 7, 2, 9, 5, 6], name: 'Revenue', color: 'var(--accent)' },
-        { data: [4, 4, 5, 6, 6, 7], name: 'Target', color: 'var(--series-2)', strokeDasharray: [3, 2] },
-        { data: [2, 5, 6, 5, 8, 9], name: 'Forecast', color: 'var(--series-3)', strokeWidth: 2.5 },
+        { data: [7, 9, 6, 10, 8, 9], name: 'Revenue', color: 'var(--chalk-green)' },
+        { data: [4, 5, 4, 6, 5, 6], name: 'Target', color: 'var(--chalk-cyan)', strokeDasharray: [3, 2] },
+        { data: [1, 2, 1, 3, 2, 3], name: 'Forecast', color: 'var(--chalk-pink)', strokeWidth: 2.5 },
       ]),
     },
     {
@@ -299,19 +287,40 @@
   ]);
 
   group('Area', [
-    { title: 'Basic', scene: area([1, 4, 2, 8, 3]) },
+    { title: 'Basic', scene: area([23, 30, 18, 27, 33, 21, 29, 24, 34, 22]) },
     { title: 'Single point — renders as a dot', scene: area([5]) },
   ]);
 
+  const barValues = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4];
+  const stackedBarPairs = [
+    [3, 2], [5, 1], [2, 4], [6, 3], [4, 2],
+    [7, 3], [3, 5], [5, 2], [2, 6], [6, 4],
+  ];
+  const stackColors = ['var(--chalk-stack-a)', 'var(--chalk-stack-b)'];
+
   group('Bar', [
-    { title: 'Basic', scene: bar([4, 9, 2, 7]) },
-    { title: 'Rounded caps', scene: bar([4, 9, 2, 7], { radius: 4 }) },
-    { title: 'Negative values', scene: bar([4, -3, 6, -2, 1]) },
-    { title: 'Horizontal, single bar (stacked)', scene: bar([[3, 5, 2]], { horizontal: true }) },
-    { title: 'Horizontal, multiple bars', scene: bar([4, 9, 2, 7], { horizontal: true }) },
+    { title: 'Basic', scene: bar(barValues) },
+    { title: 'Rounded caps', scene: bar(barValues, { radius: 4 }) },
+    { title: 'Negative values', scene: bar([4, -3, 6, -2, 1, -5, 3, -4, 2, -1]) },
+    {
+      title: 'Horizontal, single bar (stacked)',
+      scene: bar(
+        [[
+          { value: 3, color: 'var(--chalk-stack-a)' },
+          { value: 5, color: 'var(--chalk-stack-b)' },
+          { value: 2, color: 'var(--chalk-stack-a)' },
+          { value: 4, color: 'var(--chalk-stack-b)' },
+        ]],
+        { horizontal: true },
+      ),
+    },
+    { title: 'Horizontal, multiple bars', scene: bar(barValues, { horizontal: true }) },
     {
       title: 'Horizontal, multiple bars (stacked)',
-      scene: bar([[3, 2], [5, 1], [2, 4], [6, 3]], { horizontal: true }),
+      scene: bar(
+        stackedBarPairs.map((pair) => pair.map((value, row) => ({ value, color: stackColors[row] }))),
+        { horizontal: true },
+      ),
     },
   ]);
 
@@ -330,9 +339,9 @@
     {
       title: 'Segments (explicit colors)',
       scene: donut([
-        { value: 4, label: 'Chrome', color: 'var(--accent)' },
-        { value: 3, label: 'Safari', color: 'var(--series-2)' },
-        { value: 2, label: 'Firefox', color: 'var(--series-3)' },
+        { value: 4, label: 'Chrome', color: 'var(--chalk-green)' },
+        { value: 3, label: 'Safari', color: 'var(--chalk-cyan)' },
+        { value: 2, label: 'Firefox', color: 'var(--chalk-lilac)' },
       ]),
     },
     { title: 'Round caps', scene: donut({ value: 75, max: 100 }, { strokeLinecap: 'round' }) },
