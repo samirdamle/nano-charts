@@ -297,6 +297,13 @@
     [7, 3], [3, 5], [5, 2], [2, 6], [6, 4],
   ];
   const stackColors = ['var(--chalk-stack-a)', 'var(--chalk-stack-b)'];
+  const chalkPalette = [
+    'var(--chalk-green)',
+    'var(--chalk-cyan)',
+    'var(--chalk-pink)',
+    'var(--chalk-lilac)',
+    'var(--chalk-yellow)',
+  ];
 
   group('Bar', [
     { title: 'Basic', scene: bar(barValues) },
@@ -306,10 +313,10 @@
       title: 'Horizontal, single bar (stacked)',
       scene: bar(
         [[
-          { value: 3, color: 'var(--chalk-stack-a)' },
-          { value: 5, color: 'var(--chalk-stack-b)' },
-          { value: 2, color: 'var(--chalk-stack-a)' },
-          { value: 4, color: 'var(--chalk-stack-b)' },
+          { value: 3, color: 'var(--chalk-yellow)' },
+          { value: 5, color: 'var(--chalk-pink)' },
+          { value: 2, color: 'var(--chalk-cyan)' },
+          { value: 4, color: 'var(--chalk-lilac)' },
         ]],
         { horizontal: true },
       ),
@@ -335,12 +342,15 @@
   group('Donut', [
     { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
     { title: 'Full circle', scene: donut({ value: 100, max: 100 }) },
-    { title: 'Segments (categorical palette)', scene: donut([4, 3, 2, 1, 1]) },
+    {
+      title: 'Segments (categorical palette)',
+      scene: donut([4, 3, 2, 1, 1].map((value, i) => ({ value, color: chalkPalette[i] }))),
+    },
     {
       title: 'Segments (explicit colors)',
       scene: donut([
-        { value: 4, label: 'Chrome', color: 'var(--chalk-green)' },
-        { value: 3, label: 'Safari', color: 'var(--chalk-cyan)' },
+        { value: 4, label: 'Chrome', color: 'var(--chalk-yellow)' },
+        { value: 3, label: 'Safari', color: 'var(--chalk-pink)' },
         { value: 2, label: 'Firefox', color: 'var(--chalk-lilac)' },
       ]),
     },
