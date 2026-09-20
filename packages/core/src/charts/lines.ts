@@ -1,6 +1,7 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
+import { categoricalColor } from '../core/palette';
 import { seriesLayout } from '../core/plot';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
 
@@ -20,6 +21,9 @@ export type LinesOptions = BaseOptions;
 
 export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions = {}): Scene {
   const { width, height, color: defaultColor, padding } = resolveChartShell(options);
+  // Precedence: explicit per-series color > uniform options.color (only if the
+  // caller passed it) > categorical palette. Same rule donut() uses.
+  const hasUniformColor = options.color !== undefined;
 
   const perSeries = series.map((s) => {
     const accessors = s.value ? { value: s.value, label: s.label, id: s.id } : undefined;
@@ -40,7 +44,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const points: ScenePoint[] = [];
 
   perSeries.forEach(({ input, datums }, seriesIndex) => {
-    const color = input.color ?? defaultColor;
+    const color = input.color ?? (hasUniformColor ? defaultColor : categoricalColor(seriesIndex, perSeries.length));
     const strokeWidth = input.strokeWidth ?? 1;
     const dotRadius = input.dotRadius ?? 1;
     const strokeDasharray = toDasharray(input.strokeDasharray);
