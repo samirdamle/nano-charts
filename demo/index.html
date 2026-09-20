@@ -185,7 +185,7 @@
 </div>
 
 <script type="module">
-  import { line, lines, area, bar, winLoss, bullet, donut, scatter, heatmap, toSVG } from './dist/index.js';
+  import { line, lines, area, bar, winLoss, bullet, donut, scatter, heatmap, radar, toSVG } from './dist/index.js';
 
   const root = document.getElementById('root');
 
@@ -233,7 +233,9 @@
         let selectedText = null;
         const describePoint = (indexAttr) => {
           const point = scene.points[Number(indexAttr)];
-          return point ? `index ${point.index} — value ${point.value}` : null;
+          if (!point) return null;
+          const series = point.seriesLabel ? ` (${point.seriesLabel})` : '';
+          return `index ${point.index}${series} — value ${point.value}`;
         };
 
         chart.addEventListener('pointermove', (event) => {
@@ -390,6 +392,25 @@
   group('Heatmap', [
     { title: 'Basic', scene: heatmap([[1, 4, 2], [3, 0, 5], [2, 6, 1]], { cellSize: 20, gap: 2 }) },
     { title: 'Ragged rows — no longer throws', scene: heatmap([[1, 4, 2], [3, 0], [2, 6, 1, 5]], { cellSize: 20, gap: 2 }), fixed: true },
+  ]);
+
+  group('Radar', [
+    { title: 'Single series (shorthand)', scene: radar([4, 9, 2, 7, 5]) },
+    {
+      title: 'Multi-series overlay — hover the dots',
+      scene: radar(
+        [
+          { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all' },
+          { data: [7, 3, 8, 4, 6], name: 'Mobile', color: 'var(--c4)', dot: 'all' },
+        ],
+        { width: 120, height: 120 },
+      ),
+      interactive: true,
+    },
+    {
+      title: 'Custom max, no grid',
+      scene: radar([{ data: [8, 6, 9], fill: 0.35 }], { max: 10, grid: false }),
+    },
   ]);
 </script>
 </body>
