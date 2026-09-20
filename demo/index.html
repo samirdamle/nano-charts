@@ -138,7 +138,9 @@
   }
 
   .chart {
-    color: var(--text);
+    /* default series color: the library renders uncolored series in
+       currentColor, so the chart box sets the page-friendly default */
+    color: var(--c1);
     display: flex;
     align-items: center;
     justify-content: center;
