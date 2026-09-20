@@ -6,7 +6,7 @@ import {
   type SeriesColorAccessor,
   type SeriesInput,
 } from '../core/normalize';
-import { categoricalColor } from '../core/palette';
+import { resolveSegmentColor } from '../core/palette';
 import { seriesLayout, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 
@@ -97,8 +97,13 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
       const h = horizontal ? barW : len;
 
       const explicitColor = seg.color;
-      const segmentColor =
-        explicitColor ?? (stacked && !hasUniformColor ? categoricalColor(row, segs.length) : color);
+      const segmentColor = resolveSegmentColor({
+        explicit: explicitColor,
+        uniform: color,
+        usePalette: stacked && !hasUniformColor,
+        paletteIndex: row,
+        paletteTotal: segs.length,
+      });
       const useStripe = stacked && explicitColor === undefined && hasUniformColor;
 
       marks.push({
