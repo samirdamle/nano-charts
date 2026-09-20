@@ -4,7 +4,7 @@ import { toSVG } from '@samirdamle/nano-charts';
 import type { Mark, Scene } from '@samirdamle/nano-charts';
 import { Marks } from '../src/render/Marks';
 
-// Guards the to-svg.ts / Marks.tsx seam described in ADR 0002: both renderers
+// Guards the to-svg.ts / Marks.tsx seam described in ADR 0004: both renderers
 // hand-list which Mark fields they read, and nothing else keeps those two
 // lists in sync. For each Mark variant this asserts the SVG-string renderer
 // and the JSX renderer expose the same set of DOM attribute names, once with
