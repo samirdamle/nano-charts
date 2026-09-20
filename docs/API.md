@@ -124,20 +124,13 @@ Each column is a number, an object point (`{ value, label?, id?, color? }`), a
 custom object (with accessors), or — for stacked columns — an array of those.
 Stacked segments fall back to the categorical palette when no color is given.
 
-| Option                   | Type                            | Default                | Description                                     |
-| ------------------------ | ------------------------------- | ---------------------- | ----------------------------------------------- |
-| `gap`                    | `number`                        | `0.2`                  | Fraction of the slot left empty between columns |
-| `radius`                 | `number`                        | —                      | Corner radius (`rx`) on bars                    |
-| `horizontal`             | `boolean`                       | `false`                | Draw bars left-to-right instead of bottom-up    |
-| `track`                  | `boolean \| BarTrackOptions`    | —                      | Background track behind each bar spanning the full value domain |
-| `colorAccessor`          | `(row, i) => string`            | —                      | Per-row color for custom object arrays          |
-| `value` / `label` / `id` | accessors                       | —                      | For custom object arrays                        |
-
-`track: true` draws one background rect per column (base color at 15%
-opacity) behind the bars — the "100%" reference for progress-style bars.
-`track: { max, color, opacity, radius }` tunes it: `max` extends the value
-domain when larger than the data max, and `radius` defaults to the bar's own
-`radius` so rounded caps match. Tracks are decorative (no points).
+| Option                   | Type                 | Default | Description                                     |
+| ------------------------ | -------------------- | ------- | ----------------------------------------------- |
+| `gap`                    | `number`             | `0.2`   | Fraction of the slot left empty between columns |
+| `radius`                 | `number`             | —       | Corner radius (`rx`) on bars                    |
+| `horizontal`             | `boolean`            | `false` | Draw bars left-to-right instead of bottom-up    |
+| `colorAccessor`          | `(row, i) => string` | —       | Per-row color for custom object arrays          |
+| `value` / `label` / `id` | accessors            | —       | For custom object arrays                        |
 
 ### `winLoss(data, options?)` — direction / sign
 
