@@ -30,13 +30,6 @@ export interface SeriesColorAccessor<T> {
 type ObjectPoint = { id?: string | number; label?: string; value: number; color?: string };
 export type SeriesInput<T> = number[] | ObjectPoint[] | T[];
 
-// Clamp policy: a non-finite value (NaN, Infinity, or a non-numeric row) can
-// never become geometry, so it normalizes to 0 instead of poisoning
-// downstream math with NaN.
-function toFiniteNumber(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
 export function normalizeSeries<T>(
   data: SeriesInput<T>,
   accessors?: SeriesAccessors<T> & Partial<SeriesColorAccessor<T>>,
@@ -47,7 +40,7 @@ export function normalizeSeries<T>(
     return (data as T[]).map((row, index) => ({
       id: accessors.id ? accessors.id(row, index) : index,
       label: accessors.label ? accessors.label(row, index) : String(accessors.value(row, index)),
-      value: toFiniteNumber(accessors.value(row, index)),
+      value: accessors.value(row, index),
       index,
       ...(accessors.colorAccessor ? { color: accessors.colorAccessor(row, index) } : {}),
     }));
@@ -57,19 +50,16 @@ export function normalizeSeries<T>(
     return (data as number[]).map((value, index) => ({
       id: index,
       label: String(value),
-      value: toFiniteNumber(value),
+      value,
       index,
     }));
   }
 
-  return (data as ObjectPoint[]).map((d, index) => {
-    const row = (d ?? {}) as ObjectPoint;
-    return {
-      id: row.id ?? index,
-      label: row.label ?? String(row.value),
-      value: toFiniteNumber(row.value),
-      index,
-      ...(row.color !== undefined ? { color: row.color } : {}),
-    };
-  });
+  return (data as ObjectPoint[]).map((d, index) => ({
+    id: d.id ?? index,
+    label: d.label ?? String(d.value),
+    value: d.value,
+    index,
+    ...(d.color !== undefined ? { color: d.color } : {}),
+  }));
 }

@@ -6,8 +6,7 @@ import {
   type SeriesColorAccessor,
   type SeriesInput,
 } from '../core/normalize';
-import { resolveSegmentColor } from '../core/palette';
-import { resolveChartShell, sceneShell } from '../core/series-chart';
+import { categoricalColor } from '../core/palette';
 
 export interface DonutGauge {
   value: number;
@@ -56,9 +55,9 @@ function isGauge(data: unknown): data is DonutGauge {
 }
 
 export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> = {}): Scene {
-  // Donut defaults to a square 20x20 canvas; otherwise it shares the standard
-  // chart shell (width/height/color/padding resolution).
-  const { width, height, color } = resolveChartShell({ width: 20, height: 20, ...options });
+  const width = options.width ?? 20;
+  const height = options.height ?? 20;
+  const color = options.color ?? 'currentColor';
   const startAngle = options.startAngle ?? -90;
   const cx = width / 2;
   const cy = height / 2;
@@ -102,15 +101,15 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       y: round(cy),
     });
     return {
-      ...sceneShell(
-        { width, height },
-        {
-          title: options.title ?? 'donut chart',
-          desc: options.desc ?? `donut gauge, ${round(frac * 100)} percent of ${data.max}`,
-        },
-      ),
+      width,
+      height,
+      viewBox: `0 0 ${width} ${height}`,
       marks,
       points,
+      a11y: {
+        title: options.title ?? 'donut chart',
+        desc: options.desc ?? `donut gauge, ${round(frac * 100)} percent of ${data.max}`,
+      },
     };
   }
 
@@ -123,37 +122,31 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       }
     : undefined;
   const datums = normalizeSeries(data as SeriesInput<T>, accessors);
-  // Clamp policy: donut segments are fractions of a whole, so negative
-  // values can't produce negative sweeps — they're treated as zero for the
-  // sweep math. Points keep the raw values (datum identity for tooltips).
-  const swept = datums.map((d) => Math.max(0, d.value));
-  const total = swept.reduce((sum, v) => sum + v, 0);
-  const base = sceneShell(
-    { width, height },
-    {
+  const total = datums.reduce((sum, d) => sum + d.value, 0);
+  const base: Scene = {
+    width,
+    height,
+    viewBox: `0 0 ${width} ${height}`,
+    marks,
+    points,
+    a11y: {
       title: options.title ?? 'donut chart',
       desc:
         options.desc ??
         (datums.length === 0 ? 'donut chart, no data' : `donut chart, ${datums.length} segments`),
     },
-  );
+  };
   if (datums.length === 0 || total === 0) return base;
 
-  // Precedence, shared with bar via resolveSegmentColor: explicit per-segment
-  // color (field/accessor) > options.colors[i] > uniform options.color (only
-  // if the caller passed it) > categorical palette.
+  // Precedence: explicit per-segment color (field/accessor) > options.colors[i]
+  // > uniform options.color (only if the caller passed it) > categorical palette.
   const hasUniformColor = options.color !== undefined;
   let angle = startAngle;
   datums.forEach((d, i) => {
-    const sweep = (swept[i]! / total) * 360;
+    const sweep = (d.value / total) * 360;
     const explicitColor = d.color ?? options.colors?.[i];
-    const segmentColor = resolveSegmentColor({
-      explicit: explicitColor,
-      uniform: color,
-      usePalette: !hasUniformColor,
-      paletteIndex: i,
-      paletteTotal: datums.length,
-    });
+    const segmentColor =
+      explicitColor ?? (hasUniformColor ? color : categoricalColor(i, datums.length));
     const useStripe = explicitColor === undefined && hasUniformColor;
     marks.push({
       type: 'path',
@@ -169,5 +162,5 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     angle += sweep;
   });
 
-  return { ...base, marks, points };
+  return base;
 }

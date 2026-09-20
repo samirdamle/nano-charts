@@ -18,14 +18,8 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const height = options.height ?? 20;
   const color = options.color ?? 'currentColor';
   const padding = resolvePadding(options.padding);
-  // Clamp policy: bullet geometry lives on [0, max]. Negative inputs are
-  // clamped to 0 (no rect can get a negative width) and value/target are
-  // clamped into [0, max] so nothing draws off-canvas. The scene reflects
-  // the clamped values throughout.
-  const ranges = (data.ranges ?? []).map((r) => Math.max(0, r)).sort((a, b) => a - b);
-  const max = Math.max(0, data.max ?? Math.max(data.value, data.target, ...ranges, 0));
-  const value = Math.min(Math.max(data.value, 0), max);
-  const target = Math.min(Math.max(data.target, 0), max);
+  const ranges = (data.ranges ?? []).slice().sort((a, b) => a - b);
+  const max = data.max ?? Math.max(data.value, data.target, ...ranges, 0);
 
   const { left, right, top, bottom } = paddedBox({ width, height, padding });
   const xScale = linearScale([0, max], [left, right]);
@@ -52,22 +46,14 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     type: 'rect',
     x: round(left),
     y: round(barY),
-    width: round(xScale(value) - left),
+    width: round(xScale(data.value) - left),
     height: round(barH),
     fill: color,
   });
 
   // Target tick.
-  const tx = round(xScale(target));
-  marks.push({
-    type: 'line',
-    x1: tx,
-    y1: round(top),
-    x2: tx,
-    y2: round(bottom),
-    stroke: color,
-    strokeWidth: 1,
-  });
+  const tx = round(xScale(data.target));
+  marks.push({ type: 'line', x1: tx, y1: round(top), x2: tx, y2: round(bottom), stroke: color, strokeWidth: 1 });
 
   return {
     width,
@@ -77,16 +63,16 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     points: [
       {
         id: data.id ?? 0,
-        label: data.label ?? String(value),
-        value,
+        label: data.label ?? String(data.value),
+        value: data.value,
         index: 0,
-        x: round(xScale(value)),
+        x: round(xScale(data.value)),
         y: round((top + bottom) / 2),
       },
     ],
     a11y: {
       title: options.title ?? 'bullet chart',
-      desc: options.desc ?? `bullet chart, value ${value}, target ${target}, max ${max}`,
+      desc: options.desc ?? `bullet chart, value ${data.value}, target ${data.target}, max ${max}`,
     },
   };
 }
