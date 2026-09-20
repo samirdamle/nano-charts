@@ -24,3 +24,32 @@ describe('bullet', () => {
     expect(scene.points[0]).toMatchObject({ id: 'kpi', label: 'Revenue', value: 80 });
   });
 });
+
+describe('bullet (clamp policy)', () => {
+  it('clamps a negative value to a zero-width bar instead of a negative width', () => {
+    const scene = bullet({ value: -20, target: 90 }, { width: 100, height: 20 });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    const valueBar = rects[rects.length - 1];
+    expect(valueBar).toMatchObject({ width: 0 });
+    for (const r of rects) expect((r as { width: number }).width).toBeGreaterThanOrEqual(0);
+  });
+
+  it('clamps negative ranges to zero-width bands', () => {
+    const scene = bullet({ value: 80, target: 90, ranges: [-50, 75] }, { width: 100, height: 20 });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) expect((r as { width: number }).width).toBeGreaterThanOrEqual(0);
+  });
+
+  it('clamps a value above an explicit max to the full track width', () => {
+    const scene = bullet({ value: 150, target: 90, max: 100 }, { width: 100, height: 20 });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    const valueBar = rects[rects.length - 1];
+    expect(valueBar).toMatchObject({ width: 98 }); // left=1, right=99
+  });
+
+  it('clamps a negative target tick to the left edge', () => {
+    const scene = bullet({ value: 80, target: -10 }, { width: 100, height: 20 });
+    const lines = scene.marks.filter((m) => m.type === 'line');
+    expect(lines[0]).toMatchObject({ x1: 1, x2: 1 });
+  });
+});

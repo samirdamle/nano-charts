@@ -123,7 +123,11 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       }
     : undefined;
   const datums = normalizeSeries(data as SeriesInput<T>, accessors);
-  const total = datums.reduce((sum, d) => sum + d.value, 0);
+  // Clamp policy: donut segments are fractions of a whole, so negative
+  // values can't produce negative sweeps — they're treated as zero for the
+  // sweep math. Points keep the raw values (datum identity for tooltips).
+  const swept = datums.map((d) => Math.max(0, d.value));
+  const total = swept.reduce((sum, v) => sum + v, 0);
   const base = sceneShell(
     { width, height },
     {
@@ -141,7 +145,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   const hasUniformColor = options.color !== undefined;
   let angle = startAngle;
   datums.forEach((d, i) => {
-    const sweep = (d.value / total) * 360;
+    const sweep = (swept[i]! / total) * 360;
     const explicitColor = d.color ?? options.colors?.[i];
     const segmentColor = resolveSegmentColor({
       explicit: explicitColor,
