@@ -52,10 +52,15 @@ export function toSVG(
   const cls = attr('class', opts.className);
   const style = attr('style', opts.style);
   const body = scene.marks.map(renderMark).join('');
+  // No <title> child: browsers render it as a hover tooltip ("radar chart"),
+  // which spoils the experience. The accessible name comes from aria-label
+  // instead; <desc> keeps the data summary for assistive tech (it never
+  // tooltips).
+  const label = attr('aria-label', scene.a11y.title);
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${esc(scene.viewBox)}" ` +
-    `role="img" fill="currentColor" stroke="currentColor"${cls}${style}${extra}>` +
-    `<title>${esc(scene.a11y.title)}</title><desc>${esc(scene.a11y.desc)}</desc>` +
+    `role="img"${label} fill="currentColor" stroke="currentColor"${cls}${style}${extra}>` +
+    `<desc>${esc(scene.a11y.desc)}</desc>` +
     `${body}</svg>`
   );
 }

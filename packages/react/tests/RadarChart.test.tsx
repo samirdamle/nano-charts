@@ -19,7 +19,7 @@ describe('RadarChart', () => {
       scene.marks.filter((m) => m.type === 'polyline').length,
     );
     expect(container.querySelector('svg')?.getAttribute('role')).toBe('img');
-    expect(container.querySelector('title')?.textContent).toBe('my chart');
+    expect(container.querySelector('svg')?.getAttribute('aria-label')).toBe('my chart');
   });
 
   it('accepts the single-series shorthand', () => {

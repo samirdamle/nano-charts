@@ -21,12 +21,12 @@ export function ChartSvg({
     <svg
       viewBox={scene.viewBox}
       role="img"
+      aria-label={scene.a11y.title}
       fill="currentColor"
       stroke="currentColor"
       className={className}
       style={style}
     >
-      <title>{scene.a11y.title}</title>
       <desc>{scene.a11y.desc}</desc>
       <Marks marks={scene.marks} />
       <PointHitTargets

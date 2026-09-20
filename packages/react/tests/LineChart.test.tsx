@@ -14,7 +14,7 @@ describe('LineChart', () => {
       scene.marks.filter((m) => m.type === 'circle').length,
     );
     expect(container.querySelector('svg')?.getAttribute('role')).toBe('img');
-    expect(container.querySelector('title')?.textContent).toBe('my chart');
+    expect(container.querySelector('svg')?.getAttribute('aria-label')).toBe('my chart');
   });
 
   it('fires onPointHover with the point on enter and null on leave', () => {

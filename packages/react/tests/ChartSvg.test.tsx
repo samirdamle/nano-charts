@@ -13,12 +13,13 @@ const scene: Scene = {
 };
 
 describe('ChartSvg', () => {
-  it('renders the svg wrapper with viewBox, role, title, desc, and marks', () => {
+  it('renders the svg wrapper with viewBox, role, aria-label, desc, and marks', () => {
     const { container } = render(<ChartSvg scene={scene} />);
     const svg = container.querySelector('svg');
     expect(svg?.getAttribute('viewBox')).toBe('0 0 100 20');
     expect(svg?.getAttribute('role')).toBe('img');
-    expect(container.querySelector('title')?.textContent).toBe('test chart');
+    expect(svg?.getAttribute('aria-label')).toBe('test chart');
+    expect(container.querySelector('title')).toBeNull();
     expect(container.querySelector('desc')?.textContent).toBe('a test chart');
     expect(container.querySelectorAll('svg > circle')).toHaveLength(1);
   });
