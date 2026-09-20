@@ -20,7 +20,8 @@ describe('toSVG', () => {
     expect(svg.startsWith('<svg ')).toBe(true);
     expect(svg).toContain('viewBox="0 0 100 20"');
     expect(svg).toContain('role="img"');
-    expect(svg).toContain('<title>line chart</title>');
+    expect(svg).toContain('aria-label="line chart"');
+    expect(svg).not.toContain('<title>');
     expect(svg).toContain('<desc>line chart, 3 points, trend up, min 0, max 10</desc>');
     expect(svg).toContain('fill="currentColor"');
     expect(svg).toContain('stroke="currentColor"');
@@ -44,7 +45,8 @@ describe('toSVG', () => {
 
   it('escapes special characters in a11y text', () => {
     const svg = toSVG({ ...scene, a11y: { title: 'A & B <x>', desc: 'd' } });
-    expect(svg).toContain('<title>A &amp; B &lt;x&gt;</title>');
+    expect(svg).toContain('aria-label="A &amp; B &lt;x&gt;"');
+    expect(svg).not.toContain('<title>');
   });
 
   it('escapes attribute values to prevent injection', () => {
