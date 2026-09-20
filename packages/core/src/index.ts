@@ -7,6 +7,7 @@ export { bullet, type BulletData, type BulletOptions } from './charts/bullet';
 export { donut, type DonutOptions, type DonutGauge, type DonutInput } from './charts/donut';
 export { scatter, type ScatterOptions, type ScatterPoint, type ScatterInput } from './charts/scatter';
 export { heatmap, type HeatmapOptions } from './charts/heatmap';
+export { radar, type RadarOptions, type RadarInput, type RadarSeries } from './charts/radar';
 export { toSVG } from './render/to-svg';
 export type { Scene, Mark, ScenePoint, BaseOptions, Datum } from './types';
 export type { ColorScale } from './core/color-scale';

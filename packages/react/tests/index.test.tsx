@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import * as api from '../src/index';
 
 describe('public API', () => {
-  it('exports all eight chart components', () => {
+  it('exports all nine chart components', () => {
     for (const name of [
       'LineChart',
       'AreaChart',
@@ -13,6 +13,7 @@ describe('public API', () => {
       'DonutChart',
       'ScatterChart',
       'HeatmapChart',
+      'RadarChart',
     ]) {
       expect(typeof (api as Record<string, unknown>)[name]).toBe('function');
     }

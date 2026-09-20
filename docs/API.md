@@ -235,6 +235,40 @@ cells are skipped rather than throwing.
 | `colorScale` | `[string, string] \| ColorScale` | —       | Maps value extent to color; defaults to a single-color intensity ramp |
 | `value`      | `(cell, row, col) => number`     | —       | For custom cell objects                                               |
 
+### `radar(input, options?)` — multi-axis spider chart
+
+```ts
+radar([4, 9, 2, 7, 5]); // single series, five axes
+radar([
+  { data: [4, 9, 2], name: 'Web', fill: 0.3 },
+  { data: [7, 3, 8], name: 'Mobile', color: '#2563eb', dot: 'all' },
+]);
+```
+
+Each series is `{ data, name?, color?, strokeWidth?, strokeDasharray?,
+strokeLinecap?, fill?, dot?, dotRadius? }` plus `value`/`label`/`id` accessors
+for custom objects. Axes are shared across series: angles start at the top
+(-90°) and sweep clockwise, radii scale to `[0, max]` where `max` defaults to
+the largest value. A decorative spider grid (spokes + quarter rings) is on by
+default; no labels or legend are rendered — use hover/click points for values.
+
+| Option                   | Type                            | Default  | Description                                        |
+| ------------------------ | ------------------------------- | -------- | -------------------------------------------------- |
+| `max`                    | `number`                        | data max | Domain ceiling; values above it clamp to the rim   |
+| `grid`                   | `boolean`                       | `true`   | Spider grid (spokes + rings)                       |
+| `fill`                   | `boolean \| number`             | `true`   | Polygon fill: `true` → 0.2 opacity, number → opacity |
+| `dot`                    | `'none' \| 'all'`               | `'none'` | Dot markers on the vertices                        |
+| `dotRadius`              | `number`                        | `1`      | Dot radius                                         |
+| `strokeWidth`            | `number`                        | `1`      | Polygon edge thickness                             |
+| `strokeDasharray`        | `string \| number[]`            | —        | Dash pattern, e.g. `'4 2'` or `[4, 2]`             |
+| `strokeLinecap`          | `'butt' \| 'round' \| 'square'` | —        | Line-cap style                                     |
+| `value` / `label` / `id` | accessors                       | —        | For custom object arrays (single-series shorthand) |
+
+Series shorter than the longest are padded with zero-valued points; a
+single-axis input renders as a dot. **Color precedence:** explicit per-series
+`color` → uniform `options.color` (only when the caller passed one) →
+algorithmic categorical palette, the same rule `lines()` uses.
+
 ## Rendering
 
 ### `toSVG(scene, opts?)`
@@ -259,7 +293,7 @@ its own point index.
 ### React components
 
 `LineChart`, `AreaChart`, `BarChart`, `WinLossChart`, `BulletChart`,
-`DonutChart`, `ScatterChart`, `HeatmapChart` — each takes the same `data` and
+`DonutChart`, `ScatterChart`, `HeatmapChart`, `RadarChart` — each takes the same `data` (`series` for `RadarChart`) and
 options as its core function, plus interactivity props:
 
 | Prop                  | Type                                  | Description                                                           |
