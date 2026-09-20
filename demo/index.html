@@ -333,6 +333,7 @@
       ]);
 
       const barValues = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4];
+      const negValues = [4, -3, 6, -2, 1, -5, 3, -4, 2, -1];
       const stackedBarPairs = [
         [3, 2],
         [5, 1],
@@ -351,7 +352,12 @@
       group('Bar', [
         { title: 'Basic', scene: bar(barValues) },
         { title: 'Rounded caps', scene: bar(barValues, { radius: 4 }) },
-        { title: 'Negative values', scene: bar([4, -3, 6, -2, 1, -5, 3, -4, 2, -1]) },
+        {
+          title: 'Negative values',
+          scene: bar(
+            negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
+          ),
+        },
         {
           title: 'Horizontal, single bar (stacked)',
           scene: bar(
