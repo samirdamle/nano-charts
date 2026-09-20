@@ -10,6 +10,18 @@ import { categoricalColor } from '../core/palette';
 import { seriesLayout, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 
+export interface BarTrackOptions {
+  /** The "100%" the track represents. When larger than the data max it
+   * extends the value domain so the track genuinely spans the full scale. */
+  max?: number;
+  /** Track fill. Defaults to the chart's base color (theme-aware at low opacity). */
+  color?: string;
+  /** Track opacity. Defaults to 0.15. */
+  opacity?: number;
+  /** Corner rounding for the track. Defaults to the bar's `radius`. */
+  radius?: number;
+}
+
 export interface BarOptions<T = number>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
@@ -17,6 +29,9 @@ export interface BarOptions<T = number>
   gap?: number;
   radius?: number;
   horizontal?: boolean;
+  /** Background track behind each bar spanning the full value domain.
+   * `true` enables it with defaults; an object tunes it. */
+  track?: boolean | BarTrackOptions;
 }
 
 type BarSegment<T> =
@@ -56,7 +71,13 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   if (columns.length === 0) return base;
 
   const [minT, maxT] = extent(totals);
-  const domain: [number, number] = [Math.min(0, minT), Math.max(0, maxT)];
+  const track = options.track === true ? {} : options.track || undefined;
+  // An explicit track max larger than the data extends the domain so the
+  // track genuinely represents 100% instead of being squashed to the data max.
+  const domain: [number, number] = [
+    Math.min(0, minT),
+    Math.max(0, maxT, track?.max ?? -Infinity),
+  ];
   const layout = seriesLayout(columns.length, domain, { width, height, padding });
 
   // Value axis runs along x when horizontal, y otherwise; the category
@@ -76,6 +97,31 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+
+  // One track rect per column, drawn first (behind the segments), spanning
+  // the full value domain. Tracks are decorative: they emit no points.
+  if (track) {
+    const tStart = valueScale(domain[0]);
+    const tEnd = valueScale(domain[1]);
+    const tPos = round(Math.min(tStart, tEnd));
+    const tLen = round(Math.abs(tEnd - tStart));
+    const trackFill = track.color ?? color;
+    const trackOpacity = round(track.opacity ?? 0.15);
+    const trackRx = track.radius ?? options.radius;
+    columns.forEach((_segs, col) => {
+      const slotPos = round(slot.x(col));
+      marks.push({
+        type: 'rect',
+        x: horizontal ? tPos : slotPos,
+        y: horizontal ? slotPos : tPos,
+        width: horizontal ? tLen : barW,
+        height: horizontal ? barW : tLen,
+        fill: trackFill,
+        fillOpacity: trackOpacity,
+        rx: trackRx,
+      });
+    });
+  }
 
   columns.forEach((segs, col) => {
     const slotPos = round(slot.x(col));
