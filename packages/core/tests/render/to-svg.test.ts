@@ -109,6 +109,20 @@ describe('toSVG', () => {
     expect(svg).toContain('<rect x="0" y="0" width="10" height="5" fill="blue" stroke="none"/>');
   });
 
+  it('defaults circle marks to stroke="none" but honors an explicit stroke', () => {
+    const svg = toSVG({
+      ...scene,
+      marks: [{ type: 'circle', cx: 5, cy: 5, r: 2, fill: 'red' }],
+    });
+    expect(svg).toContain('<circle cx="5" cy="5" r="2" fill="red" stroke="none"/>');
+
+    const explicit = toSVG({
+      ...scene,
+      marks: [{ type: 'circle', cx: 5, cy: 5, r: 2, fill: 'red', stroke: 'white' }],
+    });
+    expect(explicit).toContain('<circle cx="5" cy="5" r="2" fill="red" stroke="white"/>');
+  });
+
   it('serializes stroke-opacity on a path', () => {
     const svg = toSVG({
       ...scene,
