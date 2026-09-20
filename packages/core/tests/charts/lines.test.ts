@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { lines } from '../../src/charts/lines';
+import { categoricalColor } from '../../src/core/palette';
 
 describe('lines', () => {
   it('overlays multiple series on one shared y-scale', () => {
@@ -75,5 +76,33 @@ describe('lines', () => {
     const circles = scene.marks.filter((m) => m.type === 'circle');
     expect(circles.map((c) => [c.index, c.seriesIndex])).toEqual([[0, 1], [1, 1]]);
     expect(scene.points).toHaveLength(2);
+  });
+
+  it('falls back to the categorical palette when series omit color', () => {
+    const scene = lines([{ data: [0, 10] }, { data: [5, 5] }, { data: [2, 8] }]);
+    const strokes = scene.marks
+      .filter((m) => m.type === 'polyline')
+      .map((m) => (m as { stroke: string }).stroke);
+    expect(strokes).toEqual([
+      categoricalColor(0, 3),
+      categoricalColor(1, 3),
+      categoricalColor(2, 3),
+    ]);
+  });
+
+  it('lets an explicit options.color win over the palette for every series', () => {
+    const scene = lines([{ data: [0, 10] }, { data: [5, 5] }], { color: 'purple' });
+    const strokes = scene.marks
+      .filter((m) => m.type === 'polyline')
+      .map((m) => (m as { stroke: string }).stroke);
+    expect(strokes).toEqual(['purple', 'purple']);
+  });
+
+  it('lets an explicit per-series color win over the palette', () => {
+    const scene = lines([{ data: [0, 10], color: 'red' }, { data: [5, 5] }]);
+    const strokes = scene.marks
+      .filter((m) => m.type === 'polyline')
+      .map((m) => (m as { stroke: string }).stroke);
+    expect(strokes).toEqual(['red', categoricalColor(1, 2)]);
   });
 });
