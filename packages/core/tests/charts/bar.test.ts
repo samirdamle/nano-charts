@@ -116,6 +116,80 @@ describe('bar (edges)', () => {
   });
 });
 
+describe('bar (track)', () => {
+  it('renders one full-domain track rect per column behind the bars', () => {
+    const scene = bar([4, 9], { track: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    // 2 tracks + 2 bars; tracks come first
+    expect(rects).toHaveLength(4);
+    const [t0, t1, b0, b1] = rects;
+    // tracks align exactly behind their column's bar
+    expect(t0).toMatchObject({ x: b0!.x, width: b0!.width });
+    expect(t1).toMatchObject({ x: b1!.x, width: b1!.width });
+    // full domain [0,9]: y(9)=1 (top), y(0)=19 (baseline) -> track spans both
+    expect(t0).toMatchObject({ y: 1, height: 18 });
+    expect(t1).toMatchObject({ y: 1, height: 18 });
+    // the tallest bar fills its track exactly
+    expect(b1).toMatchObject({ y: 1, height: 18 });
+    // default track: base color at low opacity; no points for tracks
+    expect(t0!.fill).toBe('currentColor');
+    expect(t0!.fillOpacity).toBe(0.15);
+    expect(scene.points).toHaveLength(2);
+  });
+
+  it('renders a single track behind a stacked column', () => {
+    const scene = bar([[3, 2]], { track: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(3); // 1 track + 2 segments
+    expect(rects[0]).toMatchObject({ fillOpacity: 0.15 });
+  });
+
+  it('extends the domain when track.max exceeds the data max', () => {
+    const scene = bar([50], { track: { max: 100 } });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(2);
+    const [track, valueBar] = rects;
+    // domain [0,100] over 18px of plot height: track spans all of it,
+    // the 50-bar spans half
+    expect(track).toMatchObject({ y: 1, height: 18 });
+    expect(valueBar).toMatchObject({ y: 10, height: 9 });
+  });
+
+  it('does not extend the domain when track.max is below the data max', () => {
+    const scene = bar([50], { track: { max: 10 } });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    // domain stays [0,50]: track spans it, bar overflows the track
+    expect(rects[0]).toMatchObject({ y: 1, height: 18 });
+    expect(rects[1]).toMatchObject({ y: 1, height: 18 });
+  });
+
+  it('honors explicit track color, opacity, and radius', () => {
+    const scene = bar([4], { radius: 3, track: { color: '#e5e7eb', opacity: 0.5, radius: 2 } });
+    expect(scene.marks[0]).toMatchObject({ fill: '#e5e7eb', fillOpacity: 0.5, rx: 2 });
+  });
+
+  it('inherits the bar radius for the track by default', () => {
+    const scene = bar([4], { radius: 3, track: true });
+    expect(scene.marks[0]).toMatchObject({ rx: 3 });
+  });
+
+  it('draws horizontal tracks along the value axis', () => {
+    const scene = bar([4, 9], { horizontal: true, track: { max: 100 } });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(4);
+    const [t0, t1, b0, b1] = rects;
+    // tracks share their row's y/height and span the full domain width
+    expect(t0).toMatchObject({ y: b0!.y, height: b0!.height });
+    expect(t1).toMatchObject({ y: b1!.y, height: b1!.height });
+    expect(t0!.width).toBeGreaterThan(b0!.width);
+    expect(t0!.width).toBe(t1!.width);
+  });
+
+  it('renders no track when the option is absent', () => {
+    expect(bar([4]).marks.filter((m) => m.type === 'rect')).toHaveLength(1);
+  });
+});
+
 describe('bar (horizontal)', () => {
   it('runs bar length along x and stacks a single row of segments', () => {
     const scene = bar([[3, 5, 2]], { horizontal: true });
