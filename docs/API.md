@@ -184,8 +184,14 @@ have real colors.
 | `startAngle`             | `number`                        | `-90`                 | Where the first segment starts, in degrees             |
 | `colors`                 | `string[]`                      | —                     | Per-segment colors for `number[]` input, index-matched |
 | `strokeLinecap`          | `'butt' \| 'round' \| 'square'` | —                     | Cap style on segment arcs                              |
+| `track`                  | `boolean \| DonutTrackOptions`  | —                     | Background ring behind the segments                    |
 | `colorAccessor`          | `(row, i) => string`            | —                     | Per-row color for custom object arrays                 |
 | `value` / `label` / `id` | accessors                       | —                     | For custom object arrays                               |
+
+`track: true` (or `track: { color, opacity }`) draws a full 360° background
+ring behind segmented arcs — the "100%" reference. In gauge mode the ring
+already exists: the option customizes its color/opacity, and `track: false`
+hides it. Tracks are decorative (no points).
 
 ### `scatter(data, options?)` — 2D relationship
 

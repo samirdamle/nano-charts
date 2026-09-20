@@ -16,6 +16,13 @@ export interface DonutGauge {
 
 export type DonutInput<T = number> = DonutGauge | SeriesInput<T>;
 
+export interface DonutTrackOptions {
+  /** Track ring stroke. Defaults to the chart's base color. */
+  color?: string;
+  /** Track ring opacity. Defaults to 0.15. */
+  opacity?: number;
+}
+
 export interface DonutOptions<T = number>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
@@ -25,6 +32,10 @@ export interface DonutOptions<T = number>
   /** Per-segment colors, index-matched to the input data. */
   colors?: string[];
   strokeLinecap?: 'butt' | 'round' | 'square';
+  /** Background ring behind the segments (the "100%" reference).
+   * Gauge mode already draws one: the option customizes it, and
+   * `track: false` hides it. Segmented mode gains it as an opt-in. */
+  track?: boolean | DonutTrackOptions;
 }
 
 function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
@@ -72,17 +83,24 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   const strokeLinecap =
     options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {};
 
+  const trackOpt = options.track;
+
   if (isGauge(data)) {
     const frac = data.max === 0 ? 0 : Math.max(0, Math.min(1, data.value / data.max));
-    marks.push({
-      type: 'path',
-      d: arcPath(cx, cy, rMid, startAngle, startAngle + 360),
-      fill: 'none',
-      stroke: color,
-      strokeWidth: round(thickness),
-      strokeOpacity: 0.15,
-      ...strokeLinecap,
-    });
+    // The background ring predates the track option: it stays on by default
+    // (unchanged rendering), the option customizes it, `false` hides it.
+    if (trackOpt !== false) {
+      const t: DonutTrackOptions = trackOpt === true || trackOpt === undefined ? {} : trackOpt;
+      marks.push({
+        type: 'path',
+        d: arcPath(cx, cy, rMid, startAngle, startAngle + 360),
+        fill: 'none',
+        stroke: t.color ?? color,
+        strokeWidth: round(thickness),
+        strokeOpacity: t.opacity ?? 0.15,
+        ...strokeLinecap,
+      });
+    }
     if (frac > 0) {
       marks.push({
         type: 'path',
@@ -138,6 +156,21 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     },
   );
   if (datums.length === 0 || total === 0) return base;
+
+  // Opt-in track ring behind the segments: same radii and thickness as the
+  // segments, so it reads as the "100%" reference. Decorative: no points.
+  const segTrack: DonutTrackOptions | undefined = trackOpt === true ? {} : trackOpt || undefined;
+  if (segTrack) {
+    marks.push({
+      type: 'path',
+      d: arcPath(cx, cy, rMid, startAngle, startAngle + 360),
+      fill: 'none',
+      stroke: segTrack.color ?? color,
+      strokeWidth: round(thickness),
+      strokeOpacity: segTrack.opacity ?? 0.15,
+      ...strokeLinecap,
+    });
+  }
 
   // Precedence, shared with bar via resolveSegmentColor: explicit per-segment
   // color (field/accessor) > options.colors[i] > uniform options.color (only

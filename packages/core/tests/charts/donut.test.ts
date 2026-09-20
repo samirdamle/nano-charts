@@ -118,6 +118,57 @@ describe('donut (segment color)', () => {
   });
 });
 
+describe('donut (track)', () => {
+  it('draws an opt-in full ring behind segmented arcs', () => {
+    const scene = donut([3, 1], { track: true });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(3); // track + 2 segments
+    const [track, ...segs] = paths;
+    // full 360° ring: two half-arcs, same thickness as the segments
+    expect((track!.d.match(/A/g) ?? []).length).toBe(2);
+    expect(track).toMatchObject({ fill: 'none', stroke: 'currentColor', strokeOpacity: 0.15 });
+    expect(track!.strokeWidth).toBe(segs[0]!.strokeWidth);
+    // decorative: no points for the track
+    expect(scene.points).toHaveLength(2);
+  });
+
+  it('honors explicit track color and opacity on segments', () => {
+    const scene = donut([3, 1], { track: { color: '#e5e7eb', opacity: 0.5 } });
+    const track = scene.marks.find((m) => m.type === 'path')!;
+    expect(track).toMatchObject({ stroke: '#e5e7eb', strokeOpacity: 0.5 });
+  });
+
+  it('draws no track for segments by default', () => {
+    const scene = donut([3, 1]);
+    expect(scene.marks.filter((m) => m.type === 'path')).toHaveLength(2);
+  });
+
+  it('draws no track for empty segment data', () => {
+    expect(donut([], { track: true }).marks).toEqual([]);
+  });
+
+  it('keeps the gauge background ring by default', () => {
+    const scene = donut({ value: 75, max: 100 });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(2);
+    expect(paths[0]).toMatchObject({ strokeOpacity: 0.15 });
+  });
+
+  it('hides the gauge background ring with track: false', () => {
+    const scene = donut({ value: 75, max: 100 }, { track: false });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(1); // value arc only
+  });
+
+  it('customizes the gauge background ring via the track option', () => {
+    const scene = donut({ value: 75, max: 100 }, { track: { color: 'red', opacity: 0.3 } });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths[0]).toMatchObject({ stroke: 'red', strokeOpacity: 0.3 });
+    // value arc untouched
+    expect(paths[1]!.strokeOpacity).toBeUndefined();
+  });
+});
+
 describe('donut (round caps)', () => {
   it('applies strokeLinecap to every segment arc when set', () => {
     const scene = donut([1, 1, 1], { strokeLinecap: 'round' });
