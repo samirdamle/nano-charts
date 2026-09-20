@@ -52,7 +52,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 cy={mark.cy}
                 r={mark.r}
                 fill={mark.fill}
-                stroke={mark.stroke}
+                stroke={mark.stroke ?? 'none'}
                 strokeWidth={mark.strokeWidth}
                 data-index={mark.index}
                 data-series={mark.seriesIndex}
