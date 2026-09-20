@@ -138,3 +138,22 @@ describe('donut (round caps)', () => {
     expect(paths.every((p) => p.strokeLinecap === undefined)).toBe(true);
   });
 });
+
+describe('donut (clamp policy)', () => {
+  it('treats negative segment values as zero — no negative sweeps', () => {
+    const scene = donut([
+      { id: 'a', label: 'A', value: -5 },
+      { id: 'b', label: 'B', value: 10 },
+    ]);
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(2);
+    for (const p of paths) expect((p as { d: string }).d).not.toContain('NaN');
+    // points keep raw values for datum identity
+    expect(scene.points.map((p) => p.value)).toEqual([-5, 10]);
+  });
+
+  it('renders no segments when every value is negative', () => {
+    const scene = donut([{ value: -3 }, { value: -1 }]);
+    expect(scene.marks).toHaveLength(0);
+  });
+});
