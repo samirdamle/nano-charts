@@ -15,6 +15,9 @@
     --new-badge-bg: #eef2fb;
     --new-badge-text: #3a5dae;
 
+    /* restored from the pre-#48 chalk theme for headings */
+    --chalk-yellow: #f0dd82;
+
     /* categorical chart palette: readable on the page background
        in both light and dark modes */
     --c1: #2f6fdd;
@@ -92,11 +95,11 @@
     border-bottom: 1px solid var(--border-soft);
   }
   .group-heading h2 {
-    font-size: 13px;
+    font-size: 20px;
     font-weight: 650;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--chalk-yellow);
     margin: 0;
   }
 
@@ -402,8 +405,8 @@
       title: 'Multi-series overlay — hover the dots',
       scene: radar(
         [
-          { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all' },
-          { data: [7, 3, 8, 4, 6], name: 'Mobile', color: 'var(--c4)', dot: 'all' },
+          { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
+          { data: [7, 3, 8, 4, 6], name: 'Mobile', color: 'var(--c4)', dot: 'all', dotRadius: 2.5 },
         ],
         { width: 120, height: 120 },
       ),
