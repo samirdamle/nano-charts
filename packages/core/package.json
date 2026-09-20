@@ -2,29 +2,187 @@
   "name": "@samirdamle/nano-charts",
   "version": "0.0.0",
   "description": "Extremely lightweight, zero-dependency TypeScript library for tiny SVG charts.",
+  "keywords": [
+    "charts",
+    "svg",
+    "sparklines",
+    "data-visualization",
+    "visualization",
+    "microcharts",
+    "tiny",
+    "zero-dependency"
+  ],
   "license": "MIT",
+  "author": "Samir Damle <damlemail@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/samirdamle/nano-charts/issues"
+  },
   "type": "module",
   "sideEffects": false,
-  "engines": { "node": ">=18" },
-  "files": ["dist"],
-  "repository": { "type": "git", "url": "git+https://github.com/samirdamle/nano-charts.git", "directory": "packages/core" },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samirdamle/nano-charts.git",
+    "directory": "packages/core"
+  },
   "homepage": "https://github.com/samirdamle/nano-charts#readme",
-  "publishConfig": { "access": "public", "provenance": true },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
-    "./line": { "types": "./dist/line.d.ts", "import": "./dist/line.js", "require": "./dist/line.cjs" },
-    "./lines": { "types": "./dist/lines.d.ts", "import": "./dist/lines.js", "require": "./dist/lines.cjs" },
-    "./area": { "types": "./dist/area.d.ts", "import": "./dist/area.js", "require": "./dist/area.cjs" },
-    "./bar": { "types": "./dist/bar.d.ts", "import": "./dist/bar.js", "require": "./dist/bar.cjs" },
-    "./win-loss": { "types": "./dist/win-loss.d.ts", "import": "./dist/win-loss.js", "require": "./dist/win-loss.cjs" },
-    "./bullet": { "types": "./dist/bullet.d.ts", "import": "./dist/bullet.js", "require": "./dist/bullet.cjs" },
-    "./donut": { "types": "./dist/donut.d.ts", "import": "./dist/donut.js", "require": "./dist/donut.cjs" },
-    "./scatter": { "types": "./dist/scatter.d.ts", "import": "./dist/scatter.js", "require": "./dist/scatter.cjs" },
-    "./heatmap": { "types": "./dist/heatmap.d.ts", "import": "./dist/heatmap.js", "require": "./dist/heatmap.cjs" },
-    "./to-svg": { "types": "./dist/to-svg.d.ts", "import": "./dist/to-svg.js", "require": "./dist/to-svg.cjs" }
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./line": {
+      "import": {
+        "types": "./dist/line.d.ts",
+        "default": "./dist/line.js"
+      },
+      "require": {
+        "types": "./dist/line.d.cts",
+        "default": "./dist/line.cjs"
+      }
+    },
+    "./lines": {
+      "import": {
+        "types": "./dist/lines.d.ts",
+        "default": "./dist/lines.js"
+      },
+      "require": {
+        "types": "./dist/lines.d.cts",
+        "default": "./dist/lines.cjs"
+      }
+    },
+    "./area": {
+      "import": {
+        "types": "./dist/area.d.ts",
+        "default": "./dist/area.js"
+      },
+      "require": {
+        "types": "./dist/area.d.cts",
+        "default": "./dist/area.cjs"
+      }
+    },
+    "./bar": {
+      "import": {
+        "types": "./dist/bar.d.ts",
+        "default": "./dist/bar.js"
+      },
+      "require": {
+        "types": "./dist/bar.d.cts",
+        "default": "./dist/bar.cjs"
+      }
+    },
+    "./win-loss": {
+      "import": {
+        "types": "./dist/win-loss.d.ts",
+        "default": "./dist/win-loss.js"
+      },
+      "require": {
+        "types": "./dist/win-loss.d.cts",
+        "default": "./dist/win-loss.cjs"
+      }
+    },
+    "./bullet": {
+      "import": {
+        "types": "./dist/bullet.d.ts",
+        "default": "./dist/bullet.js"
+      },
+      "require": {
+        "types": "./dist/bullet.d.cts",
+        "default": "./dist/bullet.cjs"
+      }
+    },
+    "./donut": {
+      "import": {
+        "types": "./dist/donut.d.ts",
+        "default": "./dist/donut.js"
+      },
+      "require": {
+        "types": "./dist/donut.d.cts",
+        "default": "./dist/donut.cjs"
+      }
+    },
+    "./scatter": {
+      "import": {
+        "types": "./dist/scatter.d.ts",
+        "default": "./dist/scatter.js"
+      },
+      "require": {
+        "types": "./dist/scatter.d.cts",
+        "default": "./dist/scatter.cjs"
+      }
+    },
+    "./heatmap": {
+      "import": {
+        "types": "./dist/heatmap.d.ts",
+        "default": "./dist/heatmap.js"
+      },
+      "require": {
+        "types": "./dist/heatmap.d.cts",
+        "default": "./dist/heatmap.cjs"
+      }
+    },
+    "./to-svg": {
+      "import": {
+        "types": "./dist/to-svg.d.ts",
+        "default": "./dist/to-svg.js"
+      },
+      "require": {
+        "types": "./dist/to-svg.d.cts",
+        "default": "./dist/to-svg.cjs"
+      }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "line": [
+        "./dist/line.d.ts"
+      ],
+      "lines": [
+        "./dist/lines.d.ts"
+      ],
+      "area": [
+        "./dist/area.d.ts"
+      ],
+      "bar": [
+        "./dist/bar.d.ts"
+      ],
+      "win-loss": [
+        "./dist/win-loss.d.ts"
+      ],
+      "bullet": [
+        "./dist/bullet.d.ts"
+      ],
+      "donut": [
+        "./dist/donut.d.ts"
+      ],
+      "scatter": [
+        "./dist/scatter.d.ts"
+      ],
+      "heatmap": [
+        "./dist/heatmap.d.ts"
+      ],
+      "to-svg": [
+        "./dist/to-svg.d.ts"
+      ]
+    }
   },
   "scripts": {
     "build": "tsup",
@@ -34,7 +192,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "size": "size-limit",
-    "prepublishOnly": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && pnpm run size"
+    "prepublishOnly": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build && pnpm run size && pnpm run publint",
+    "publint": "pnpm dlx publint@0.3.24"
   },
   "dependencies": {},
   "devDependencies": {

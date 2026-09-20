@@ -59,7 +59,7 @@ pnpm version-packages   # apply changesets: bump versions, update changelogs
 pnpm release            # lint + typecheck + test + build + size, then `changeset publish`
 ```
 
-In practice this is automated: merging a changeset to `main` makes the
+In practice this is automated: merging a changeset to `develop` makes the
 [Release workflow](.github/workflows/release.yml) open a "Version Packages" PR, and merging
 that PR publishes to npm. `pnpm release` above is the same gate run locally, for a manual
 publish. Each package also runs the same checks (plus a build-output integrity check) as an
