@@ -1,0 +1,306 @@
+# nano-charts API reference
+
+Tiny SVG charts for table cells and metric cards. Every chart is a pure function —
+`data → Scene` — and a separate renderer turns the `Scene` into pixels: `toSVG()`
+for an SVG string, or the React components for JSX with hover/click interactivity.
+
+```ts
+import { line, toSVG } from '@samirdamle/nano-charts';
+
+const scene = line([4, 9, 2, 7, 5]); // data → Scene
+const svg = toSVG(scene); // Scene → '<svg …>…</svg>'
+```
+
+```tsx
+import { LineChart } from '@samirdamle/nano-charts-react';
+
+<LineChart data={[4, 9, 2, 7, 5]} dot="last" onPointClick={(p) => console.log(p)} />;
+```
+
+## Mental model
+
+**Scene.** A chart function returns a `Scene`: `{ width, height, viewBox, marks,
+points, a11y }`. `marks` is the visual layer (a small union of `polyline`,
+`path`, `rect`, `circle`, `line` descriptors); `points` is the data layer —
+each datum's computed `{ id, label, value, index, x, y }` (plus `seriesIndex` /
+`seriesLabel` for multi-series charts, `row` / `col` for heatmaps) so wrappers
+can attach hover/click handlers without reverse-mapping coordinates. `a11y`
+carries the `<title>`/`<desc>` text; every chart is accessible by default and
+SSR-safe (no DOM access, no randomness).
+
+**Inheriting text color.** `color` defaults to `currentColor` everywhere, so a
+chart picks up the surrounding text color with no configuration. Explicit colors
+always win over the default, and per-datum/per-series colors win over a uniform
+`color`.
+
+## Data input shapes
+
+Series charts (`line`, `area`, `lines` series, `bar`, `winLoss`) accept three
+shapes, normalized by the same pipeline:
+
+| Shape                      | Example                                                                                                        |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `number[]`                 | `[4, 9, 2, 7]`                                                                                                 |
+| Object points              | `[{ value: 4, label: 'Mon', id: 'm' }, …]` — `label`/`id` optional, `color` supported where the chart reads it |
+| Custom objects + accessors | `orders.map(...)` with `value: (o) => o.total`, plus optional `label` / `id` accessors                         |
+
+A single datum with no values renders an empty scene (never throws).
+
+## Options shared by every chart
+
+`BaseOptions` — every chart accepts these:
+
+| Option    | Type                                         | Default                      | Description                                           |
+| --------- | -------------------------------------------- | ---------------------------- | ----------------------------------------------------- |
+| `width`   | `number`                                     | `100`                        | SVG width in user units                               |
+| `height`  | `number`                                     | `20`                         | SVG height in user units                              |
+| `color`   | `string`                                     | `'currentColor'`             | Uniform color; inherited from text color when omitted |
+| `padding` | `number \| { top?, right?, bottom?, left? }` | `1` all sides (heatmap: `0`) | Inner padding in user units                           |
+| `title`   | `string`                                     | per-chart default            | `<title>` for screen readers                          |
+| `desc`    | `string`                                     | per-chart default            | `<desc>` for screen readers                           |
+
+## Charts
+
+### `line(data, options?)` — trend sparkline
+
+```ts
+line([4, 9, 2, 7, 5], { strokeWidth: 1.5, dot: 'last' });
+```
+
+| Option                   | Type                            | Default  | Description                            |
+| ------------------------ | ------------------------------- | -------- | -------------------------------------- |
+| `dot`                    | `'none' \| 'last' \| 'all'`     | `'none'` | Dot markers on the line                |
+| `strokeWidth`            | `number`                        | `1`      | Line thickness                         |
+| `dotRadius`              | `number`                        | `1`      | Dot radius                             |
+| `strokeDasharray`        | `string \| number[]`            | —        | Dash pattern, e.g. `'4 2'` or `[4, 2]` |
+| `strokeLinecap`          | `'butt' \| 'round' \| 'square'` | —        | Line-cap style                         |
+| `value` / `label` / `id` | accessors                       | —        | For custom object arrays               |
+
+A single point renders as a dot instead of a degenerate line.
+
+### `area(data, options?)` — filled trend
+
+Same input as `line`.
+
+| Option                   | Type      | Default | Description                  |
+| ------------------------ | --------- | ------- | ---------------------------- |
+| `strokeWidth`            | `number`  | `1`     | Top-edge line thickness      |
+| `fillOpacity`            | `number`  | `0.2`   | Fill opacity under the curve |
+| `value` / `label` / `id` | accessors | —       | For custom object arrays     |
+
+### `lines(series, options?)` — multi-series overlay
+
+Several series drawn on one shared scale.
+
+```ts
+lines([
+  { data: [4, 9, 2], name: 'Web', color: '#2563eb', dot: 'last' },
+  { data: [7, 3, 8], name: 'Mobile' }, // colored from the categorical palette
+]);
+```
+
+Each series is `{ data, name?, color?, strokeWidth?, strokeDasharray?,
+strokeLinecap?, dot?, dotRadius? }` plus `value`/`label`/`id` accessors for
+custom objects. `options` is just `BaseOptions`.
+
+**Color precedence:** explicit per-series `color` → uniform `options.color` (only
+when the caller passed one) → algorithmic categorical palette. The palette is
+positional — a pure function of `(seriesIndex, seriesCount)` — so colors can
+shift if the series count changes.
+
+### `bar(data, options?)` — magnitude bars, simple or stacked
+
+```ts
+bar([4, 9, 2]); // simple bars
+bar([
+  [4, 1],
+  [9, 3],
+  [2, 5],
+]); // stacked: one inner array per column
+bar(data, { horizontal: true }); // horizontal orientation
+```
+
+Each column is a number, an object point (`{ value, label?, id?, color? }`), a
+custom object (with accessors), or — for stacked columns — an array of those.
+Stacked segments fall back to the categorical palette when no color is given.
+
+| Option                   | Type                 | Default | Description                                     |
+| ------------------------ | -------------------- | ------- | ----------------------------------------------- |
+| `gap`                    | `number`             | `0.2`   | Fraction of the slot left empty between columns |
+| `radius`                 | `number`             | —       | Corner radius (`rx`) on bars                    |
+| `horizontal`             | `boolean`            | `false` | Draw bars left-to-right instead of bottom-up    |
+| `colorAccessor`          | `(row, i) => string` | —       | Per-row color for custom object arrays          |
+| `value` / `label` / `id` | accessors            | —       | For custom object arrays                        |
+
+### `winLoss(data, options?)` — direction / sign
+
+One slim bar per value: up for non-negative, down for negative.
+
+| Option                   | Type      | Default                            | Description                                  |
+| ------------------------ | --------- | ---------------------------------- | -------------------------------------------- |
+| `gap`                    | `number`  | `0.2`                              | Fraction of the slot left empty between bars |
+| `winColor`               | `string`  | `options.color` → `'currentColor'` | Color for zero and positive values           |
+| `lossColor`              | `string`  | `options.color` → `'currentColor'` | Color for negative values                    |
+| `value` / `label` / `id` | accessors | —                                  | For custom object arrays                     |
+
+When no explicit win/loss colors are given, losses render at 40% opacity so
+they still read as distinct from wins.
+
+### `bullet(data, options?)` — value vs. target
+
+```ts
+bullet({ value: 72, target: 80, ranges: [50, 75, 100] });
+```
+
+`data` is `{ value, target, ranges?, max?, id?, label? }`. `ranges` are
+background bands (sorted automatically); `max` defaults to the largest of
+`value`, `target`, and the ranges. `options` is just `BaseOptions`.
+
+### `donut(data, options?)` — proportion
+
+Two modes:
+
+```ts
+donut({ value: 62, max: 100 });              // gauge ring
+donut([30, 50, 20]);                         // segments
+donut([{ value: 30, label: 'A', color: '#e11d48' }, …]); // labeled + colored
+```
+
+Segments render as stroked arcs (never a fill plus an inherited stroke).
+Uncolored segments fall back to the categorical palette; the alternating
+opacity stripe used for uniform-color segments is suppressed once segments
+have real colors.
+
+| Option                   | Type                            | Default               | Description                                            |
+| ------------------------ | ------------------------------- | --------------------- | ------------------------------------------------------ |
+| `thickness`              | `number`                        | `35%` of outer radius | Ring thickness                                         |
+| `startAngle`             | `number`                        | `-90`                 | Where the first segment starts, in degrees             |
+| `colors`                 | `string[]`                      | —                     | Per-segment colors for `number[]` input, index-matched |
+| `strokeLinecap`          | `'butt' \| 'round' \| 'square'` | —                     | Cap style on segment arcs                              |
+| `colorAccessor`          | `(row, i) => string`            | —                     | Per-row color for custom object arrays                 |
+| `value` / `label` / `id` | accessors                       | —                     | For custom object arrays                               |
+
+### `scatter(data, options?)` — 2D relationship
+
+```ts
+scatter([
+  [0, 1],
+  [2, 3],
+  [4, 2],
+]); // [x, y] pairs
+scatter(users, { x: (u) => u.age, y: (u) => u.spend }); // custom objects
+```
+
+Accepts `[x, y][]`, `{ x, y, id?, label? }[]`, or custom objects with `x` / `y`
+/ `label` / `id` accessors. Point labels default to `"x, y"`.
+
+| Option   | Type     | Default | Description  |
+| -------- | -------- | ------- | ------------ |
+| `radius` | `number` | `1`     | Point radius |
+
+### `heatmap(matrix, options?)` — intensity grid
+
+```ts
+heatmap(
+  [
+    [1, 4, 2],
+    [3, 0, 5],
+  ],
+  { cellSize: 20, gap: 2 },
+);
+```
+
+`matrix` is `number[][]` (or `T[][]` with a `value` accessor). The grid
+auto-sizes to the widest row — ragged input lays out consistently and missing
+cells are skipped rather than throwing.
+
+| Option       | Type                             | Default | Description                                                           |
+| ------------ | -------------------------------- | ------- | --------------------------------------------------------------------- |
+| `cellSize`   | `number`                         | `8`     | Cell width/height in user units                                       |
+| `gap`        | `number`                         | `1`     | Gap between cells                                                     |
+| `radius`     | `number`                         | —       | Corner radius on cells                                                |
+| `colorScale` | `[string, string] \| ColorScale` | —       | Maps value extent to color; defaults to a single-color intensity ramp |
+| `value`      | `(cell, row, col) => number`     | —       | For custom cell objects                                               |
+
+## Rendering
+
+### `toSVG(scene, opts?)`
+
+Serializes a `Scene` to an SVG string. Safe to embed anywhere — attribute
+values are escaped and custom attribute names are validated.
+
+```ts
+toSVG(scene, { className: 'spark', attrs: { role: 'img' } });
+```
+
+| Opt         | Type                               | Description                                   |
+| ----------- | ---------------------------------- | --------------------------------------------- |
+| `className` | `string`                           | Added as the `class` attribute on `<svg>`     |
+| `style`     | `string`                           | Added as the `style` attribute on `<svg>`     |
+| `attrs`     | `Record<string, string \| number>` | Extra attributes on `<svg>` (names validated) |
+
+Rendered dot circles carry `data-index` / `data-series` attributes, so
+hit-testing a point needs no coordinate reverse-mapping — the DOM node names
+its own point index.
+
+### React components
+
+`LineChart`, `AreaChart`, `BarChart`, `WinLossChart`, `BulletChart`,
+`DonutChart`, `ScatterChart`, `HeatmapChart` — each takes the same `data` and
+options as its core function, plus interactivity props:
+
+| Prop                  | Type                                  | Description                                                           |
+| --------------------- | ------------------------------------- | --------------------------------------------------------------------- |
+| `onPointHover`        | `(point: ScenePoint \| null) => void` | Fires with the point on hover enter, `null` on leave                  |
+| `onPointClick`        | `(point: ScenePoint) => void`         | Fires on click with the point                                         |
+| `hitRadius`           | `number` (default `4`)                | Invisible hover/click target radius around each point, in chart units |
+| `className` / `style` | standard React props                  | Passed to the root `<svg>`                                            |
+
+No tooltip UI ships with the package — build your own from the callback data.
+Every component sets `'use client'` (Next.js App Router compatible) and works
+with React 17+. Components are also available as subpath imports, e.g.
+`@samirdamle/nano-charts-react/bar`.
+
+## Accessibility
+
+Every chart ships an a11y summary (`<title>` + `<desc>`): chart kind, point
+count, and value range. Override per chart with `title` / `desc`. Charts are
+deterministic — no layout randomness — so SSR output matches the client.
+
+## Bundle size
+
+Zero runtime dependencies in core; React is a peer dependency of the React
+package. Import one chart per subpath to ship only what you use — the bundler
+tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
+size-limit); all figures below are minified + Brotli.
+
+**Enforced budgets (measured 2026-09-20):**
+
+| Entry                                                    | Budget | Measured    |
+| -------------------------------------------------------- | ------ | ----------- |
+| `@samirdamle/nano-charts` — `line` standalone            | 1.5 kB | **1.15 kB** |
+| `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB   | **599 B**   |
+| `@samirdamle/nano-charts` — full barrel                  | 6 kB   | **4.4 kB**  |
+| `@samirdamle/nano-charts-react` — `LineChart` standalone | 2 kB   | **1.61 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 12 kB  | **4.3 kB**  |
+
+**One chart + `toSVG` (the realistic per-chart cost):**
+
+| Chart      | Size    |
+| ---------- | ------- |
+| `line`     | 1.67 kB |
+| `area`     | 1.61 kB |
+| `lines`    | 1.76 kB |
+| `bar`      | 1.89 kB |
+| `win-loss` | 1.53 kB |
+| `bullet`   | 1.22 kB |
+| `donut`    | 1.53 kB |
+| `scatter`  | 1.31 kB |
+| `heatmap`  | 1.48 kB |
+
+Positioning: nano-charts is built for the case where a page renders _hundreds_
+of tiny charts — table cells, metric cards, dashboards of sparklines — where
+per-chart byte cost dominates. A single chart plus its renderer stays under
+2 kB; the whole core library (all nine charts plus `toSVG`) is 4.4 kB, roughly
+the cost of one small image. The budgets above are hard CI gates, so the
+library can't silently grow past them.

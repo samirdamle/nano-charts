@@ -42,6 +42,9 @@ other React 17+ setup.
 `ScatterChart`, `HeatmapChart` — also available as subpath imports for the smallest
 bundle, e.g. `import { BarChart } from '@samirdamle/nano-charts-react/bar'`.
 
+**Full API reference:** [docs/API.md](https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md) —
+every component's props, the interactivity model, and bundle-size positioning.
+
 ## License
 
 MIT © Samir Damle
