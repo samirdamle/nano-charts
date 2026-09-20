@@ -13,6 +13,45 @@ cards.
 
 Both are independently versioned and published (via [Changesets](https://github.com/changesets/changesets)).
 
+## Getting Started
+
+```sh
+npm install @samirdamle/nano-charts
+# or, for React:
+npm install @samirdamle/nano-charts-react
+```
+
+Vanilla JS — render a sparkline to an SVG string:
+
+```js
+import { line, toSVG } from '@samirdamle/nano-charts';
+
+const svg = toSVG(line([3, 1, 4, 1, 5, 9, 2, 6], { width: 120, height: 32 }));
+document.getElementById('spark').innerHTML = svg;
+```
+
+Import a single chart to ship only what you use:
+
+```js
+import { line } from '@samirdamle/nano-charts/line';
+```
+
+React:
+
+```jsx
+import { LineChart } from '@samirdamle/nano-charts-react';
+
+<LineChart
+  data={[3, 1, 4, 1, 5, 9, 2, 6]}
+  width={120}
+  height={32}
+  onPointHover={(point) => console.log(point)}
+/>;
+```
+
+See the [API reference](docs/API.md) for all nine charts, their data shapes,
+and every option.
+
 ## Docs
 
 - [API reference](docs/API.md) — every chart's data shapes and options, the
@@ -47,6 +86,15 @@ pnpm lint       # lints every package
 pnpm typecheck  # typechecks every package
 pnpm size       # checks bundle size budgets (.size-limit.json per package)
 pnpm dev:demo   # builds core and serves demo/ locally with live reload
+```
+
+## Demo
+
+A static page showcasing every chart, built from the local core package:
+
+```sh
+pnpm dev:demo     # build core and serve demo/ locally with live reload
+pnpm build:demo   # build once, then open demo/index.html directly
 ```
 
 ## Releasing

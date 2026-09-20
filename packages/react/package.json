@@ -1,6 +1,6 @@
 {
   "name": "@samirdamle/nano-charts-react",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "React components for @samirdamle/nano-charts \u2014 tiny SVG charts with hover/click interactivity.",
   "keywords": [
     "charts",
@@ -12,7 +12,10 @@
     "tiny"
   ],
   "license": "MIT",
-  "author": "Samir Damle <damlemail@gmail.com>",
+  "author": {
+    "name": "Samir Damle",
+    "url": "https://github.com/samirdamle"
+  },
   "bugs": {
     "url": "https://github.com/samirdamle/nano-charts/issues"
   },
