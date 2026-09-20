@@ -1,4 +1,4 @@
-# ADR 0004: Contract test to prevent Mark-attribute drift between to-svg.ts and Marks.tsx
+# ADR 0002: Contract test to prevent Mark-attribute drift between to-svg.ts and Marks.tsx
 
 - Status: Accepted
 - Date: 2026-09-05

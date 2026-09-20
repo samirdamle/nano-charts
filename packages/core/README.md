@@ -32,6 +32,10 @@ Rendered dot circles also carry `data-index`/`data-series` attributes in the `to
 output, so hit-testing a specific point no longer requires reverse-mapping coordinates —
 the DOM node names its own point index.
 
+**Full API reference:** [docs/API.md](https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md) —
+every chart's data shapes and options, the `Scene` model, `toSVG`, and
+bundle-size positioning.
+
 ## Charts
 
 | Function | Encodes | Data |
