@@ -256,6 +256,8 @@ default; no labels or legend are rendered — use hover/click points for values.
 | ------------------------ | ------------------------------- | -------- | -------------------------------------------------- |
 | `max`                    | `number`                        | data max | Domain ceiling; values above it clamp to the rim   |
 | `grid`                   | `boolean`                       | `true`   | Spider grid (spokes + rings)                       |
+| `gridColor`              | `string`                        | chart color | Grid stroke color                               |
+| `gridOpacity`            | `number`                        | `0.15`   | Grid stroke opacity, 0–1                            |
 | `fill`                   | `boolean \| number`             | `true`   | Polygon fill: `true` → 0.2 opacity, number → opacity |
 | `dot`                    | `'none' \| 'all'`               | `'none'` | Dot markers on the vertices                        |
 | `dotRadius`              | `number`                        | `1`      | Dot radius                                         |
