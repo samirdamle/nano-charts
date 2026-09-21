@@ -31,8 +31,9 @@ export interface PictogramOptions<T = number>
   horizontal?: boolean;
   /** Data value represented by one block. Defaults to 1. */
   unit?: number;
-  /** Prefix for the `<defs>` block id (and clip ids). Pass a unique value per
-   * chart when inlining several pictograms in one document. */
+  /** Prefix for the `<defs>` block id (and clip ids). Defaults to a unique
+   * value per chart so several pictograms can be inlined in one document;
+   * pass an explicit value to take control of the ids. */
   idPrefix?: string;
 }
 
@@ -45,6 +46,12 @@ export type PictogramInput<T = number> = PictogramDatum<T>[];
 function positiveFinite(v: number | undefined, fallback: number): number {
   return v !== undefined && Number.isFinite(v) && v > 0 ? v : fallback;
 }
+
+/** Per-chart counter so the default `idPrefix` is unique document-wide.
+ * `<use href="#…">` resolves against the whole document, not the enclosing
+ * svg, so two pictograms sharing `pictogram-block` would render each
+ * other's shape. */
+let pictogramUid = 0;
 
 /** Split a block count into whole blocks plus an optional partial fraction,
  * snapping float dust at both ends. */
@@ -67,7 +74,7 @@ export function pictogram<T = number>(
   const g = gap * s;
   const unit = positiveFinite(options.unit, 1);
   const horizontal = options.horizontal ?? false;
-  const idPrefix = options.idPrefix ?? 'pictogram';
+  const idPrefix = options.idPrefix ?? `pictogram-${++pictogramUid}`;
 
   const blockOpt = options.block;
   const shape: 'rect' | 'circle' | 'emoji' =

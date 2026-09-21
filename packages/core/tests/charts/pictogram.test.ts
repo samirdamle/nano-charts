@@ -21,7 +21,7 @@ describe('pictogram', () => {
   });
 
   it('emits one defs block and one use per block', () => {
-    const scene = pictogram([3, 7], { padding: 0 });
+    const scene = pictogram([3, 7], { padding: 0, idPrefix: 'pictogram' });
     expect(defs(scene)).toHaveLength(1);
     expect(defs(scene)[0]).toMatchObject({ id: 'pictogram-block', shape: 'rect', size: 8 });
     expect(uses(scene)).toHaveLength(10);
@@ -62,7 +62,7 @@ describe('pictogram', () => {
   });
 
   it('renders a partial block for fractional counts', () => {
-    const scene = pictogram([3.5], { blockSize: 8, gap: 0.25, padding: 0 });
+    const scene = pictogram([3.5], { blockSize: 8, gap: 0.25, padding: 0, idPrefix: 'pictogram' });
     // defs + 3 full uses + clipPath + dim remainder use + clipped use.
     expect(defs(scene)).toHaveLength(1);
     expect(uses(scene)).toHaveLength(5);
@@ -78,7 +78,7 @@ describe('pictogram', () => {
   });
 
   it('fills partial blocks left-to-right when horizontal', () => {
-    const scene = pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, horizontal: true });
+    const scene = pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, horizontal: true, idPrefix: 'pictogram' });
     // Partial block is the rightmost: x = 2 * 10 = 20, clip covers left half.
     expect(clips(scene)[0]).toMatchObject({ id: 'pictogram-clip-0', x: 20, y: 0, width: 4, height: 8 });
   });
@@ -209,13 +209,15 @@ describe('pictogram', () => {
   });
 
   it('is deterministic', () => {
-    const a = toSVG(pictogram([3, 2.5, 1]));
-    const b = toSVG(pictogram([3, 2.5, 1]));
+    // Same input + same explicit idPrefix → byte-identical output. Two calls
+    // with the default prefix intentionally differ: ids are unique per chart.
+    const a = toSVG(pictogram([3, 2.5, 1], { idPrefix: 'pictogram' }));
+    const b = toSVG(pictogram([3, 2.5, 1], { idPrefix: 'pictogram' }));
     expect(a).toBe(b);
   });
 
   it('renders defs/use/clipPath in the SVG string', () => {
-    const svg = toSVG(pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0 }));
+    const svg = toSVG(pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, idPrefix: 'pictogram' }));
     expect(svg).toContain('<defs><rect id="pictogram-block" width="8" height="8"/></defs>');
     expect(svg).toContain('<use href="#pictogram-block" x="0" y="10"');
     expect(svg).toContain('data-index="0"');
@@ -226,9 +228,33 @@ describe('pictogram', () => {
 
   it('renders circle and emoji defs in the SVG string', () => {
     const circle = toSVG(pictogram([1], { block: { kind: 'circle' }, blockSize: 10 }));
-    expect(circle).toContain('<circle id="pictogram-block" cx="5" cy="5" r="5"/>');
+    expect(circle).toMatch(/<circle id="pictogram-\d+-block" cx="5" cy="5" r="5"\/>/);
     const emoji = toSVG(pictogram([1], { block: { kind: 'emoji', emoji: '⭐' }, blockSize: 10 }));
-    expect(emoji).toContain('<text id="pictogram-block" font-size="10" y="8">⭐</text>');
+    expect(emoji).toMatch(/<text id="pictogram-\d+-block" font-size="10" y="8">⭐<\/text>/);
+  });
+
+  it('generates a unique default idPrefix per chart so inlined pictograms keep their own defs', () => {
+    const rectChart = toSVG(pictogram([1], { block: { kind: 'rect' } }));
+    const circleChart = toSVG(pictogram([1], { block: { kind: 'circle' } }));
+    const idOf = (svg: string) => svg.match(/id="(pictogram-\d+-block)"/)?.[1];
+    const rectId = idOf(rectChart);
+    const circleId = idOf(circleChart);
+    expect(rectId).toBeTruthy();
+    expect(circleId).toBeTruthy();
+    expect(rectId).not.toBe(circleId);
+    // each chart's <use> elements resolve to their own defs, document-wide
+    expect(rectChart).toContain(`href="#${rectId}"`);
+    expect(circleChart).toContain(`href="#${circleId}"`);
+    expect(circleChart).not.toContain(`href="#${rectId}"`);
+  });
+
+  it('generates unique clip ids per chart for partial blocks', () => {
+    const clipOf = (svg: string) => svg.match(/id="(pictogram-\d+-clip-0)"/)?.[1];
+    const a = clipOf(toSVG(pictogram([1.5])));
+    const b = clipOf(toSVG(pictogram([2.5])));
+    expect(a).toBeTruthy();
+    expect(b).toBeTruthy();
+    expect(a).not.toBe(b);
   });
 
   it('keeps use marks working when the defs id needs escaping', () => {

@@ -296,7 +296,7 @@ per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
 | `gap`                    | `number`                                          | `0.25`       | Space between blocks (and columns/rows) as a fraction of `blockSize`, like `bar()` |
 | `horizontal`             | `boolean`                                         | `false`      | Rows stack left→right instead of columns bottom-up                        |
 | `unit`                   | `number`                                          | `1`          | Data value per block; count = `value / unit`                             |
-| `idPrefix`               | `string`                                          | `'pictogram'` | Prefix for `<defs>`/clip ids — pass a unique value per chart when inlining several pictograms in one document |
+| `idPrefix`               | `string`                                          | auto (`pictogram-N`) | Prefix for `<defs>`/clip ids — unique per chart by default so several pictograms can share a document; pass an explicit value to control the ids |
 | `value` / `label` / `id` | accessors                                         | —            | For custom object arrays                                                  |
 | `colorAccessor`          | `(datum, index) => string \| undefined`           | —            | Per-column color accessor                                                |
 
