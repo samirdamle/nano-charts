@@ -46,7 +46,7 @@ describe('inherited-stroke regression (#9)', () => {
     expectNoInheritedStroke(svg);
     // The track is a stroked ring, not a filled shape: it must carry an
     // explicit stroke rather than inheriting currentColor.
-    expect(svg).toContain('stroke-opacity="0.15"');
+    expect(svg).toContain('stroke-opacity="0.25"');
   });
 
   it('donut segments declare their own stroke, including the striped variant', () => {
@@ -100,5 +100,17 @@ describe('inherited-stroke regression (#9)', () => {
   it('line and lines polylines keep their explicit stroke', () => {
     expectNoInheritedStroke(toSVG(line([1, 3, 2, 5], { color: '#e11d48' })));
     expectNoInheritedStroke(toSVG(lines([{ data: [1, 2, 3] }, { data: [3, 2, 1] }])));
+  });
+
+  it('center-label text cannot inherit the root stroke', () => {
+    // A 1-unit inherited currentColor stroke on tiny label glyphs renders as
+    // fat blobby outlines with miter-join spikes — the "thorny" label. <text>
+    // is not self-closing, so it needs its own assertion.
+    const svg = toSVG(donut({ value: 72, max: 100 }, { centerLabel: '72%' }));
+    const textEls = svg.match(/<text\b[^>]*>/g) ?? [];
+    expect(textEls.length).toBeGreaterThan(0);
+    for (const el of textEls) {
+      expect(el).toContain('stroke="none"');
+    }
   });
 });

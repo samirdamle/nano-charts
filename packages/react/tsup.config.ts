@@ -9,6 +9,7 @@ export default defineConfig({
     'win-loss': 'src/charts/WinLossChart.tsx',
     bullet: 'src/charts/BulletChart.tsx',
     donut: 'src/charts/DonutChart.tsx',
+    gauge: 'src/charts/GaugeChart.tsx',
     scatter: 'src/charts/ScatterChart.tsx',
     heatmap: 'src/charts/HeatmapChart.tsx',
   },

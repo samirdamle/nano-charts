@@ -10,6 +10,7 @@ export default defineConfig({
     'win-loss': 'src/charts/win-loss.ts',
     bullet: 'src/charts/bullet.ts',
     donut: 'src/charts/donut.ts',
+    gauge: 'src/charts/gauge.ts',
     scatter: 'src/charts/scatter.ts',
     heatmap: 'src/charts/heatmap.ts',
     'to-svg': 'src/render/to-svg.ts',

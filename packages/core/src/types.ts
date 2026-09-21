@@ -40,6 +40,16 @@ export type Mark =
     }
   | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number }
   | {
+      type: 'text';
+      x: number;
+      y: number;
+      text: string;
+      fontSize?: number;
+      fontWeight?: string | number;
+      fill?: string;
+      textAnchor?: 'start' | 'middle' | 'end';
+    }
+  | {
       type: 'defs';
       id: string;
       shape: 'rect' | 'circle' | 'emoji';
@@ -64,6 +74,15 @@ export type Mark =
       fillOpacity?: number;
       index?: number;
     };
+
+/** Value context passed to a centerLabel formatter: the dial's value, its
+ * domain, and the value's fraction across that domain. */
+export interface CenterLabelContext {
+  value: number;
+  min: number;
+  max: number;
+  frac: number;
+}
 
 export interface ScenePoint {
   id: string | number;

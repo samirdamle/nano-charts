@@ -25,15 +25,15 @@ Built for pages that render _hundreds_ of tiny charts, where per-chart byte
 cost dominates. Zero runtime dependencies in core; React is a peer dependency
 of the React package. Import one chart per subpath and ship only what you use.
 Budgets are enforced in CI (`pnpm size`); all figures minified + Brotli,
-measured 2026-09-20:
+measured 2026-09-21:
 
 | Entry                                        | Budget | Measured    |
 | -------------------------------------------- | ------ | ----------- |
 | Core — `line` standalone                     | 1.5 kB | **1.19 kB** |
-| Core — `toSVG` standalone                    | 1 kB   | **798 B**   |
-| Core — full barrel (all 10 charts + `toSVG`) | 7 kB   | **6.46 kB** |
-| React — `LineChart` standalone               | 2 kB   | **1.82 kB** |
-| React — full barrel                          | 12 kB  | **6.41 kB** |
+| Core — `toSVG` standalone                    | 1 kB   | **878 B**   |
+| Core — full barrel (all 12 charts + `toSVG`) | 8 kB   | **7.36 kB** |
+| React — `LineChart` standalone               | 2 kB   | **1.89 kB** |
+| React — full barrel                          | 12 kB  | **7.27 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 

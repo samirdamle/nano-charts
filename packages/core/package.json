@@ -119,6 +119,16 @@
         "default": "./dist/donut.cjs"
       }
     },
+    "./gauge": {
+      "import": {
+        "types": "./dist/gauge.d.ts",
+        "default": "./dist/gauge.js"
+      },
+      "require": {
+        "types": "./dist/gauge.d.cts",
+        "default": "./dist/gauge.cjs"
+      }
+    },
     "./scatter": {
       "import": {
         "types": "./dist/scatter.d.ts",

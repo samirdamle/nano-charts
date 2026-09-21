@@ -70,6 +70,21 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 strokeWidth={mark.strokeWidth}
               />
             );
+          case 'text':
+            return (
+              <text
+                key={i}
+                x={mark.x}
+                y={mark.y}
+                fontSize={mark.fontSize}
+                fontWeight={mark.fontWeight}
+                fill={mark.fill}
+                stroke="none"
+                textAnchor={mark.textAnchor}
+              >
+                {mark.text}
+              </text>
+            );
           case 'defs': {
             const renderShape = (id?: string) =>
               mark.shape === 'rect' ? (

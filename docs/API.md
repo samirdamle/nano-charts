@@ -182,16 +182,52 @@ have real colors.
 | ------------------------ | ------------------------------- | --------------------- | ------------------------------------------------------ |
 | `thickness`              | `number`                        | `35%` of outer radius | Ring thickness                                         |
 | `startAngle`             | `number`                        | `-90`                 | Where the first segment starts, in degrees             |
+| `endAngle`               | `number`                        | `startAngle + 360`    | Where the dial ends — a smaller span makes a partial dial (e.g. `135` → `405`) |
+| `centerLabel`            | `string \| (ctx) => string`     | —                     | Text at the dial's center; `ctx` is `{ value, min, max, frac }` |
 | `colors`                 | `string[]`                      | —                     | Per-segment colors for `number[]` input, index-matched |
 | `strokeLinecap`          | `'butt' \| 'round' \| 'square'` | —                     | Cap style on segment arcs                              |
 | `track`                  | `boolean \| DonutTrackOptions`  | —                     | Background ring behind the segments                    |
 | `colorAccessor`          | `(row, i) => string`            | —                     | Per-row color for custom object arrays                 |
 | `value` / `label` / `id` | accessors                       | —                     | For custom object arrays                               |
 
-`track: true` (or `track: { color, opacity }`) draws a full 360° background
+`track: true` (or `track: { color, opacity }`) draws a background
 ring behind segmented arcs — the "100%" reference. In gauge mode the ring
 already exists: the option customizes its color/opacity, and `track: false`
 hides it. Tracks are decorative (no points).
+
+In gauge mode, `centerLabel` receives `{ value, min: 0, max, frac }`; in
+segmented mode it receives `{ value: total, min: 0, max: total, frac: 1 }`.
+
+### `gauge(data, options?)` — dial gauge
+
+```ts
+gauge({ value: 72, max: 100 });                                        // arc mode (default)
+gauge({ value: 72, max: 100 }, { mode: 'needle', zones: [              // needle + zones
+  { to: 60, color: '#4ade80' }, { to: 85, color: '#facc15' }, { to: 100, color: '#f87171' },
+]});
+gauge({ value: 72, max: 100 }, { centerLabel: ({ frac }) => `${Math.round(frac * 100)}%` });
+```
+
+`data` is `{ value, max }`. Two modes: `'arc'` sweeps a foreground arc to
+the value; `'needle'` points a needle at the value over the dial. The dial
+defaults to the classic 270° sweep (`135°` → `405°`).
+
+| Option          | Type                            | Default            | Description                                                              |
+| --------------- | ------------------------------- | ------------------ | ------------------------------------------------------------------------ |
+| `min`           | `number`                        | `0`                | Domain minimum                                                           |
+| `mode`          | `'arc' \| 'needle'`             | `'arc'`            | Value shown as sweeping arc, or needle over the dial                     |
+| `startAngle`    | `number`                        | `135`              | Dial start, in degrees (0° = east, clockwise positive)                   |
+| `endAngle`      | `number`                        | `startAngle + 270` | Dial end                                                                 |
+| `thickness`     | `number`                        | `35%` of outer radius | Dial thickness                                                        |
+| `track`         | `boolean \| DonutTrackOptions`  | on                 | Background dial (`false` hides it; ignored when `zones` are given)       |
+| `zones`         | `GaugeZone[]`                   | —                  | Colored dial bands `{ to, color, opacity? }`; background in arc mode, the dial itself in needle mode |
+| `needle`        | `'line' \| 'triangle'`          | `'triangle'`       | Needle shape (needle mode)                                               |
+| `needleColor`   | `string`                        | chart color        | Needle and hub color                                                     |
+| `centerLabel`   | `string \| (ctx) => string`     | —                  | Center readout; `ctx` is `{ value, min, max, frac }` (below center in needle mode) |
+| `strokeLinecap` | `'butt' \| 'round' \| 'square'` | —                  | Cap style on the value arc, track, and zone bands (background ends always match the value arc) |
+
+Values outside `[min, max]` clamp to the dial ends; a bad domain (or bad
+`endAngle`) falls back gracefully and still renders the dial.
 
 ### `scatter(data, options?)` — 2D relationship
 
@@ -360,33 +396,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + Brotli.
 
-**Enforced budgets (measured 2026-09-20):**
+**Enforced budgets (measured 2026-09-21):**
 
 | Entry                                                    | Budget | Measured    |
 | -------------------------------------------------------- | ------ | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 1.5 kB | **1.15 kB** |
-| `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB   | **599 B**   |
-| `@samirdamle/nano-charts` — full barrel                  | 6 kB   | **4.4 kB**  |
-| `@samirdamle/nano-charts-react` — `LineChart` standalone | 2 kB   | **1.61 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 12 kB  | **4.3 kB**  |
+| `@samirdamle/nano-charts` — `line` standalone            | 1.5 kB | **1.19 kB** |
+| `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB   | **878 B**   |
+| `@samirdamle/nano-charts` — full barrel                  | 8 kB   | **7.36 kB** |
+| `@samirdamle/nano-charts-react` — `LineChart` standalone | 2 kB   | **1.89 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 12 kB  | **7.27 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 1.67 kB |
-| `area`     | 1.61 kB |
-| `lines`    | 1.76 kB |
-| `bar`      | 1.89 kB |
-| `win-loss` | 1.53 kB |
-| `bullet`   | 1.22 kB |
-| `donut`    | 1.53 kB |
-| `scatter`  | 1.31 kB |
-| `heatmap`  | 1.48 kB |
+| `line`     | 1.98 kB |
+| `area`     | 1.93 kB |
+| `lines`    | 2.07 kB |
+| `bar`      | 2.38 kB |
+| `win-loss` | 1.83 kB |
+| `bullet`   | 1.52 kB |
+| `donut`    | 2.24 kB |
+| `gauge`    | 1.26 kB |
+| `scatter`  | 1.54 kB |
+| `heatmap`  | 1.74 kB |
+| `radar`    | 2.34 kB |
+| `pictogram`| 2.33 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
-per-chart byte cost dominates. A single chart plus its renderer stays under
-2 kB; the whole core library (all nine charts plus `toSVG`) is 4.4 kB, roughly
+per-chart byte cost dominates. A single chart plus its renderer stays around
+2 kB; the whole core library (all twelve charts plus `toSVG`) is 7.36 kB, roughly
 the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.
