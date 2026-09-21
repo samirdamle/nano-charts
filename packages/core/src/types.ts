@@ -38,7 +38,26 @@ export type Mark =
       index?: number;
       seriesIndex?: number;
     }
-  | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number };
+  | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number }
+  | {
+      type: 'defs';
+      id: string;
+      shape: 'rect' | 'circle' | 'emoji';
+      size: number;
+      radius?: number;
+      emoji?: string;
+    }
+  | { type: 'clipPath'; id: string; x: number; y: number; width: number; height: number }
+  | {
+      type: 'use';
+      href: string;
+      x: number;
+      y: number;
+      fill?: string;
+      fillOpacity?: number;
+      clipPath?: string;
+      index?: number;
+    };
 
 export interface ScenePoint {
   id: string | number;
@@ -53,6 +72,12 @@ export interface ScenePoint {
   h?: number;
   seriesIndex?: number;
   seriesLabel?: string;
+  /** Pictogram: 1-based position of the block within its column/row. */
+  blockNumber?: number;
+  /** Pictogram: total blocks (slots) in the block's column/row. */
+  blocksTotal?: number;
+  /** Pictogram: whether the block is a fractional partial fill. */
+  partial?: boolean;
 }
 
 export interface Scene {

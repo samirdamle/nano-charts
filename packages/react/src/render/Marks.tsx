@@ -70,6 +70,41 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 strokeWidth={mark.strokeWidth}
               />
             );
+          case 'defs':
+            return (
+              <defs key={i}>
+                {mark.shape === 'rect' ? (
+                  <rect id={mark.id} width={mark.size} height={mark.size} rx={mark.radius} />
+                ) : mark.shape === 'circle' ? (
+                  <circle id={mark.id} cx={mark.size / 2} cy={mark.size / 2} r={mark.size / 2} />
+                ) : (
+                  <text id={mark.id} fontSize={mark.size} y={Math.round(mark.size * 0.8)}>
+                    {mark.emoji}
+                  </text>
+                )}
+              </defs>
+            );
+          case 'clipPath':
+            return (
+              <defs key={i}>
+                <clipPath id={mark.id}>
+                  <rect x={mark.x} y={mark.y} width={mark.width} height={mark.height} />
+                </clipPath>
+              </defs>
+            );
+          case 'use':
+            return (
+              <use
+                key={i}
+                href={mark.href}
+                x={mark.x}
+                y={mark.y}
+                fill={mark.fill}
+                fillOpacity={mark.fillOpacity}
+                clipPath={mark.clipPath === undefined ? undefined : `url(#${mark.clipPath})`}
+                data-index={mark.index}
+              />
+            );
         }
       })}
     </>

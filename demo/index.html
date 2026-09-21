@@ -219,6 +219,7 @@
         scatter,
         heatmap,
         radar,
+        pictogram,
         toSVG,
       } from './dist/index.js';
 
@@ -270,7 +271,10 @@
               const point = scene.points[Number(indexAttr)];
               if (!point) return null;
               const series = point.seriesLabel ? ` (${point.seriesLabel})` : '';
-              return `index ${point.index}${series} — value ${point.value}`;
+              const block = point.blockNumber
+                ? ` — block ${point.blockNumber} of ${point.blocksTotal}${point.partial ? ' (partial)' : ''}`
+                : '';
+              return `index ${point.index}${series}${block} — value ${point.value}`;
             };
 
             chart.addEventListener('pointermove', (event) => {
@@ -490,6 +494,25 @@
         {
           title: 'Custom max, no grid',
           scene: radar([{ data: [8, 6, 9], fill: 0.35 }], { max: 10, grid: false }),
+        },
+      ]);
+
+      group('Pictogram', [
+        { title: 'Basic columns', scene: pictogram([3, 7, 5, 2]) },
+        {
+          title: 'Rounded blocks',
+          scene: pictogram([4, 6, 3], { block: { kind: 'rect', radius: 2 } }),
+        },
+        { title: 'Dots', scene: pictogram([4, 6, 3], { block: { kind: 'circle' } }) },
+        {
+          title: 'Emoji with partial fill',
+          scene: pictogram([4.5], { block: { kind: 'emoji', emoji: '⭐' }, blockSize: 16 }),
+        },
+        { title: 'Horizontal rows', scene: pictogram([5, 3, 7], { horizontal: true }) },
+        {
+          title: 'Hover the blocks',
+          scene: pictogram([3, 2.5, 4], { blockSize: 10 }),
+          interactive: true,
         },
       ]);
     </script>

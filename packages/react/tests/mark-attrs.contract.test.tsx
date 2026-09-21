@@ -122,4 +122,42 @@ describe('to-svg.ts / Marks.tsx attribute-set contract', () => {
   it('line: minimal fields', () => {
     expectSameAttrs({ type: 'line', x1: 0, y1: 0, x2: 10, y2: 10 }, 'line');
   });
+
+  it('defs: full fields (rounded rect)', () => {
+    expectSameAttrs({ type: 'defs', id: 'p-block', shape: 'rect', size: 8, radius: 2 }, 'rect');
+  });
+
+  it('defs: minimal fields (circle)', () => {
+    expectSameAttrs({ type: 'defs', id: 'p-block', shape: 'circle', size: 8 }, 'circle');
+  });
+
+  it('defs: emoji shape', () => {
+    expectSameAttrs({ type: 'defs', id: 'p-block', shape: 'emoji', size: 10, emoji: '⭐' }, 'text');
+  });
+
+  it('clipPath: full fields', () => {
+    const mark = { type: 'clipPath', id: 'p-clip-0', x: 0, y: 4, width: 8, height: 4 } as const;
+    expectSameAttrs(mark, 'clipPath');
+    expectSameAttrs(mark, 'rect');
+  });
+
+  it('use: full fields', () => {
+    expectSameAttrs(
+      {
+        type: 'use',
+        href: '#p-block',
+        x: 1,
+        y: 2,
+        fill: 'red',
+        fillOpacity: 0.25,
+        clipPath: 'p-clip-0',
+        index: 3,
+      },
+      'use',
+    );
+  });
+
+  it('use: minimal fields', () => {
+    expectSameAttrs({ type: 'use', href: '#p-block', x: 0, y: 0 }, 'use');
+  });
 });

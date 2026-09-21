@@ -7,4 +7,5 @@ export { DonutChart, type DonutChartProps } from './charts/DonutChart';
 export { ScatterChart, type ScatterChartProps } from './charts/ScatterChart';
 export { RadarChart, type RadarChartProps } from './charts/RadarChart';
 export { HeatmapChart, type HeatmapChartProps } from './charts/HeatmapChart';
+export { PictogramChart, type PictogramChartProps } from './charts/PictogramChart';
 export type { InteractionProps } from './types';

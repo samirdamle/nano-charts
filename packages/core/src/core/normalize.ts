@@ -33,7 +33,7 @@ export type SeriesInput<T> = number[] | ObjectPoint[] | T[];
 // Clamp policy: a non-finite value (NaN, Infinity, or a non-numeric row) can
 // never become geometry, so it normalizes to 0 instead of poisoning
 // downstream math with NaN.
-function toFiniteNumber(value: unknown): number {
+export function toFiniteNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 

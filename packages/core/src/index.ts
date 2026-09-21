@@ -8,6 +8,12 @@ export { donut, type DonutOptions, type DonutGauge, type DonutInput } from './ch
 export { scatter, type ScatterOptions, type ScatterPoint, type ScatterInput } from './charts/scatter';
 export { heatmap, type HeatmapOptions } from './charts/heatmap';
 export { radar, type RadarOptions, type RadarInput, type RadarSeries } from './charts/radar';
+export {
+  pictogram,
+  type PictogramOptions,
+  type PictogramInput,
+  type PictogramBlock,
+} from './charts/pictogram';
 export { toSVG } from './render/to-svg';
 export type { Scene, Mark, ScenePoint, BaseOptions, Datum } from './types';
 export type { ColorScale } from './core/color-scale';
