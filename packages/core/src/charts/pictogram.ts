@@ -180,16 +180,18 @@ export function pictogram<T = number>(
       const y = round(by);
 
       if (isPartial) {
-        const clipId = `${idPrefix}-clip-${clipCounter++}`;
-        // Filled portion: bottom-up for columns, left-to-right for rows.
-        const cx = horizontal ? bx : bx;
-        const cy = horizontal ? by : by + s - fraction * s;
-        const cw = horizontal ? fraction * s : s;
-        const ch = horizontal ? s : fraction * s;
-        marks.push({ type: 'clipPath', id: clipId, x: round(cx), y: round(cy), width: round(cw), height: round(ch) });
+        const partialId = `${idPrefix}-partial-${clipCounter++}`;
+        // Pre-clipped block variant, defined once in <defs>: the clip rect is
+        // in the block's local coordinates (left-to-right for rows,
+        // bottom-up for columns). The overlay <use> below stays plain because
+        // clip-path placed directly on <use> does not render in browsers.
+        const clip = horizontal
+          ? { x: 0, y: 0, width: round(fraction * s), height: round(s) }
+          : { x: 0, y: round(s - fraction * s), width: round(s), height: round(fraction * s) };
+        marks.push({ type: 'defs', id: partialId, shape, size: s, radius, emoji, clip });
         // The "empty slot" at low opacity, then the filled fraction on top.
         marks.push({ type: 'use', href, x, y, fill: color, fillOpacity: 0.25, index: pointIndex });
-        marks.push({ type: 'use', href, x, y, fill: color, clipPath: clipId, index: pointIndex });
+        marks.push({ type: 'use', href: `#${partialId}`, x, y, fill: color, index: pointIndex });
       } else {
         marks.push({ type: 'use', href, x, y, fill: color, index: pointIndex });
       }

@@ -70,28 +70,34 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 strokeWidth={mark.strokeWidth}
               />
             );
-          case 'defs':
-            return (
-              <defs key={i}>
-                {mark.shape === 'rect' ? (
-                  <rect id={mark.id} width={mark.size} height={mark.size} rx={mark.radius} />
-                ) : mark.shape === 'circle' ? (
-                  <circle id={mark.id} cx={mark.size / 2} cy={mark.size / 2} r={mark.size / 2} />
-                ) : (
-                  <text id={mark.id} fontSize={mark.size} y={Math.round(mark.size * 0.8)}>
-                    {mark.emoji}
-                  </text>
-                )}
-              </defs>
-            );
-          case 'clipPath':
-            return (
-              <defs key={i}>
-                <clipPath id={mark.id}>
-                  <rect x={mark.x} y={mark.y} width={mark.width} height={mark.height} />
-                </clipPath>
-              </defs>
-            );
+          case 'defs': {
+            const renderShape = (id?: string) =>
+              mark.shape === 'rect' ? (
+                <rect id={id} width={mark.size} height={mark.size} rx={mark.radius} />
+              ) : mark.shape === 'circle' ? (
+                <circle id={id} cx={mark.size / 2} cy={mark.size / 2} r={mark.size / 2} />
+              ) : (
+                <text id={id} fontSize={mark.size} y={Math.round(mark.size * 0.8)}>
+                  {mark.emoji}
+                </text>
+              );
+            // Partial-block variant, pre-clipped inside <defs>: clip-path on
+            // <use> does not render in browsers, so the overlay <use>
+            // references this clipped <g> instead.
+            if (mark.clip !== undefined) {
+              return (
+                <defs key={i}>
+                  <clipPath id={`${mark.id}-clip`}>
+                    <rect x={mark.clip.x} y={mark.clip.y} width={mark.clip.width} height={mark.clip.height} />
+                  </clipPath>
+                  <g id={mark.id} clipPath={`url(#${mark.id}-clip)`}>
+                    {renderShape()}
+                  </g>
+                </defs>
+              );
+            }
+            return <defs key={i}>{renderShape(mark.id)}</defs>;
+          }
           case 'use':
             return (
               <use
@@ -102,7 +108,6 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 fill={mark.fill}
                 fillOpacity={mark.fillOpacity}
                 stroke="none"
-                clipPath={mark.clipPath === undefined ? undefined : `url(#${mark.clipPath})`}
                 data-index={mark.index}
               />
             );

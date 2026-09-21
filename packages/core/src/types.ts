@@ -46,8 +46,15 @@ export type Mark =
       size: number;
       radius?: number;
       emoji?: string;
+      /**
+       * Pre-clipped variant for partial blocks: the shape is wrapped in a
+       * `<g clip-path>` inside `<defs>`, with the clip rect in the block's
+       * local coordinates. clip-path placed directly on `<use>` does not
+       * render in browsers, so partial overlays reference this variant
+       * with a plain `<use>` instead.
+       */
+      clip?: { x: number; y: number; width: number; height: number };
     }
-  | { type: 'clipPath'; id: string; x: number; y: number; width: number; height: number }
   | {
       type: 'use';
       href: string;
@@ -55,7 +62,6 @@ export type Mark =
       y: number;
       fill?: string;
       fillOpacity?: number;
-      clipPath?: string;
       index?: number;
     };
 

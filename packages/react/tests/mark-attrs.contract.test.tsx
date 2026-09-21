@@ -135,10 +135,17 @@ describe('to-svg.ts / Marks.tsx attribute-set contract', () => {
     expectSameAttrs({ type: 'defs', id: 'p-block', shape: 'emoji', size: 10, emoji: '⭐' }, 'text');
   });
 
-  it('clipPath: full fields', () => {
-    const mark = { type: 'clipPath', id: 'p-clip-0', x: 0, y: 4, width: 8, height: 4 } as const;
+  it('defs: pre-clipped partial variant', () => {
+    const mark = {
+      type: 'defs',
+      id: 'p-partial-0',
+      shape: 'rect',
+      size: 8,
+      clip: { x: 0, y: 4, width: 8, height: 4 },
+    } as const;
     expectSameAttrs(mark, 'clipPath');
     expectSameAttrs(mark, 'rect');
+    expectSameAttrs(mark, 'g');
   });
 
   it('use: full fields', () => {
@@ -150,7 +157,6 @@ describe('to-svg.ts / Marks.tsx attribute-set contract', () => {
         y: 2,
         fill: 'red',
         fillOpacity: 0.25,
-        clipPath: 'p-clip-0',
         index: 3,
       },
       'use',
