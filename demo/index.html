@@ -28,8 +28,8 @@
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #161513;
-          --border-soft: #26251f;
+          --bg: #121218;
+          --border-soft: #23232e;
           --text: #f3f1ec;
           --text-muted: #a19d94;
           --text-faint: #6f6c64;
@@ -353,6 +353,22 @@
       const stackColors = ['var(--c1)', 'var(--c2)'];
       const palette = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)'];
 
+      // 10x10 correlation-style matrix: symmetric, 1s on the diagonal,
+      // values in [-1, 1]. Seeded so the demo is stable between loads.
+      const corrMatrix = (() => {
+        let s = 42;
+        const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 0xffffffff;
+        const m = Array.from({ length: 10 }, () => Array(10).fill(0));
+        for (let i = 0; i < 10; i++) {
+          for (let j = i; j < 10; j++) {
+            const v = i === j ? 1 : Math.round((rnd() * 2 - 1) * 100) / 100;
+            m[i][j] = v;
+            m[j][i] = v;
+          }
+        }
+        return m;
+      })();
+
       group('Bar', [
         { title: 'Basic', scene: bar(barValues) },
         { title: 'Rounded caps', scene: bar(barValues, { radius: 4 }) },
@@ -448,32 +464,29 @@
 
       group('Heatmap', [
         {
-          title: 'Basic',
-          scene: heatmap(
-            [
-              [1, 4, 2],
-              [3, 0, 5],
-              [2, 6, 1],
-            ],
-            { cellSize: 20, gap: 2 },
-          ),
+          title: 'Correlation matrix',
+          scene: heatmap(corrMatrix, { cellSize: 20, gap: 2 }),
         },
         {
-          title: 'Ragged rows — no longer throws',
+          title: 'Ragged rows',
           scene: heatmap(
             [
-              [1, 4, 2],
-              [3, 0],
-              [2, 6, 1, 5],
+              [1, 4, 2, 7, 3, 9, 5, 8, 2, 6],
+              [3, 0, 5, 1, 8, 2, 4],
+              [2, 6, 1, 5, 9, 3, 7, 4, 1],
+              [8, 2, 6, 4, 1],
+              [5, 3, 9, 7, 2, 8, 6, 1, 4, 3],
             ],
             { cellSize: 20, gap: 2 },
           ),
-          fixed: true,
         },
       ]);
 
       group('Radar', [
-        { title: 'Single series (shorthand)', scene: radar([4, 9, 2, 7, 5]) },
+        {
+          title: 'Single series (shorthand)',
+          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
+        },
         {
           title: 'Multi-series overlay — hover the dots',
           scene: radar(
@@ -487,13 +500,13 @@
                 dotRadius: 2.5,
               },
             ],
-            { width: 120, height: 120 },
+            { width: 120, height: 120, gridOpacity: 0.35 },
           ),
           interactive: true,
         },
         {
           title: 'Custom max, no grid',
-          scene: radar([{ data: [8, 6, 9], fill: 0.35 }], { max: 10, grid: false }),
+          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
         },
       ]);
 
@@ -506,12 +519,16 @@
         { title: 'Dots', scene: pictogram([4, 6, 3], { block: { kind: 'circle' } }) },
         {
           title: 'Emoji with partial fill',
-          scene: pictogram([4.5], { block: { kind: 'emoji', emoji: '⭐' }, blockSize: 16 }),
+          scene: pictogram([4.5], {
+            block: { kind: 'emoji', emoji: '⭐' },
+            blockSize: 16,
+            horizontal: true,
+          }),
         },
         { title: 'Horizontal rows', scene: pictogram([5, 3, 7], { horizontal: true }) },
         {
           title: 'Hover the blocks',
-          scene: pictogram([3, 2.5, 4], { blockSize: 10 }),
+          scene: pictogram([3, 2.5, 4]),
           interactive: true,
         },
       ]);

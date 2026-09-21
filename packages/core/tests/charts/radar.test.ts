@@ -75,6 +75,21 @@ describe('radar', () => {
     expect(noGrid.marks.some((m) => m.type === 'path' && 'strokeOpacity' in m)).toBe(false);
   });
 
+  it('honors gridColor and gridOpacity, clamping opacity into [0, 1]', () => {
+    const scene = radar([{ data: [1, 1, 1] }], { gridColor: '#fff', gridOpacity: 0.4 });
+    const grids = scene.marks.filter((m) => m.type === 'path' && 'strokeOpacity' in m);
+    expect(grids).toHaveLength(7);
+    for (const g of grids) {
+      expect(g).toMatchObject({ stroke: '#fff', strokeOpacity: 0.4 });
+    }
+    const clamped = radar([{ data: [1, 1, 1] }], { gridOpacity: 2 });
+    const clampedGrids = clamped.marks.filter((m) => m.type === 'path' && 'strokeOpacity' in m);
+    expect(clampedGrids[0]).toMatchObject({ strokeOpacity: 1 });
+    const bad = radar([{ data: [1, 1, 1] }], { gridOpacity: Number.NaN });
+    const badGrids = bad.marks.filter((m) => m.type === 'path' && 'strokeOpacity' in m);
+    expect(badGrids[0]).toMatchObject({ strokeOpacity: 0.15 });
+  });
+
   it('fills polygons at 0.2 opacity by default; fill variants', () => {
     const scene = radar([{ data: [1, 2, 3] }], { grid: false });
     const fills = scene.marks.filter((m) => m.type === 'path' && 'fillOpacity' in m);

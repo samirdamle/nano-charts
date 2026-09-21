@@ -38,6 +38,10 @@ export interface RadarOptions extends BaseOptions {
   max?: number;
   /** Decorative spider grid (spokes + rings). Default true. */
   grid?: boolean;
+  /** Grid stroke color. Defaults to the chart color (`currentColor` when unset). */
+  gridColor?: string;
+  /** Grid stroke opacity, 0–1. Defaults to 0.15. */
+  gridOpacity?: number;
 }
 
 const TAU = Math.PI * 2;
@@ -111,7 +115,13 @@ export function radar<T = number>(
   // Decorative spider grid: spokes plus concentric rings at quarter steps.
   // Drawn as paths so the stroke can be translucent.
   if (options.grid ?? true) {
-    const gridStroke = defaultColor;
+    const gridStroke = options.gridColor ?? defaultColor;
+    const gridOpacity =
+      options.gridOpacity !== undefined &&
+      Number.isFinite(options.gridOpacity) &&
+      options.gridOpacity >= 0
+        ? Math.min(options.gridOpacity, 1)
+        : 0.15;
     for (let i = 0; i < axisCount; i++) {
       const [x, y] = polar(cx, cy, radius, angleAt(i));
       marks.push({
@@ -120,7 +130,7 @@ export function radar<T = number>(
         fill: 'none',
         stroke: gridStroke,
         strokeWidth: 0.5,
-        strokeOpacity: 0.15,
+        strokeOpacity: gridOpacity,
       });
     }
     for (const frac of [0.25, 0.5, 0.75, 1]) {
@@ -133,7 +143,7 @@ export function radar<T = number>(
         fill: 'none',
         stroke: gridStroke,
         strokeWidth: 0.5,
-        strokeOpacity: 0.15,
+        strokeOpacity: gridOpacity,
       });
     }
   }
