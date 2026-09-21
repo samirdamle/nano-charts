@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { pictogram } from '../../src/charts/pictogram';
 import { toSVG } from '../../src/render/to-svg';
-import { categoricalColor } from '../../src/core/palette';
+import { pastelColor } from '../../src/core/palette';
 import type { Mark } from '../../src/types';
 
 const uses = (scene: ReturnType<typeof pictogram>) =>
@@ -123,17 +123,17 @@ describe('pictogram', () => {
     expect(uses(scene)).toHaveLength(2);
   });
 
-  it('resolves column colors with datum > uniform > palette precedence', () => {
+  it('resolves column colors with datum > uniform > pastel palette precedence', () => {
     const explicit = pictogram([{ value: 1, color: '#111' }, 1]);
     expect(uses(explicit)[0]!.fill).toBe('#111');
-    expect(uses(explicit)[1]!.fill).toBe(categoricalColor(1, 2));
+    expect(uses(explicit)[1]!.fill).toBe(pastelColor(1));
 
     const uniform = pictogram([1, 1], { color: '#222' });
     for (const u of uses(uniform)) expect(u.fill).toBe('#222');
 
     const palette = pictogram([1, 1]);
-    expect(uses(palette)[0]!.fill).toBe(categoricalColor(0, 2));
-    expect(uses(palette)[1]!.fill).toBe(categoricalColor(1, 2));
+    expect(uses(palette)[0]!.fill).toBe(pastelColor(0));
+    expect(uses(palette)[1]!.fill).toBe(pastelColor(1));
   });
 
   it('accepts object data with labels and accessors', () => {
@@ -141,6 +141,22 @@ describe('pictogram', () => {
     expect(scene.points[0]).toMatchObject({ label: 'A', col: 0 });
     const via = pictogram([{ v: 3 }], { value: (d) => d.v });
     expect(uses(via)).toHaveLength(3);
+  });
+
+  it('defaults blocks to the pastel palette, cycling past five columns', () => {
+    const scene = pictogram([1, 1, 1, 1, 1, 1, 1]);
+    const fills = scene.marks
+      .filter((m) => m.type === 'use')
+      .map((m) => (m as { fill?: string }).fill);
+    expect(fills).toEqual([
+      '#8fe6c4',
+      '#7fd8e6',
+      '#f3a8c7',
+      '#c6a6e8',
+      '#f0dd82',
+      '#8fe6c4',
+      '#7fd8e6',
+    ]);
   });
 
   it('passes the real category index to accessor callbacks', () => {
@@ -231,6 +247,6 @@ describe('pictogram mark types', () => {
     ];
     const svg = toSVG({ width: 8, height: 8, viewBox: '0 0 8 8', marks, points: [], a11y: { title: 't', desc: 'd' } });
     expect(svg).toContain('<defs><rect id="p-block" width="8" height="8"/></defs>');
-    expect(svg).toContain('<use href="#p-block" x="0" y="0" fill="red" data-index="0"/>');
+    expect(svg).toContain('<use href="#p-block" x="0" y="0" fill="red" stroke="none" data-index="0"/>');
   });
 });

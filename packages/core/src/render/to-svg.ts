@@ -50,7 +50,9 @@ function renderMark(m: Mark): string {
     case 'clipPath':
       return `<defs><clipPath id="${esc(m.id)}"><rect${attr('x', m.x)}${attr('y', m.y)}${attr('width', m.width)}${attr('height', m.height)}/></clipPath></defs>`;
     case 'use':
-      return `<use${attr('href', m.href)}${attr('x', m.x)}${attr('y', m.y)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('clip-path', m.clipPath === undefined ? undefined : `url(#${m.clipPath})`)}${attr('data-index', m.index)}/>`;
+      // stroke="none" overrides the root svg's inherited stroke="currentColor"
+      // so blocks never pick up an unwanted border (rect/circle do the same).
+      return `<use${attr('href', m.href)}${attr('x', m.x)}${attr('y', m.y)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', 'none')}${attr('clip-path', m.clipPath === undefined ? undefined : `url(#${m.clipPath})`)}${attr('data-index', m.index)}/>`;
   }
 }
 
