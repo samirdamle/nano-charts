@@ -39,20 +39,29 @@ function renderMark(m: Mark): string {
     case 'defs': {
       // A reusable block shape drawn at the origin with no fill of its own,
       // so each <use> reference inherits its fill (and opacity) instead.
-      const shape =
-        m.shape === 'rect'
-          ? `<rect id="${esc(m.id)}"${attr('width', m.size)}${attr('height', m.size)}${attr('rx', m.radius)}/>`
+      // The id sits on the shape itself, unless this is a pre-clipped
+      // partial-block variant — then it goes on the wrapping <g>.
+      const shape = (idOnShape: boolean) => {
+        const id = idOnShape ? ` id="${esc(m.id)}"` : '';
+        return m.shape === 'rect'
+          ? `<rect${id}${attr('width', m.size)}${attr('height', m.size)}${attr('rx', m.radius)}/>`
           : m.shape === 'circle'
-            ? `<circle id="${esc(m.id)}"${attr('cx', m.size / 2)}${attr('cy', m.size / 2)}${attr('r', m.size / 2)}/>`
-            : `<text id="${esc(m.id)}"${attr('font-size', m.size)}${attr('y', Math.round(m.size * 0.8))}>${esc(m.emoji ?? '')}</text>`;
-      return `<defs>${shape}</defs>`;
+            ? `<circle${id}${attr('cx', m.size / 2)}${attr('cy', m.size / 2)}${attr('r', m.size / 2)}/>`
+            : `<text${id}${attr('font-size', m.size)}${attr('y', Math.round(m.size * 0.8))}>${esc(m.emoji ?? '')}</text>`;
+      };
+      if (m.clip === undefined) return `<defs>${shape(true)}</defs>`;
+      // Partial-block variant, pre-clipped inside <defs>: clip-path placed
+      // directly on <use> does not render in browsers, so the overlay <use>
+      // references this clipped <g> instead. The clip rect uses the block's
+      // local coordinates.
+      const c = m.clip;
+      const clipId = `${m.id}-clip`;
+      return `<defs><clipPath id="${esc(clipId)}"><rect${attr('x', c.x)}${attr('y', c.y)}${attr('width', c.width)}${attr('height', c.height)}/></clipPath><g id="${esc(m.id)}" clip-path="url(#${esc(clipId)})">${shape(false)}</g></defs>`;
     }
-    case 'clipPath':
-      return `<defs><clipPath id="${esc(m.id)}"><rect${attr('x', m.x)}${attr('y', m.y)}${attr('width', m.width)}${attr('height', m.height)}/></clipPath></defs>`;
     case 'use':
       // stroke="none" overrides the root svg's inherited stroke="currentColor"
       // so blocks never pick up an unwanted border (rect/circle do the same).
-      return `<use${attr('href', m.href)}${attr('x', m.x)}${attr('y', m.y)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', 'none')}${attr('clip-path', m.clipPath === undefined ? undefined : `url(#${m.clipPath})`)}${attr('data-index', m.index)}/>`;
+      return `<use${attr('href', m.href)}${attr('x', m.x)}${attr('y', m.y)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', 'none')}${attr('data-index', m.index)}/>`;
   }
 }
 

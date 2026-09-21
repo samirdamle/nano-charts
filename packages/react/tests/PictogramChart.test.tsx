@@ -8,7 +8,7 @@ describe('PictogramChart', () => {
     const { container } = render(<PictogramChart data={[3, 2]} title="my chart" />);
     const scene = pictogram([3, 2]);
     expect(container.querySelectorAll('svg > defs')).toHaveLength(
-      scene.marks.filter((m) => m.type === 'defs' || m.type === 'clipPath').length,
+      scene.marks.filter((m) => m.type === 'defs').length,
     );
     expect(container.querySelectorAll('svg > use')).toHaveLength(
       scene.marks.filter((m) => m.type === 'use').length,
@@ -45,11 +45,16 @@ describe('PictogramChart', () => {
     );
   });
 
-  it('renders partial blocks with clip paths', () => {
+  it('renders partial blocks via a pre-clipped defs variant', () => {
     const { container } = render(<PictogramChart data={[2.5]} idPrefix="pictogram" />);
+    // The clip lives on a <g> inside <defs>, never on <use> (clip-path on
+    // <use> does not render in browsers).
     expect(container.querySelector('clipPath')).not.toBeNull();
-    const clipped = container.querySelector('use[clip-path]');
-    expect(clipped?.getAttribute('clip-path')).toBe('url(#pictogram-clip-0)');
+    expect(container.querySelector('use[clip-path]')).toBeNull();
+    const clipped = container.querySelector('g[id="pictogram-partial-0"]');
+    expect(clipped?.getAttribute('clip-path')).toBe('url(#pictogram-partial-0-clip)');
+    const overlay = container.querySelector('use[href="#pictogram-partial-0"]');
+    expect(overlay).not.toBeNull();
   });
 
   it('renders emoji blocks', () => {
