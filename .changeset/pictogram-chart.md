@@ -1,0 +1,6 @@
+---
+'@samirdamle/nano-charts': minor
+'@samirdamle/nano-charts-react': minor
+---
+
+Add `pictogram()` and the `PictogramChart` React component: a countable-unit chart where each category is a column (or row) of uniform blocks — squares, dots, or emoji — and the block count is the value. Accepts numbers or `{ value, label?, color? }` objects (plus `value`/`label`/`id`/`colorAccessor` accessors). The block shape is defined once in `<defs>` and stamped with `<use>` (new first-class `defs`/`clipPath`/`use` mark types, rendered by both `toSVG` and the React `Marks` component); fractional counts render a partial block review-stars style via a per-block `<clipPath>`. Options: `block` (`{ kind: 'rect', radius? }` | `{ kind: 'circle' }` | `{ kind: 'emoji', emoji }`), `blockSize`, `gap` (fraction of `blockSize`, like `bar()`), `horizontal`, `unit` (value per block), and `idPrefix` for the defs id (pass a unique value per chart when inlining several pictograms in one document). Blocks are fixed-size so the scene sizes itself to the data; one hover/click point per block carries `col`, `blockNumber`, `blocksTotal`, and `partial`. Bad values follow the clamp policy (negatives/non-finite render zero blocks). Color precedence matches `bar()`/`donut()`: per-datum `color` → uniform `options.color` → categorical palette per column.

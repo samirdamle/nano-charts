@@ -36,6 +36,21 @@ function renderMark(m: Mark): string {
       return `<circle${attr('cx', m.cx)}${attr('cy', m.cy)}${attr('r', m.r)}${attr('fill', m.fill)}${attr('stroke', m.stroke ?? 'none')}${attr('stroke-width', m.strokeWidth)}${attr('data-index', m.index)}${attr('data-series', m.seriesIndex)}/>`;
     case 'line':
       return `<line${attr('x1', m.x1)}${attr('y1', m.y1)}${attr('x2', m.x2)}${attr('y2', m.y2)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
+    case 'defs': {
+      // A reusable block shape drawn at the origin with no fill of its own,
+      // so each <use> reference inherits its fill (and opacity) instead.
+      const shape =
+        m.shape === 'rect'
+          ? `<rect id="${esc(m.id)}"${attr('width', m.size)}${attr('height', m.size)}${attr('rx', m.radius)}/>`
+          : m.shape === 'circle'
+            ? `<circle id="${esc(m.id)}"${attr('cx', m.size / 2)}${attr('cy', m.size / 2)}${attr('r', m.size / 2)}/>`
+            : `<text id="${esc(m.id)}"${attr('font-size', m.size)}${attr('y', Math.round(m.size * 0.8))}>${esc(m.emoji ?? '')}</text>`;
+      return `<defs>${shape}</defs>`;
+    }
+    case 'clipPath':
+      return `<defs><clipPath id="${esc(m.id)}"><rect${attr('x', m.x)}${attr('y', m.y)}${attr('width', m.width)}${attr('height', m.height)}/></clipPath></defs>`;
+    case 'use':
+      return `<use${attr('href', m.href)}${attr('x', m.x)}${attr('y', m.y)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('clip-path', m.clipPath === undefined ? undefined : `url(#${m.clipPath})`)}${attr('data-index', m.index)}/>`;
   }
 }
 

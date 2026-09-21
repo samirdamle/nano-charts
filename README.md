@@ -27,13 +27,13 @@ of the React package. Import one chart per subpath and ship only what you use.
 Budgets are enforced in CI (`pnpm size`); all figures minified + Brotli,
 measured 2026-09-20:
 
-| Entry                                       | Budget | Measured    |
-| ------------------------------------------- | ------ | ----------- |
-| Core — `line` standalone                    | 1.5 kB | **1.15 kB** |
-| Core — `toSVG` standalone                   | 1 kB   | **599 B**   |
-| Core — full barrel (all 9 charts + `toSVG`) | 6 kB   | **4.4 kB**  |
-| React — `LineChart` standalone              | 2 kB   | **1.61 kB** |
-| React — full barrel                         | 12 kB  | **4.3 kB**  |
+| Entry                                        | Budget | Measured    |
+| -------------------------------------------- | ------ | ----------- |
+| Core — `line` standalone                     | 1.5 kB | **1.19 kB** |
+| Core — `toSVG` standalone                    | 1 kB   | **798 B**   |
+| Core — full barrel (all 10 charts + `toSVG`) | 7 kB   | **6.46 kB** |
+| React — `LineChart` standalone               | 2 kB   | **1.82 kB** |
+| React — full barrel                          | 12 kB  | **6.41 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 

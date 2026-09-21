@@ -269,6 +269,42 @@ single-axis input renders as a dot. **Color precedence:** explicit per-series
 `color` → uniform `options.color` (only when the caller passed one) →
 algorithmic categorical palette, the same rule `lines()` uses.
 
+### `pictogram(data, options?)` — countable unit blocks
+
+```ts
+pictogram([3, 7, 5]); // three columns of 3, 7, 5 blocks
+pictogram([3, 7, 5], { block: { kind: 'circle' }, horizontal: true });
+pictogram([4.5], { block: { kind: 'emoji', emoji: '⭐' } }); // 4 full + 1 half star
+```
+
+Each entry is one column (vertical) or row (horizontal) of uniform blocks —
+squares, dots, or emoji — where the **count** of blocks is the value. No axes;
+the units are countable. Entries accept `{ value, label?, color? }` objects
+plus `value`/`label`/`id`/`colorAccessor` accessors for custom objects.
+
+The block shape is defined once in `<defs>` and stamped with `<use>`, keeping
+output small. Fractional counts render a **partial block**, review-stars
+style: the full shape at 25% opacity (the "empty slot") with the filled
+fraction clipped on top. Blocks are fixed-size, so the scene sizes itself to
+the data (like `heatmap()` with `cellSize`); one hover/click point is emitted
+per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
+
+| Option                   | Type                                              | Default      | Description                                                              |
+| ------------------------ | ------------------------------------------------- | ------------ | ------------------------------------------------------------------------ |
+| `block`                  | `PictogramBlock`                                  | `{ kind: 'rect' }` | Block shape: `{ kind: 'rect', radius? }`, `{ kind: 'circle' }`, or `{ kind: 'emoji', emoji }` |
+| `blockSize`              | `number`                                          | `8`          | Block edge in px                                                         |
+| `gap`                    | `number`                                          | `0.25`       | Space between blocks (and columns/rows) as a fraction of `blockSize`, like `bar()` |
+| `horizontal`             | `boolean`                                         | `false`      | Rows stack left→right instead of columns bottom-up                        |
+| `unit`                   | `number`                                          | `1`          | Data value per block; count = `value / unit`                             |
+| `idPrefix`               | `string`                                          | `'pictogram'` | Prefix for `<defs>`/clip ids — pass a unique value per chart when inlining several pictograms in one document |
+| `value` / `label` / `id` | accessors                                         | —            | For custom object arrays                                                  |
+| `colorAccessor`          | `(datum, index) => string \| undefined`           | —            | Per-column color accessor                                                |
+
+Bad values follow the clamp policy: negatives and non-finite values render
+zero blocks; a non-positive or non-finite `unit` falls back to `1`.
+**Color precedence:** explicit per-datum `color` → uniform `options.color` →
+categorical palette per column, the same rule `bar()`/`donut()` use.
+
 ## Rendering
 
 ### `toSVG(scene, opts?)`
@@ -293,7 +329,7 @@ its own point index.
 ### React components
 
 `LineChart`, `AreaChart`, `BarChart`, `WinLossChart`, `BulletChart`,
-`DonutChart`, `ScatterChart`, `HeatmapChart`, `RadarChart` — each takes the same `data` (`series` for `RadarChart`) and
+`DonutChart`, `ScatterChart`, `HeatmapChart`, `RadarChart`, `PictogramChart` — each takes the same `data` (`series` for `RadarChart`) and
 options as its core function, plus interactivity props:
 
 | Prop                  | Type                                  | Description                                                           |
