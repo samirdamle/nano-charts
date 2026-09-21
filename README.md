@@ -4,6 +4,19 @@ A monorepo for **tiny SVG charts** — sparklines, micro bars, donuts, bullets, 
 and heatmaps — the kind you repeat hundreds of times across table cells and metric
 cards.
 
+## Demo
+
+Explore every chart live at the **[demo site](https://samirdamle.github.io/nano-charts/)** —
+automatically redeployed on every push to `develop` that touches the demo, the core
+package, or the deploy workflow.
+
+To run it locally:
+
+```sh
+pnpm install  # once
+pnpm dev:demo # builds core, then serves demo/ with live reload
+```
+
 ## Packages
 
 | Package                                                     | Description                                                                                                |
