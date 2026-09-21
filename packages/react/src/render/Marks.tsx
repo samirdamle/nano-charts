@@ -101,6 +101,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 y={mark.y}
                 fill={mark.fill}
                 fillOpacity={mark.fillOpacity}
+                stroke="none"
                 clipPath={mark.clipPath === undefined ? undefined : `url(#${mark.clipPath})`}
                 data-index={mark.index}
               />

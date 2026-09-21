@@ -7,7 +7,7 @@ import {
   type SeriesColorAccessor,
   type SeriesInput,
 } from '../core/normalize';
-import { resolveSegmentColor } from '../core/palette';
+import { pastelColor, resolveSegmentColor } from '../core/palette';
 import { resolvePadding } from '../core/plot';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
@@ -158,6 +158,8 @@ export function pictogram<T = number>(
       usePalette: !hasUniformColor,
       paletteIndex: j,
       paletteTotal: n,
+      // Blocks default to the pastel palette rather than the categorical one.
+      palette: pastelColor,
     });
     const { full, fraction } = splits[j]!;
     const total = slots[j]!;

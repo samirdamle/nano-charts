@@ -303,7 +303,8 @@ per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
 Bad values follow the clamp policy: negatives and non-finite values render
 zero blocks; a non-positive or non-finite `unit` falls back to `1`.
 **Color precedence:** explicit per-datum `color` → uniform `options.color` →
-categorical palette per column, the same rule `bar()`/`donut()` use.
+the pastel block palette (`#8fe6c4`, `#7fd8e6`, `#f3a8c7`, `#c6a6e8`, `#f0dd82`,
+cycling), from the same precedence rule `bar()`/`donut()` use.
 
 ## Rendering
 
