@@ -220,6 +220,7 @@
         heatmap,
         radar,
         pictogram,
+        gauge,
         toSVG,
       } from './dist/index.js';
 
@@ -426,6 +427,56 @@
           ]),
         },
         { title: 'Round caps', scene: donut({ value: 75, max: 100 }, { strokeLinecap: 'round' }) },
+        {
+          title: 'Center label',
+          scene: donut({ value: 72, max: 100 }, { centerLabel: '72%' }),
+        },
+        {
+          title: 'Partial dial',
+          scene: donut({ value: 60, max: 100 }, { startAngle: 135, endAngle: 405 }),
+        },
+      ]);
+
+      group('Gauge', [
+        {
+          title: 'Arc',
+          scene: gauge({ value: 72, max: 100 }, { centerLabel: '72%' }),
+        },
+        {
+          title: 'Needle + zones (semicircle)',
+          scene: gauge(
+            { value: 72, max: 100 },
+            {
+              mode: 'needle',
+              startAngle: 180,
+              endAngle: 360,
+              zones: [
+                { to: 50, color: 'var(--c3)' },
+                { to: 80, color: 'var(--c5)' },
+                { to: 100, color: 'var(--c4)' },
+              ],
+              centerLabel: '72',
+            },
+          ),
+        },
+        {
+          title: 'Arc + zones',
+          scene: gauge(
+            { value: 72, max: 100 },
+            {
+              zones: [
+                { to: 50, color: 'var(--c3)', opacity: 0.3 },
+                { to: 80, color: 'var(--c2)', opacity: 0.3 },
+                { to: 100, color: 'var(--c4)', opacity: 0.3 },
+              ],
+              strokeLinecap: 'round',
+            },
+          ),
+        },
+        {
+          title: 'Line needle',
+          scene: gauge({ value: 35, max: 100 }, { mode: 'needle', needle: 'line' }),
+        },
       ]);
 
       // Seeded PRNG so the scatter demo renders the same point cloud on every load.

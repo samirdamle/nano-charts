@@ -166,4 +166,24 @@ describe('to-svg.ts / Marks.tsx attribute-set contract', () => {
   it('use: minimal fields', () => {
     expectSameAttrs({ type: 'use', href: '#p-block', x: 0, y: 0 }, 'use');
   });
+
+  it('text: full fields', () => {
+    expectSameAttrs(
+      {
+        type: 'text',
+        x: 10,
+        y: 12,
+        text: '72%',
+        fontSize: 6,
+        fontWeight: 600,
+        fill: 'red',
+        textAnchor: 'middle',
+      },
+      'text',
+    );
+  });
+
+  it('text: minimal fields (only geometry and content)', () => {
+    expectSameAttrs({ type: 'text', x: 0, y: 0, text: 'hi' }, 'text');
+  });
 });

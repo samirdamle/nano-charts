@@ -126,7 +126,7 @@ describe('donut (track)', () => {
     const [track, ...segs] = paths;
     // full 360° ring: two half-arcs, same thickness as the segments
     expect((track!.d.match(/A/g) ?? []).length).toBe(2);
-    expect(track).toMatchObject({ fill: 'none', stroke: 'currentColor', strokeOpacity: 0.15 });
+    expect(track).toMatchObject({ fill: 'none', stroke: 'currentColor', strokeOpacity: 0.25 });
     expect(track!.strokeWidth).toBe(segs[0]!.strokeWidth);
     // decorative: no points for the track
     expect(scene.points).toHaveLength(2);
@@ -151,7 +151,7 @@ describe('donut (track)', () => {
     const scene = donut({ value: 75, max: 100 });
     const paths = scene.marks.filter((m) => m.type === 'path');
     expect(paths).toHaveLength(2);
-    expect(paths[0]).toMatchObject({ strokeOpacity: 0.15 });
+    expect(paths[0]).toMatchObject({ strokeOpacity: 0.25 });
   });
 
   it('hides the gauge background ring with track: false', () => {
@@ -206,5 +206,63 @@ describe('donut (clamp policy)', () => {
   it('renders no segments when every value is negative', () => {
     const scene = donut([{ value: -3 }, { value: -1 }]);
     expect(scene.marks).toHaveLength(0);
+  });
+});
+
+describe('donut (endAngle)', () => {
+  it('spans a partial dial in gauge mode', () => {
+    const scene = donut({ value: 50, max: 100 }, { startAngle: 135, endAngle: 405 });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(2); // track + value arc
+    // value arc ends halfway across the 270° dial (at 270°)
+    const d = (paths[1] as { d: string }).d;
+    expect(d.split(' ').pop()).toBe('10,1.75');
+  });
+
+  it('scales segment sweeps to the partial span', () => {
+    const scene = donut([1, 1], { startAngle: 0, endAngle: 180 });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(2);
+    // each segment sweeps 90°: first ends at 90° (bottom, y-down), on the mid-radius
+    expect((paths[0] as { d: string }).d.split(' ').pop()).toBe('10,18.25');
+  });
+
+  it('falls back to the full circle on a bad endAngle', () => {
+    const scene = donut({ value: 100, max: 100 }, { endAngle: -90 });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    // full-circle track renders as a split arc (2 half-sweeps)
+    expect(((paths[0] as { d: string }).d.match(/A/g) ?? []).length).toBe(2);
+  });
+});
+
+describe('donut (centerLabel)', () => {
+  it('renders a literal string at the dial center in gauge mode', () => {
+    const scene = donut({ value: 72, max: 100 }, { centerLabel: '72%' });
+    const label = scene.marks.find((m) => m.type === 'text');
+    expect(label).toMatchObject({
+      x: 10,
+      y: 11.05, // cy + fontSize(3) * 0.35 baseline nudge
+      fontSize: 3,
+      fontWeight: 600,
+      text: '72%',
+      textAnchor: 'middle',
+    });
+  });
+
+  it('passes { value, min: 0, max, frac } to a formatter in gauge mode', () => {
+    const seen: unknown[] = [];
+    donut({ value: 75, max: 150 }, { centerLabel: (ctx) => (seen.push({ ...ctx }), 'x') });
+    expect(seen).toEqual([{ value: 75, min: 0, max: 150, frac: 0.5 }]);
+  });
+
+  it('passes the total as value in segmented mode', () => {
+    const seen: unknown[] = [];
+    donut([3, 1], { centerLabel: (ctx) => (seen.push({ ...ctx }), 'total') });
+    expect(seen).toEqual([{ value: 4, min: 0, max: 4, frac: 1 }]);
+  });
+
+  it('omits the label by default', () => {
+    expect(donut({ value: 50, max: 100 }).marks.some((m) => m.type === 'text')).toBe(false);
+    expect(donut([1, 2]).marks.some((m) => m.type === 'text')).toBe(false);
   });
 });

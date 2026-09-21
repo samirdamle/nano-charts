@@ -36,6 +36,12 @@ function renderMark(m: Mark): string {
       return `<circle${attr('cx', m.cx)}${attr('cy', m.cy)}${attr('r', m.r)}${attr('fill', m.fill)}${attr('stroke', m.stroke ?? 'none')}${attr('stroke-width', m.strokeWidth)}${attr('data-index', m.index)}${attr('data-series', m.seriesIndex)}/>`;
     case 'line':
       return `<line${attr('x1', m.x1)}${attr('y1', m.y1)}${attr('x2', m.x2)}${attr('y2', m.y2)}${attr('stroke', m.stroke)}${attr('stroke-width', m.strokeWidth)}/>`;
+    case 'text':
+      // No fill default: inherits currentColor (the chart's text color) unless set.
+      // stroke="none" overrides the root svg's inherited stroke="currentColor":
+      // a 1-unit stroke on tiny label glyphs renders as fat blobby outlines
+      // with miter-join spikes (rect/circle/use do the same).
+      return `<text${attr('x', m.x)}${attr('y', m.y)}${attr('font-size', m.fontSize)}${attr('font-weight', m.fontWeight)}${attr('fill', m.fill)}${attr('stroke', 'none')}${attr('text-anchor', m.textAnchor)}>${esc(m.text)}</text>`;
     case 'defs': {
       // A reusable block shape drawn at the origin with no fill of its own,
       // so each <use> reference inherits its fill (and opacity) instead.

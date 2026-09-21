@@ -1,5 +1,5 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
-import { round } from '../core/geometry';
+import type { BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
+import { arcPath, dialSpan, polar, round } from '../core/geometry';
 import {
   normalizeSeries,
   type SeriesAccessors,
@@ -19,7 +19,7 @@ export type DonutInput<T = number> = DonutGauge | SeriesInput<T>;
 export interface DonutTrackOptions {
   /** Track ring stroke. Defaults to the chart's base color. */
   color?: string;
-  /** Track ring opacity. Defaults to 0.15. */
+  /** Track ring opacity. Defaults to 0.25. */
   opacity?: number;
 }
 
@@ -29,6 +29,10 @@ export interface DonutOptions<T = number>
     Partial<SeriesColorAccessor<T>> {
   thickness?: number;
   startAngle?: number;
+  /** End of the dial's angle domain in degrees (same convention as startAngle:
+   * 0° = east, clockwise positive). Defaults to startAngle + 360 (full circle).
+   * A smaller span turns the donut into a partial dial, e.g. 135 → 405. */
+  endAngle?: number;
   /** Per-segment colors, index-matched to the input data. */
   colors?: string[];
   strokeLinecap?: 'butt' | 'round' | 'square';
@@ -36,30 +40,11 @@ export interface DonutOptions<T = number>
    * Gauge mode already draws one: the option customizes it, and
    * `track: false` hides it. Segmented mode gains it as an opt-in. */
   track?: boolean | DonutTrackOptions;
-}
-
-function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
-  const rad = (deg * Math.PI) / 180;
-  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-}
-
-// Draw each ring segment as a stroked arc along its mid-radius (stroke-width
-// gives the ring its thickness) rather than a filled outer+inner path — a
-// segment then never carries both a fill and an inherited stroke.
-// Split into two half-sweeps so that even a full 360° ring has distinct
-// intermediate endpoints — a single ~360° arc collapses (start == end after
-// rounding) and SVG renders nothing.
-function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number): string {
-  const midDeg = (startDeg + endDeg) / 2;
-  const [x1, y1] = polar(cx, cy, r, startDeg);
-  const [xm, ym] = polar(cx, cy, r, midDeg);
-  const [x2, y2] = polar(cx, cy, r, endDeg);
-  const rr = round(r);
-  return (
-    `M${round(x1)},${round(y1)} ` +
-    `A${rr},${rr} 0 0 1 ${round(xm)},${round(ym)} ` +
-    `A${rr},${rr} 0 0 1 ${round(x2)},${round(y2)}`
-  );
+  /** Text rendered at the dial's center: a literal string, or a formatter
+   * receiving the value context. Gauge mode passes
+   * { value, min: 0, max, frac }; segmented mode passes
+   * { value: total, min: 0, max: total, frac: 1 }. */
+  centerLabel?: string | ((ctx: CenterLabelContext) => string);
 }
 
 function isGauge(data: unknown): data is DonutGauge {
@@ -71,14 +56,38 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   // chart shell (width/height/color/padding resolution).
   const { width, height, color } = resolveChartShell({ width: 20, height: 20, ...options });
   const startAngle = options.startAngle ?? -90;
+  // The dial spans [startAngle, endAngle]; default is the full circle.
+  // Clamp policy: a bad endAngle falls back to the full 360° span.
+  const span = dialSpan(startAngle, options.endAngle, 360);
   const cx = width / 2;
   const cy = height / 2;
   const rOuter = Math.min(width, height) / 2;
   const thickness = options.thickness ?? rOuter * 0.35;
   const rMid = rOuter - thickness / 2;
+  const rInner = rOuter - thickness;
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+
+  // Center readout: font sized to the dial's hole, baseline nudged so the
+  // text reads as vertically centered. No fill: inherits currentColor.
+  const pushCenterLabel = (ctx: CenterLabelContext) => {
+    const label =
+      typeof options.centerLabel === 'function' ? options.centerLabel(ctx) : options.centerLabel;
+    if (label === undefined) return;
+    // Half the previous label size, semibold: the readout sits inside the
+    // dial's hole and never overlaps the dial ring.
+    const fontSize = Math.max(2, Math.round(rInner * 0.425));
+    marks.push({
+      type: 'text',
+      x: round(cx),
+      y: round(cy + fontSize * 0.35),
+      text: label,
+      fontSize,
+      fontWeight: 600,
+      textAnchor: 'middle',
+    });
+  };
 
   const strokeLinecap =
     options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {};
@@ -93,18 +102,18 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       const t: DonutTrackOptions = trackOpt === true || trackOpt === undefined ? {} : trackOpt;
       marks.push({
         type: 'path',
-        d: arcPath(cx, cy, rMid, startAngle, startAngle + 360),
+        d: arcPath(cx, cy, rMid, startAngle, startAngle + span),
         fill: 'none',
         stroke: t.color ?? color,
         strokeWidth: round(thickness),
-        strokeOpacity: t.opacity ?? 0.15,
+        strokeOpacity: t.opacity ?? 0.25,
         ...strokeLinecap,
       });
     }
     if (frac > 0) {
       marks.push({
         type: 'path',
-        d: arcPath(cx, cy, rMid, startAngle, startAngle + 360 * frac),
+        d: arcPath(cx, cy, rMid, startAngle, startAngle + span * frac),
         fill: 'none',
         stroke: color,
         strokeWidth: round(thickness),
@@ -119,6 +128,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       x: round(cx),
       y: round(cy),
     });
+    pushCenterLabel({ value: data.value, min: 0, max: data.max, frac });
     return {
       ...sceneShell(
         { width, height },
@@ -163,11 +173,11 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   if (segTrack) {
     marks.push({
       type: 'path',
-      d: arcPath(cx, cy, rMid, startAngle, startAngle + 360),
+      d: arcPath(cx, cy, rMid, startAngle, startAngle + span),
       fill: 'none',
       stroke: segTrack.color ?? color,
       strokeWidth: round(thickness),
-      strokeOpacity: segTrack.opacity ?? 0.15,
+      strokeOpacity: segTrack.opacity ?? 0.25,
       ...strokeLinecap,
     });
   }
@@ -178,7 +188,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   const hasUniformColor = options.color !== undefined;
   let angle = startAngle;
   datums.forEach((d, i) => {
-    const sweep = (swept[i]! / total) * 360;
+    const sweep = (swept[i]! / total) * span;
     const explicitColor = d.color ?? options.colors?.[i];
     const segmentColor = resolveSegmentColor({
       explicit: explicitColor,
@@ -201,6 +211,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x: round(px), y: round(py) });
     angle += sweep;
   });
+  pushCenterLabel({ value: total, min: 0, max: total, frac: 1 });
 
   return { ...base, marks, points };
 }

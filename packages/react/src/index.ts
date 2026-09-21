@@ -8,4 +8,5 @@ export { ScatterChart, type ScatterChartProps } from './charts/ScatterChart';
 export { RadarChart, type RadarChartProps } from './charts/RadarChart';
 export { HeatmapChart, type HeatmapChartProps } from './charts/HeatmapChart';
 export { PictogramChart, type PictogramChartProps } from './charts/PictogramChart';
+export { GaugeChart, type GaugeChartProps } from './charts/GaugeChart';
 export type { InteractionProps } from './types';
