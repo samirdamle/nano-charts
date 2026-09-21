@@ -46,7 +46,7 @@ describe('PictogramChart', () => {
   });
 
   it('renders partial blocks with clip paths', () => {
-    const { container } = render(<PictogramChart data={[2.5]} />);
+    const { container } = render(<PictogramChart data={[2.5]} idPrefix="pictogram" />);
     expect(container.querySelector('clipPath')).not.toBeNull();
     const clipped = container.querySelector('use[clip-path]');
     expect(clipped?.getAttribute('clip-path')).toBe('url(#pictogram-clip-0)');
