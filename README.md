@@ -4,6 +4,26 @@ A monorepo for **tiny SVG charts** — sparklines, micro bars, donuts, bullets, 
 and heatmaps — the kind you repeat hundreds of times across table cells and metric
 cards.
 
+## Charts
+
+| Chart                              | What it's for                                       |
+| ---------------------------------- | --------------------------------------------------- |
+| `line`                             | Trend sparkline                                     |
+| `area`                             | Filled trend                                        |
+| `lines`                            | Multi-series overlay                                |
+| `bar`                              | Magnitude bars, simple or stacked                   |
+| `winLoss`                          | Direction / sign (wins vs. losses)                  |
+| `bullet`                           | Value vs. target with ranges                        |
+| `donut`                            | Proportion, full or partial dial                    |
+| `gauge`                            | Dial gauge with arc/needle modes, zones, center label |
+| `scatter`                          | 2D relationship                                     |
+| `heatmap`                          | Intensity grid                                      |
+| `radar`                            | Multi-axis spider chart                             |
+| `pictogram`                        | Countable unit blocks                               |
+
+Every chart has a matching React component (`LineChart`, `AreaChart`, …).
+Full options for each are in the [API reference](docs/API.md#charts).
+
 ## Demo
 
 Explore every chart live at the **[demo site](https://samirdamle.github.io/nano-charts/)** —
