@@ -186,6 +186,7 @@ have real colors.
 | `centerLabel`            | `string \| (ctx) => string`     | —                     | Text at the dial's center; `ctx` is `{ value, min, max, frac }` |
 | `colors`                 | `string[]`                      | —                     | Per-segment colors for `number[]` input, index-matched |
 | `strokeLinecap`          | `'butt' \| 'round' \| 'square'` | —                     | Cap style on segment arcs                              |
+| `gap`                    | `number`                        | `1`                   | Gap between segments, in user units; each segment is inset by half the gap on both ends. `0` renders touching segments. Segmented mode only (ignored in gauge mode) |
 | `track`                  | `boolean \| DonutTrackOptions`  | —                     | Background ring behind the segments                    |
 | `colorAccessor`          | `(row, i) => string`            | —                     | Per-row color for custom object arrays                 |
 | `value` / `label` / `id` | accessors                       | —                     | For custom object arrays                               |

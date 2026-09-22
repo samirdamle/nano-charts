@@ -40,6 +40,11 @@ export interface DonutOptions<T = number>
    * Gauge mode already draws one: the option customizes it, and
    * `track: false` hides it. Segmented mode gains it as an opt-in. */
   track?: boolean | DonutTrackOptions;
+  /** Gap between adjacent segments in segmented mode, in user units (same
+   * units as `thickness`). Each segment is inset by half the gap on both
+   * ends, so the wrap seam at `startAngle` is gapped too. Defaults to 1;
+   * `0` renders touching segments. Ignored in gauge mode. */
+  gap?: number;
   /** Text rendered at the dial's center: a literal string, or a formatter
    * receiving the value context. Gauge mode passes
    * { value, min: 0, max, frac }; segmented mode passes
@@ -68,6 +73,14 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+
+  // Segment gaps (segmented mode only): each segment is inset by half the
+  // gap on both ends, so every adjacency — including the wrap seam at
+  // startAngle — gets the same spacing. Clamp policy: a non-finite gap
+  // falls back to the default, a negative gap behaves as 0.
+  const gapRaw = options.gap ?? 1;
+  const gap = Number.isFinite(gapRaw) ? Math.max(0, gapRaw) : 1;
+  const halfGapDeg = gap === 0 ? 0 : ((gap / 2) / rMid) * (180 / Math.PI);
 
   // Center readout: font sized to the dial's hole, baseline nudged so the
   // text reads as vertically centered. No fill: inherits currentColor.
@@ -198,9 +211,13 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       paletteTotal: datums.length,
     });
     const useStripe = explicitColor === undefined && hasUniformColor;
+    // Inset both ends by half the gap; a segment narrower than the full gap
+    // collapses to a zero-length arc rather than inverting.
+    const segStart = angle + halfGapDeg;
+    const segEnd = Math.max(angle + sweep - halfGapDeg, segStart);
     marks.push({
       type: 'path',
-      d: arcPath(cx, cy, rMid, angle, angle + sweep),
+      d: arcPath(cx, cy, rMid, segStart, segEnd),
       fill: 'none',
       stroke: segmentColor,
       strokeWidth: round(thickness),
