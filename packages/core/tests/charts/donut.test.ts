@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { donut } from '../../src/charts/donut';
+import { arcPath } from '../../src/core/geometry';
 
 describe('donut (gauge)', () => {
   it('draws a track arc plus a value arc, both stroked and unfilled', () => {
@@ -220,7 +221,7 @@ describe('donut (endAngle)', () => {
   });
 
   it('scales segment sweeps to the partial span', () => {
-    const scene = donut([1, 1], { startAngle: 0, endAngle: 180 });
+    const scene = donut([1, 1], { startAngle: 0, endAngle: 180, gap: 0 });
     const paths = scene.marks.filter((m) => m.type === 'path');
     expect(paths).toHaveLength(2);
     // each segment sweeps 90°: first ends at 90° (bottom, y-down), on the mid-radius
@@ -264,5 +265,50 @@ describe('donut (centerLabel)', () => {
   it('omits the label by default', () => {
     expect(donut({ value: 50, max: 100 }).marks.some((m) => m.type === 'text')).toBe(false);
     expect(donut([1, 2]).marks.some((m) => m.type === 'text')).toBe(false);
+  });
+});
+
+describe('donut (segment gap)', () => {
+  const segPaths = (scene: ReturnType<typeof donut>) =>
+    scene.marks.filter((m) => m.type === 'path').map((p) => (p as { d: string }).d);
+
+  it('defaults to a 1-unit gap between segments', () => {
+    expect(segPaths(donut([1, 1]))).toEqual(segPaths(donut([1, 1], { gap: 1 })));
+  });
+
+  it('draws full sweeps with gap: 0', () => {
+    const [d] = segPaths(donut([1, 1], { gap: 0 }));
+    // 20x20 canvas: cx = cy = 10, rMid = 10 - (10 * 0.35) / 2 = 8.25
+    expect(d).toBe(arcPath(10, 10, 8.25, -90, 90));
+    expect(d).not.toBe(segPaths(donut([1, 1]))[0]);
+  });
+
+  it('insets each segment symmetrically, including the wrap seam', () => {
+    const [first, second] = segPaths(donut([1, 1], { gap: 2 }));
+    const halfGapDeg = ((2 / 2) / 8.25) * (180 / Math.PI);
+    expect(first).toBe(arcPath(10, 10, 8.25, -90 + halfGapDeg, 90 - halfGapDeg));
+    expect(second).toBe(arcPath(10, 10, 8.25, 90 + halfGapDeg, 270 - halfGapDeg));
+  });
+
+  it('treats a negative gap as 0', () => {
+    expect(segPaths(donut([1, 1], { gap: -2 }))).toEqual(segPaths(donut([1, 1], { gap: 0 })));
+  });
+
+  it('falls back to the default for a non-finite gap', () => {
+    expect(segPaths(donut([1, 1], { gap: NaN }))).toEqual(segPaths(donut([1, 1])));
+  });
+
+  it('collapses a sub-gap segment to a zero-length arc instead of inverting', () => {
+    const d = segPaths(donut([0.0001, 1], { gap: 5 }))[0] as string;
+    const tokens = d.split(' ');
+    const start = tokens[0]!.slice(1); // strip leading "M"
+    const end = tokens[tokens.length - 1]!;
+    expect(start).toBe(end);
+  });
+
+  it('ignores gap in gauge mode', () => {
+    expect(segPaths(donut({ value: 75, max: 100 }, { gap: 5 }))).toEqual(
+      segPaths(donut({ value: 75, max: 100 })),
+    );
   });
 });
