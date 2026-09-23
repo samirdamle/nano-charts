@@ -272,8 +272,8 @@ describe('donut (segment gap)', () => {
   const segPaths = (scene: ReturnType<typeof donut>) =>
     scene.marks.filter((m) => m.type === 'path').map((p) => (p as { d: string }).d);
 
-  it('defaults to a 1-unit gap between segments', () => {
-    expect(segPaths(donut([1, 1]))).toEqual(segPaths(donut([1, 1], { gap: 1 })));
+  it('defaults to a 0.2-unit gap between segments', () => {
+    expect(segPaths(donut([1, 1]))).toEqual(segPaths(donut([1, 1], { gap: 0.2 })));
   });
 
   it('draws full sweeps with gap: 0', () => {
