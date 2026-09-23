@@ -321,8 +321,36 @@
     { title: 'Full circle', scene: donut({ value: 100, max: 100 }) },
   ]);
 
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function correlatedScatterData() {
+    const rng = mulberry32(42);
+    const points = [];
+    // ~50 points clustered tightly around a diagonal trend
+    for (let i = 0; i < 50; i++) {
+      const x = rng() * 100;
+      const y = x + (rng() - 0.5) * 24;
+      points.push([x, y]);
+    }
+    // ~10 noisier points scattered further from the trend
+    for (let i = 0; i < 10; i++) {
+      const x = rng() * 100;
+      const y = x + (rng() - 0.5) * 100;
+      points.push([x, y]);
+    }
+    return points;
+  }
+
   group('Scatter', [
-    { title: 'Basic', scene: scatter([[0, 0], [3, 8], [6, 2], [10, 10]]) },
+    { title: 'Correlated data', scene: scatter(correlatedScatterData(), { radius: 1.2 }) },
   ]);
 
   group('Heatmap', [
