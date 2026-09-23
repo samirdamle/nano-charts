@@ -42,7 +42,8 @@ export interface DonutOptions<T = number>
   track?: boolean | DonutTrackOptions;
   /** Gap between adjacent segments in segmented mode, in user units (same
    * units as `thickness`). Each segment is inset by half the gap on both
-   * ends, so the wrap seam at `startAngle` is gapped too. Defaults to 1;
+   * ends, so the wrap seam at `startAngle` is gapped too. Defaults to 0.2
+   * (about 1px at typical display sizes);
    * `0` renders touching segments. Ignored in gauge mode. */
   gap?: number;
   /** Text rendered at the dial's center: a literal string, or a formatter
@@ -78,8 +79,8 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   // gap on both ends, so every adjacency — including the wrap seam at
   // startAngle — gets the same spacing. Clamp policy: a non-finite gap
   // falls back to the default, a negative gap behaves as 0.
-  const gapRaw = options.gap ?? 1;
-  const gap = Number.isFinite(gapRaw) ? Math.max(0, gapRaw) : 1;
+  const gapRaw = options.gap ?? 0.2;
+  const gap = Number.isFinite(gapRaw) ? Math.max(0, gapRaw) : 0.2;
   const halfGapDeg = gap === 0 ? 0 : ((gap / 2) / rMid) * (180 / Math.PI);
 
   // Center readout: font sized to the dial's hole, baseline nudged so the
