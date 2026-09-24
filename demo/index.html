@@ -94,6 +94,14 @@
         margin: 0;
         max-width: 46em;
       }
+      header.hero p.meta {
+        font-size: 14px;
+        margin-top: 12px;
+      }
+      header.hero p.meta a {
+        color: var(--text);
+        font-weight: 550;
+      }
 
       section.group {
         margin-bottom: 28px;
@@ -189,6 +197,9 @@
         border-radius: 4px;
         font-size: 12px;
       }
+      footer a {
+        color: var(--text-muted);
+      }
     </style>
   </head>
   <body>
@@ -199,11 +210,18 @@
           This is a demo of all the nano chart types with their variations. Nano charts is an open
           source, very light weight, pure JavaScript + SVG data visualization library.
         </p>
+        <p class="meta">
+          <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
+          by Samir Damle ·
+          v0.1.0 ·
+          7.4 kB for all 12 charts (minified + Brotli)
+        </p>
       </header>
       <div id="root"></div>
       <footer>
         Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with
-        <code>pnpm build:demo</code> to refresh.
+        <code>pnpm build:demo</code> to refresh. ·
+        <a href="https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md">API reference</a>
       </footer>
     </div>
 
