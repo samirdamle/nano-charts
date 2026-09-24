@@ -1,7 +1,7 @@
 {
   "name": "@samirdamle/nano-charts-react",
-  "version": "0.0.0",
-  "description": "React components for @samirdamle/nano-charts \u2014 tiny SVG charts with hover/click interactivity.",
+  "version": "0.1.0",
+  "description": "React components for @samirdamle/nano-charts — tiny SVG charts with hover/click interactivity.",
   "keywords": [
     "charts",
     "svg",
