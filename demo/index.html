@@ -353,6 +353,14 @@
       group('Area', [
         { title: 'Basic', scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42]) },
         { title: 'Single point — renders as a dot', scene: area([5]) },
+        {
+          title: 'Custom fill color',
+          scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42], {
+            color: 'var(--c1)',
+            fillColor: 'var(--c4)',
+            fillOpacity: 0.35,
+          }),
+        },
       ]);
 
       const barValues = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4];

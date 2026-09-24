@@ -8,6 +8,7 @@ export interface AreaOptions<T = number>
     Partial<SeriesAccessors<T>> {
   strokeWidth?: number;
   fillOpacity?: number;
+  fillColor?: string;
 }
 
 export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> = {}): Scene {
@@ -26,8 +27,9 @@ export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> =
       `M${first.x},${bottom} ` +
       points.map((p) => `L${p.x},${p.y}`).join(' ') +
       ` L${last.x},${bottom} Z`;
+    const fill = options.fillColor ?? color;
     const marks: Mark[] = [
-      { type: 'path', d, fill: color, fillOpacity, stroke: 'none' },
+      { type: 'path', d, fill, fillOpacity, stroke: 'none' },
       {
         type: 'polyline',
         points: points.map((p) => [p.x, p.y] as [number, number]),
