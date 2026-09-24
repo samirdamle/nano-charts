@@ -1,0 +1,24 @@
+import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: {
+    index: 'src/index.ts',
+    line: 'src/charts/line.ts',
+    lines: 'src/charts/lines.ts',
+    area: 'src/charts/area.ts',
+    bar: 'src/charts/bar.ts',
+    'win-loss': 'src/charts/win-loss.ts',
+    bullet: 'src/charts/bullet.ts',
+    donut: 'src/charts/donut.ts',
+    gauge: 'src/charts/gauge.ts',
+    scatter: 'src/charts/scatter.ts',
+    heatmap: 'src/charts/heatmap.ts',
+    'to-svg': 'src/render/to-svg.ts',
+  },
+  format: ['esm', 'cjs'],
+  dts: true,
+  clean: true,
+  treeshake: true,
+  minify: true,
+  outDir: 'dist',
+});

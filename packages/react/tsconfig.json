@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "outDir": "dist",
+    "paths": {
+      "@samirdamle/nano-charts": ["../core/src/index.ts"]
+    }
+  },
+  "include": ["src", "tests"]
+}

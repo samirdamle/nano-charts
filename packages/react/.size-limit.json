@@ -1,0 +1,9 @@
+[
+  {
+    "name": "LineChart (standalone)",
+    "path": "dist/line.js",
+    "import": "{ LineChart }",
+    "limit": "2 kB"
+  },
+  { "name": "full barrel", "path": "dist/index.js", "limit": "12 kB" }
+]

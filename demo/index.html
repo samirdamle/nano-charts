@@ -1,342 +1,625 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>nano-charts</title>
-<style>
-  :root {
-    color-scheme: light dark;
-    --bg: #fbfbfa;
-    --surface: #ffffff;
-    --border: #e8e6e2;
-    --border-soft: #f0efec;
-    --text: #1c1b1a;
-    --text-muted: #6b6862;
-    --text-faint: #a6a29a;
-    --accent: #3a5dae;
-    --accent-soft: #ecf0fa;
-    --new-badge-bg: #eef2fb;
-    --new-badge-text: #3a5dae;
-    --series-2: #3f9d76;
-    --series-3: #b8555f;
-    --shadow: 0 1px 2px rgba(20, 18, 14, 0.04), 0 1px 1px rgba(20, 18, 14, 0.03);
-    --radius: 12px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #161513;
-      --surface: #1e1d1a;
-      --border: #302e2a;
-      --border-soft: #26251f;
-      --text: #f3f1ec;
-      --text-muted: #a19d94;
-      --text-faint: #6f6c64;
-      --accent: #8ea6e0;
-      --accent-soft: #23283a;
-      --new-badge-bg: #23283a;
-      --new-badge-text: #8ea6e0;
-      --series-2: #7cc9a7;
-      --series-3: #e08a91;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-    }
-  }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>nano-charts</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfbfa;
+        --border-soft: #f0efec;
+        --text: #1c1b1a;
+        --text-muted: #6b6862;
+        --text-faint: #a6a29a;
+        --new-badge-bg: #eef2fb;
+        --new-badge-text: #3a5dae;
 
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
+        /* restored from the pre-#48 chalk theme for headings */
+        --chalk-yellow: #f0dd82;
 
-  .page {
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 72px 32px 120px;
-  }
+        /* categorical chart palette: readable on the page background
+       in both light and dark modes */
+        --c1: #2f6fdd;
+        --c2: #e8833a;
+        --c3: #2e9e4f;
+        --c4: #d64545;
+        --c5: #8e6cc8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121218;
+          --border-soft: #23232e;
+          --text: #f3f1ec;
+          --text-muted: #a19d94;
+          --text-faint: #6f6c64;
+          --new-badge-bg: #23283a;
+          --new-badge-text: #8ea6e0;
 
-  header.hero {
-    margin-bottom: 64px;
-  }
-  header.hero .kicker {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 12px;
-  }
-  header.hero h1 {
-    font-size: 34px;
-    font-weight: 650;
-    letter-spacing: -0.02em;
-    margin: 0 0 10px;
-  }
-  header.hero p {
-    font-size: 16px;
-    line-height: 1.55;
-    color: var(--text-muted);
-    margin: 0;
-    max-width: 46em;
-  }
-
-  section.group {
-    margin-bottom: 56px;
-  }
-  section.group + section.group {
-    padding-top: 8px;
-  }
-  .group-heading {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-soft);
-  }
-  .group-heading h2 {
-    font-size: 13px;
-    font-weight: 650;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--text);
-    margin: 0;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
-  }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .card-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .card-head h3 {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    margin: 0;
-    line-height: 1.4;
-  }
-  .card-head .badge {
-    flex: none;
-    font-size: 10px;
-    font-weight: 650;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--new-badge-text);
-    background: var(--new-badge-bg);
-    border-radius: 999px;
-    padding: 3px 8px;
-    white-space: nowrap;
-  }
-
-  .chart {
-    color: var(--accent);
-    background: var(--accent-soft);
-    border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 96px;
-  }
-  .chart svg {
-    width: 100%;
-    height: auto;
-    max-height: 96px;
-    display: block;
-    overflow: visible;
-  }
-  .chart-info {
-    font-size: 12px;
-    color: var(--text-muted);
-    min-height: 16px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  footer {
-    margin-top: 80px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border-soft);
-    font-size: 13px;
-    color: var(--text-faint);
-  }
-  footer code {
-    background: var(--border-soft);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-  }
-</style>
-</head>
-<body>
-<div class="page">
-  <header class="hero">
-    <p class="kicker">nano-charts</p>
-    <h1>Chart gallery</h1>
-    <p>Every chart type rendered from representative sample data, for visually spot-checking output while developing. Cards marked <strong>fixed</strong> cover the edge cases addressed on this branch.</p>
-  </header>
-  <div id="root"></div>
-  <footer>Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with <code>pnpm build</code> to refresh.</footer>
-</div>
-
-<script type="module">
-  import { line, lines, area, bar, winLoss, bullet, donut, scatter, heatmap, toSVG } from '../dist/index.js';
-
-  const root = document.getElementById('root');
-
-  function group(title, entries) {
-    const section = document.createElement('section');
-    section.className = 'group';
-
-    const heading = document.createElement('div');
-    heading.className = 'group-heading';
-    const h2 = document.createElement('h2');
-    h2.textContent = title;
-    heading.append(h2);
-
-    const grid = document.createElement('div');
-    grid.className = 'grid';
-
-    for (const { title: cardTitle, scene, fixed, interactive } of entries) {
-      const card = document.createElement('div');
-      card.className = 'card';
-
-      const head = document.createElement('div');
-      head.className = 'card-head';
-      const h3 = document.createElement('h3');
-      h3.textContent = cardTitle;
-      head.append(h3);
-      if (fixed) {
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = 'Fixed';
-        head.append(badge);
+          --c1: #6ea8fe;
+          --c2: #f5a524;
+          --c3: #4ade80;
+          --c4: #f87171;
+          --c5: #c4b5fd;
+        }
       }
 
-      const chart = document.createElement('div');
-      chart.className = 'chart';
-      chart.innerHTML = toSVG(scene);
+      /* categorical palette utility classes */
+      .c1 {
+        color: var(--c1);
+      }
+      .c2 {
+        color: var(--c2);
+      }
+      .c3 {
+        color: var(--c3);
+      }
+      .c4 {
+        color: var(--c4);
+      }
+      .c5 {
+        color: var(--c5);
+      }
 
-      card.append(head, chart);
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
 
-      if (interactive) {
-        const info = document.createElement('div');
-        info.className = 'chart-info';
-        const idleText = 'Hover or click a point';
-        info.textContent = idleText;
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 40px 32px 64px;
+      }
 
-        let selectedText = null;
-        const describePoint = (indexAttr) => {
-          const point = scene.points[Number(indexAttr)];
-          return point ? `index ${point.index} — value ${point.value}` : null;
-        };
+      header.hero {
+        margin-bottom: 32px;
+      }
+      header.hero h1 {
+        font-size: 34px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+        margin: 0 0 10px;
+      }
+      header.hero p {
+        font-size: 16px;
+        line-height: 1.55;
+        color: var(--text-muted);
+        margin: 0;
+        max-width: 46em;
+      }
+      header.hero p.meta {
+        font-size: 14px;
+        margin-top: 12px;
+      }
+      header.hero p.meta a {
+        color: var(--text);
+        font-weight: 550;
+      }
 
-        chart.addEventListener('pointermove', (event) => {
-          const indexAttr = event.target?.dataset?.index;
-          const desc = indexAttr === undefined ? null : describePoint(indexAttr);
-          info.textContent = desc ? `Hovering: ${desc}` : (selectedText ?? idleText);
-        });
+      section.group {
+        margin-bottom: 28px;
+      }
+      .group-heading {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .group-heading h2 {
+        font-size: 20px;
+        font-weight: 650;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--chalk-yellow);
+        margin: 0;
+      }
 
-        chart.addEventListener('pointerleave', () => {
-          info.textContent = selectedText ?? idleText;
-        });
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+      }
 
-        chart.addEventListener('click', (event) => {
-          const indexAttr = event.target?.dataset?.index;
-          if (indexAttr === undefined) return;
-          const desc = describePoint(indexAttr);
-          if (desc) {
-            selectedText = `Selected: ${desc}`;
-            info.textContent = selectedText;
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .card-head h3 {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0;
+        line-height: 1.4;
+      }
+      .card-head .badge {
+        flex: none;
+        font-size: 10px;
+        font-weight: 650;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--new-badge-text);
+        background: var(--new-badge-bg);
+        border-radius: 999px;
+        padding: 3px 8px;
+        white-space: nowrap;
+      }
+
+      .chart {
+        /* default series color: the library renders uncolored series in
+       currentColor, so the chart box sets the page-friendly default */
+        color: var(--c1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 96px;
+        margin-right: 20px;
+      }
+      .chart svg {
+        width: 100%;
+        height: auto;
+        max-height: 96px;
+        display: block;
+        overflow: visible;
+      }
+      .chart-info {
+        font-size: 12px;
+        color: var(--text-muted);
+        min-height: 16px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      footer {
+        margin-top: 80px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-soft);
+        font-size: 13px;
+        color: var(--text-faint);
+      }
+      footer code {
+        background: var(--border-soft);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      footer a {
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <h1>Nano Charts - Tiny Minimal Charts</h1>
+        <p>
+          This is a demo of all the nano chart types with their variations. Nano charts is an open
+          source, very light weight, pure JavaScript + SVG data visualization library.
+        </p>
+        <p class="meta">
+          <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
+          by Samir Damle ·
+          v0.1.0 ·
+          7.4 kB for all 12 charts (minified + Brotli)
+        </p>
+      </header>
+      <div id="root"></div>
+      <footer>
+        Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with
+        <code>pnpm build:demo</code> to refresh. ·
+        <a href="https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md">API reference</a>
+      </footer>
+    </div>
+
+    <script type="module">
+      import {
+        line,
+        lines,
+        area,
+        bar,
+        winLoss,
+        bullet,
+        donut,
+        scatter,
+        heatmap,
+        radar,
+        pictogram,
+        gauge,
+        toSVG,
+      } from './dist/index.js';
+
+      const root = document.getElementById('root');
+
+      function group(title, entries) {
+        const section = document.createElement('section');
+        section.className = 'group';
+
+        const heading = document.createElement('div');
+        heading.className = 'group-heading';
+        const h2 = document.createElement('h2');
+        h2.textContent = title;
+        heading.append(h2);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+
+        for (const { title: cardTitle, scene, fixed, interactive } of entries) {
+          const card = document.createElement('div');
+          card.className = 'card';
+
+          const head = document.createElement('div');
+          head.className = 'card-head';
+          const h3 = document.createElement('h3');
+          h3.textContent = cardTitle;
+          head.append(h3);
+          if (fixed) {
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = 'Fixed';
+            head.append(badge);
           }
-        });
 
-        card.append(info);
+          const chart = document.createElement('div');
+          chart.className = 'chart';
+          chart.innerHTML = toSVG(scene);
+
+          card.append(head, chart);
+
+          if (interactive) {
+            const info = document.createElement('div');
+            info.className = 'chart-info';
+            const idleText = 'Hover or click a point';
+            info.textContent = idleText;
+
+            let selectedText = null;
+            const describePoint = (indexAttr) => {
+              const point = scene.points[Number(indexAttr)];
+              if (!point) return null;
+              const series = point.seriesLabel ? ` (${point.seriesLabel})` : '';
+              const block = point.blockNumber
+                ? ` — block ${point.blockNumber} of ${point.blocksTotal}${point.partial ? ' (partial)' : ''}`
+                : '';
+              return `index ${point.index}${series}${block} — value ${point.value}`;
+            };
+
+            chart.addEventListener('pointermove', (event) => {
+              const indexAttr = event.target?.dataset?.index;
+              const desc = indexAttr === undefined ? null : describePoint(indexAttr);
+              info.textContent = desc ? `Hovering: ${desc}` : (selectedText ?? idleText);
+            });
+
+            chart.addEventListener('pointerleave', () => {
+              info.textContent = selectedText ?? idleText;
+            });
+
+            chart.addEventListener('click', (event) => {
+              const indexAttr = event.target?.dataset?.index;
+              if (indexAttr === undefined) return;
+              const desc = describePoint(indexAttr);
+              if (desc) {
+                selectedText = `Selected: ${desc}`;
+                info.textContent = selectedText;
+              }
+            });
+
+            card.append(info);
+          }
+
+          grid.append(card);
+        }
+
+        section.append(heading, grid);
+        root.append(section);
       }
 
-      grid.append(card);
-    }
+      group('Line', [
+        { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
+        { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
+        { title: 'Single point — renders as a dot', scene: line([5]) },
+        {
+          title: 'Multiple series',
+          scene: lines([
+            { data: [7, 9, 6, 10, 8, 9], name: 'Revenue', color: 'var(--c1)' },
+            {
+              data: [4, 5, 4, 6, 5, 6],
+              name: 'Target',
+              color: 'var(--c2)',
+              strokeDasharray: [3, 2],
+            },
+            { data: [1, 2, 1, 3, 2, 3], name: 'Forecast', color: 'var(--c3)', strokeWidth: 2.5 },
+          ]),
+        },
+        {
+          title: 'Hover & click',
+          scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
+          interactive: true,
+        },
+      ]);
 
-    section.append(heading, grid);
-    root.append(section);
-  }
+      group('Area', [
+        { title: 'Basic', scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42]) },
+        { title: 'Single point — renders as a dot', scene: area([5]) },
+        {
+          title: 'Custom fill color',
+          scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42], {
+            color: 'var(--c1)',
+            fillColor: 'var(--c4)',
+            fillOpacity: 0.35,
+          }),
+        },
+      ]);
 
-  group('Line', [
-    { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
-    { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
-    { title: 'Single point — renders as a dot', scene: line([5]) },
-    {
-      title: 'Multiple series',
-      scene: lines([
-        { data: [3, 7, 2, 9, 5, 6], name: 'Revenue', color: 'var(--accent)' },
-        { data: [4, 4, 5, 6, 6, 7], name: 'Target', color: 'var(--series-2)', strokeDasharray: [3, 2] },
-        { data: [2, 5, 6, 5, 8, 9], name: 'Forecast', color: 'var(--series-3)', strokeWidth: 2.5 },
-      ]),
-    },
-    {
-      title: 'Hover & click',
-      scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
-      interactive: true,
-    },
-  ]);
+      const barValues = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4];
+      const negValues = [4, -3, 6, -2, 1, -5, 3, -4, 2, -1];
+      const stackedBarPairs = [
+        [3, 2],
+        [5, 1],
+        [2, 4],
+        [6, 3],
+        [4, 2],
+        [7, 3],
+        [3, 5],
+        [5, 2],
+        [2, 6],
+        [6, 4],
+      ];
+      const stackColors = ['var(--c1)', 'var(--c2)'];
+      const palette = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)'];
 
-  group('Area', [
-    { title: 'Basic', scene: area([1, 4, 2, 8, 3]) },
-    { title: 'Single point — renders as a dot', scene: area([5]) },
-    {
-      title: 'Custom fill color',
-      scene: area([1, 4, 2, 8, 3], {
-        color: 'var(--accent)',
-        fillColor: 'var(--series-2)',
-        fillOpacity: 0.35,
-      }),
-    },
-  ]);
+      // 10x10 correlation-style matrix: symmetric, 1s on the diagonal,
+      // values in [-1, 1]. Seeded so the demo is stable between loads.
+      const corrMatrix = (() => {
+        let s = 42;
+        const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 0xffffffff;
+        const m = Array.from({ length: 10 }, () => Array(10).fill(0));
+        for (let i = 0; i < 10; i++) {
+          for (let j = i; j < 10; j++) {
+            const v = i === j ? 1 : Math.round((rnd() * 2 - 1) * 100) / 100;
+            m[i][j] = v;
+            m[j][i] = v;
+          }
+        }
+        return m;
+      })();
 
-  group('Bar', [
-    { title: 'Basic', scene: bar([4, 9, 2, 7]) },
-    { title: 'Negative values', scene: bar([4, -3, 6, -2, 1]) },
-  ]);
+      group('Bar', [
+        { title: 'Basic', scene: bar(barValues) },
+        { title: 'Rounded caps', scene: bar(barValues, { radius: 4 }) },
+        {
+          title: 'Negative values',
+          scene: bar(
+            negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
+          ),
+        },
+        {
+          title: 'Horizontal, single bar (stacked)',
+          scene: bar(
+            [
+              [
+                { value: 3, color: 'var(--c1)' },
+                { value: 5, color: 'var(--c2)' },
+                { value: 2, color: 'var(--c3)' },
+                { value: 4, color: 'var(--c4)' },
+              ],
+            ],
+            { horizontal: true },
+          ),
+        },
+        { title: 'Horizontal, multiple bars', scene: bar(barValues, { horizontal: true }) },
+        {
+          title: 'Horizontal, multiple bars (stacked)',
+          scene: bar(
+            stackedBarPairs.map((pair) =>
+              pair.map((value, row) => ({ value, color: stackColors[row] })),
+            ),
+            { horizontal: true },
+          ),
+        },
+      ]);
 
-  group('Win / Loss', [
-    { title: 'Basic', scene: winLoss([1, -2, 3, -1, 2, -3]) },
-  ]);
+      group('Win / Loss', [{ title: 'Basic', scene: winLoss([1, -2, 3, -1, 2, -3]) }]);
 
-  group('Bullet', [
-    { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
-  ]);
+      group('Bullet', [
+        { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
+      ]);
 
-  group('Donut', [
-    { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
-    { title: 'Full circle', scene: donut({ value: 100, max: 100 }) },
-  ]);
+      group('Donut', [
+        { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
+        { title: 'Full circle', scene: donut({ value: 100, max: 100 }) },
+        {
+          title: 'Segments (categorical palette)',
+          scene: donut([4, 3, 2, 1, 1].map((value, i) => ({ value, color: palette[i] }))),
+        },
+        {
+          title: 'Segments (explicit colors)',
+          scene: donut([
+            { value: 4, label: 'Chrome', color: 'var(--c1)' },
+            { value: 3, label: 'Safari', color: 'var(--c4)' },
+            { value: 2, label: 'Firefox', color: 'var(--c5)' },
+          ]),
+        },
+        {
+          title: 'Wide gaps',
+          scene: donut(
+            [
+              { value: 4, label: 'Chrome', color: 'var(--c1)' },
+              { value: 3, label: 'Safari', color: 'var(--c4)' },
+              { value: 2, label: 'Firefox', color: 'var(--c5)' },
+            ],
+            { gap: 1 },
+          ),
+        },
+        { title: 'Round caps', scene: donut({ value: 75, max: 100 }, { strokeLinecap: 'round' }) },
+        {
+          title: 'Center label',
+          scene: donut({ value: 72, max: 100 }, { centerLabel: '72%' }),
+        },
+        {
+          title: 'Partial dial',
+          scene: donut({ value: 60, max: 100 }, { startAngle: 135, endAngle: 405 }),
+        },
+      ]);
 
-  group('Scatter', [
-    { title: 'Basic', scene: scatter([[0, 0], [3, 8], [6, 2], [10, 10]]) },
-  ]);
+      group('Gauge', [
+        {
+          title: 'Arc',
+          scene: gauge({ value: 72, max: 100 }, { centerLabel: '72%' }),
+        },
+        {
+          title: 'Needle + zones (semicircle)',
+          scene: gauge(
+            { value: 72, max: 100 },
+            {
+              mode: 'needle',
+              startAngle: 180,
+              endAngle: 360,
+              zones: [
+                { to: 50, color: 'var(--c3)' },
+                { to: 80, color: 'var(--c5)' },
+                { to: 100, color: 'var(--c4)' },
+              ],
+              centerLabel: '72',
+            },
+          ),
+        },
+        {
+          title: 'Arc + zones',
+          scene: gauge(
+            { value: 72, max: 100 },
+            {
+              zones: [
+                { to: 50, color: 'var(--c3)', opacity: 0.3 },
+                { to: 80, color: 'var(--c2)', opacity: 0.3 },
+                { to: 100, color: 'var(--c4)', opacity: 0.3 },
+              ],
+              strokeLinecap: 'round',
+            },
+          ),
+        },
+        {
+          title: 'Line needle',
+          scene: gauge({ value: 35, max: 100 }, { mode: 'needle', needle: 'line' }),
+        },
+      ]);
 
-  group('Heatmap', [
-    { title: 'Basic', scene: heatmap([[1, 4, 2], [3, 0, 5], [2, 6, 1]], { cellSize: 20, gap: 2 }) },
-    { title: 'Ragged rows — no longer throws', scene: heatmap([[1, 4, 2], [3, 0], [2, 6, 1, 5]], { cellSize: 20, gap: 2 }), fixed: true },
-  ]);
-</script>
-</body>
+      // Seeded PRNG so the scatter demo renders the same point cloud on every load.
+      function mulberry32(seed) {
+        return function () {
+          seed |= 0;
+          seed = (seed + 0x6d2b79f5) | 0;
+          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const scatterRand = mulberry32(20260920);
+      const scatterTrend = [];
+      const scatterOutliers = [];
+      const scatterPoint = (x, y) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+      // ~50 points clustered around an implied diagonal trend (y = x).
+      for (let i = 0; i < 50; i++) {
+        const x = scatterRand() * 10;
+        const y = x + (scatterRand() + scatterRand() + scatterRand() - 1.5);
+        scatterTrend.push(scatterPoint(x, y));
+      }
+      // ~10 noisier points scattered further from the trend.
+      for (let i = 0; i < 10; i++) {
+        const x = scatterRand() * 10;
+        const y = x + (scatterRand() < 0.5 ? -1 : 1) * (3 + scatterRand() * 3);
+        scatterOutliers.push(scatterPoint(x, y));
+      }
+
+      group('Scatter', [
+        {
+          title: 'Dense point cloud with outliers',
+          scene: scatter([...scatterTrend, ...scatterOutliers]),
+        },
+      ]);
+
+      group('Heatmap', [
+        {
+          title: 'Correlation matrix',
+          scene: heatmap(corrMatrix, { cellSize: 20, gap: 2 }),
+        },
+        {
+          title: 'Ragged rows',
+          scene: heatmap(
+            [
+              [1, 4, 2, 7, 3, 9, 5, 8, 2, 6],
+              [3, 0, 5, 1, 8, 2, 4],
+              [2, 6, 1, 5, 9, 3, 7, 4, 1],
+              [8, 2, 6, 4, 1],
+              [5, 3, 9, 7, 2, 8, 6, 1, 4, 3],
+            ],
+            { cellSize: 20, gap: 2 },
+          ),
+        },
+      ]);
+
+      group('Radar', [
+        {
+          title: 'Single series (shorthand)',
+          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
+        },
+        {
+          title: 'Multi-series overlay — hover the dots',
+          scene: radar(
+            [
+              { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
+              {
+                data: [7, 3, 8, 4, 6],
+                name: 'Mobile',
+                color: 'var(--c4)',
+                dot: 'all',
+                dotRadius: 2.5,
+              },
+            ],
+            { width: 120, height: 120, gridOpacity: 0.35 },
+          ),
+          interactive: true,
+        },
+        {
+          title: 'Custom max, no grid',
+          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
+        },
+      ]);
+
+      group('Pictogram', [
+        { title: 'Basic columns', scene: pictogram([3, 7, 5, 2]) },
+        {
+          title: 'Rounded blocks',
+          scene: pictogram([4, 6, 3], { block: { kind: 'rect', radius: 2 } }),
+        },
+        { title: 'Dots', scene: pictogram([4, 6, 3], { block: { kind: 'circle' } }) },
+        {
+          title: 'Emoji with partial fill',
+          scene: pictogram([4.5], {
+            block: { kind: 'emoji', emoji: '⭐' },
+            blockSize: 16,
+            horizontal: true,
+          }),
+        },
+        { title: 'Horizontal rows', scene: pictogram([5, 3, 7], { horizontal: true }) },
+        {
+          title: 'Hover the blocks',
+          scene: pictogram([3, 2.5, 4]),
+          interactive: true,
+        },
+      ]);
+    </script>
+  </body>
 </html>
