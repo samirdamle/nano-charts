@@ -2,7 +2,7 @@ name: Deploy demo
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'demo/**'
       - 'packages/core/**'

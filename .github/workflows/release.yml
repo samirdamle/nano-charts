@@ -1,6 +1,6 @@
 name: Release
 on:
-  push: { branches: [develop] }
+  push: { branches: [main] }
 permissions: { contents: write, pull-requests: write, id-token: write }
 jobs:
   release:
