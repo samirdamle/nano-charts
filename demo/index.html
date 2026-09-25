@@ -221,6 +221,9 @@
         border-top: 1px solid var(--line);
         border-left: 1px solid var(--line);
       }
+      .grid-cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
       .cell {
         display: flex;
         flex-direction: column;
@@ -303,6 +306,9 @@
           font-size: 30px;
         }
         .hero-grid {
+          grid-template-columns: 1fr;
+        }
+        .grid-cols-3 {
           grid-template-columns: 1fr;
         }
         .cell {
@@ -395,7 +401,7 @@
       }
       setTheme(document.documentElement.dataset.theme || 'dark');
 
-      function group(title, entries) {
+      function group(title, entries, columns) {
         const section = document.createElement('section');
         section.className = 'group';
 
@@ -406,7 +412,7 @@
         heading.append(h2);
 
         const grid = document.createElement('div');
-        grid.className = 'grid';
+        grid.className = columns ? `grid grid-cols-${columns}` : 'grid';
 
         for (const { title: cardTitle, scene, fixed, interactive } of entries) {
           const cell = document.createElement('div');
@@ -514,6 +520,7 @@
       ]);
 
       const barValues = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4];
+      const barValuesDense = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4, 7, 3, 8, 5, 2, 9, 6, 4, 7, 3];
       const negValues = [4, -3, 6, -2, 1, -5, 3, -4, 2, -1];
       const stackedBarPairs = [
         [3, 2],
@@ -546,40 +553,47 @@
         return m;
       })();
 
-      group('Bar', [
-        { title: 'Basic', scene: bar(barValues) },
-        { title: 'Rounded caps', scene: bar(barValues, { radius: 4 }) },
-        {
-          title: 'Negative values',
-          scene: bar(
-            negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
-          ),
-        },
-        {
-          title: 'Horizontal, single bar (stacked)',
-          scene: bar(
-            [
-              [
-                { value: 3, color: 'var(--c1)' },
-                { value: 5, color: 'var(--c2)' },
-                { value: 2, color: 'var(--c3)' },
-                { value: 4, color: 'var(--c4)' },
-              ],
-            ],
-            { horizontal: true },
-          ),
-        },
-        { title: 'Horizontal, multiple bars', scene: bar(barValues, { horizontal: true }) },
-        {
-          title: 'Horizontal, multiple bars (stacked)',
-          scene: bar(
-            stackedBarPairs.map((pair) =>
-              pair.map((value, row) => ({ value, color: stackColors[row] })),
+      group(
+        'Bar',
+        [
+          { title: 'Basic', scene: bar(barValuesDense, { gap: 0.6 }) },
+          { title: 'Rounded caps', scene: bar(barValuesDense, { radius: 4, gap: 0.6 }) },
+          {
+            title: 'Negative values',
+            scene: bar(
+              negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
             ),
-            { horizontal: true },
-          ),
-        },
-      ]);
+          },
+          {
+            title: 'Horizontal single',
+            scene: bar(
+              [
+                [
+                  { value: 3, color: 'var(--c1)' },
+                  { value: 5, color: 'var(--c2)' },
+                  { value: 2, color: 'var(--c3)' },
+                  { value: 4, color: 'var(--c4)' },
+                ],
+              ],
+              { horizontal: true },
+            ),
+          },
+          {
+            title: 'Horizontal multiple',
+            scene: bar(barValues, { horizontal: true, gap: 0 }),
+          },
+          {
+            title: 'Horizontal multiple stacked',
+            scene: bar(
+              stackedBarPairs.map((pair) =>
+                pair.map((value, row) => ({ value, color: stackColors[row] })),
+              ),
+              { horizontal: true, gap: 0 },
+            ),
+          },
+        ],
+        3,
+      );
 
       group('Win / Loss', [{ title: 'Basic', scene: winLoss([1, -2, 3, -1, 2, -3]) }]);
 
