@@ -146,6 +146,10 @@
         line-height: 1.15;
         color: var(--c3);
       }
+      .title-sub {
+        display: block;
+        color: var(--text);
+      }
       .hero-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -311,7 +315,7 @@
     <div class="wrap">
       <header class="hero">
         <div class="hero-top">
-          <p class="kicker">// open-source · mit licensed</p>
+          <p class="kicker">OPEN-SOURCE · MIT LICENSED</p>
           <div class="theme-switch" role="group" aria-label="Color theme">
             <button type="button" data-set-theme="dark" aria-pressed="true">Dark</button>
             <button type="button" data-set-theme="light" aria-pressed="false">Light</button>
@@ -319,7 +323,7 @@
         </div>
         <div class="hero-grid">
           <div>
-            <h1>Nano Charts - Tiny Minimal Charts</h1>
+            <h1>Nano Charts<span class="title-sub">Tiny Minimal Charts</span></h1>
             <p class="lede">
               This is a demo of all the nano chart types with their variations. Nano charts is an open
               source, very light weight, pure JavaScript + SVG data visualization library.
@@ -328,8 +332,7 @@
               <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
               <a href="https://www.npmjs.com/package/@samirdamle/nano-charts">NPM</a> ·
               by Samir Damle ·
-              v0.1.0 ·
-              7.4 kB for all 12 charts (minified + Brotli)
+              v0.1.0
             </p>
           </div>
           <aside class="hero-features">
