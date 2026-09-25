@@ -272,6 +272,9 @@
         display: block;
         overflow: visible;
       }
+      .chart.tall svg {
+        max-height: 220px;
+      }
       .readout {
         min-height: 16px;
         padding-top: 10px;
@@ -414,7 +417,7 @@
         const grid = document.createElement('div');
         grid.className = columns ? `grid grid-cols-${columns}` : 'grid';
 
-        for (const { title: cardTitle, scene, fixed, interactive } of entries) {
+        for (const { title: cardTitle, scene, fixed, tall, interactive } of entries) {
           const cell = document.createElement('div');
           cell.className = 'cell';
 
@@ -433,6 +436,7 @@
 
           const chart = document.createElement('div');
           chart.className = 'chart';
+          if (tall) chart.classList.add('tall');
           chart.innerHTML = toSVG(scene);
 
           cell.append(cellHead, chart);
@@ -557,7 +561,7 @@
         'Bar',
         [
           { title: 'Basic', scene: bar(barValuesDense, { gap: 0.6 }) },
-          { title: 'Rounded caps', scene: bar(barValuesDense, { radius: 4, gap: 0.6 }) },
+          { title: 'Rounded caps', scene: bar(barValuesDense, { radius: 1, gap: 0.6 }) },
           {
             title: 'Negative values',
             scene: bar(
@@ -580,7 +584,8 @@
           },
           {
             title: 'Horizontal multiple',
-            scene: bar(barValues, { horizontal: true, gap: 0 }),
+            scene: bar(barValues, { horizontal: true, height: 40 }),
+            tall: true,
           },
           {
             title: 'Horizontal multiple stacked',
@@ -588,8 +593,9 @@
               stackedBarPairs.map((pair) =>
                 pair.map((value, row) => ({ value, color: stackColors[row] })),
               ),
-              { horizontal: true, gap: 0 },
+              { horizontal: true, height: 40 },
             ),
+            tall: true,
           },
         ],
         3,
