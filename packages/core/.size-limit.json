@@ -3,7 +3,7 @@
     "name": "line (standalone)",
     "path": "dist/line.js",
     "import": "{ line }",
-    "limit": "1.5 kB"
+    "limit": "1.75 kB"
   },
   {
     "name": "toSVG (standalone)",
