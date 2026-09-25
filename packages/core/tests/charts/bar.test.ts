@@ -235,3 +235,103 @@ describe('bar (horizontal)', () => {
     expect(rects[0]!.x).toBeLessThan(rects[1]!.x);
   });
 });
+
+describe('bar (grouped)', () => {
+  it('places segments side by side within each column', () => {
+    const scene = bar([[3, 6], [9, 2]], { mode: 'grouped' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(4);
+    // 2 columns: slot 49, barW 39.2; group of 2: sub-slot 19.6, subW 15.68
+    // col 0 slot starts at 5.9 -> bars at 7.86 and 27.46
+    expect(rects[0]).toMatchObject({ x: 7.86, width: 15.68 });
+    expect(rects[1]).toMatchObject({ x: 27.46, width: 15.68 });
+    // col 1 slot starts at 54.9 -> bars at 56.86 and 76.46
+    expect(rects[2]).toMatchObject({ x: 56.86, width: 15.68 });
+    expect(rects[3]).toMatchObject({ x: 76.46, width: 15.68 });
+  });
+
+  it('scales the domain to segment values, not column totals', () => {
+    // totals would be 16 (stacked domain [0,16]); grouped domain is [0,8]
+    const scene = bar([[8, 8]], { mode: 'grouped' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    // each value-8 bar spans the full plot height (18)
+    for (const r of rects) expect(r.height).toBe(18);
+  });
+
+  it('draws every bar from the zero baseline, including negatives', () => {
+    const scene = bar([[-4, 6]], { mode: 'grouped' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(2);
+    for (const r of rects) expect(r.height).toBeGreaterThan(0);
+    // domain [-4,6] -> baseline y(0) = 11.8; negative bar hangs below it
+    expect(rects[0]).toMatchObject({ y: 11.8, height: 7.2 });
+    expect(rects[1]).toMatchObject({ y: 1, height: 10.8 });
+  });
+
+  it('lays out grouped bars along the category axis when horizontal', () => {
+    const scene = bar([[3, 6]], { mode: 'grouped', horizontal: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(2);
+    // side by side vertically: same height, different y
+    expect(rects[0]!.height).toBe(rects[1]!.height);
+    expect(rects[0]!.y).toBeLessThan(rects[1]!.y);
+    // longer value -> longer bar along x
+    expect(rects[1]!.width).toBeGreaterThan(rects[0]!.width);
+  });
+
+  it('keeps bar widths uniform and centers short columns with ragged data', () => {
+    const scene = bar([[4, 8], [6]], { mode: 'grouped' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(3);
+    const widths = new Set(rects.map((r) => r.width));
+    expect(widths.size).toBe(1);
+    // column 2's lone bar sits centered where its pair would be (56.86..76.46)
+    const lone = rects[2]!.x as number;
+    expect(lone).toBeGreaterThan(56.86);
+    expect(lone).toBeLessThan(76.46);
+  });
+
+  it('colors each series consistently across columns', () => {
+    const scene = bar([[1, 2], [3, 4]], { mode: 'grouped' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    // same series index -> same palette color; different series -> different
+    expect(rects[0]!.fill).toBe(rects[2]!.fill);
+    expect(rects[0]!.fill).not.toBe(rects[1]!.fill);
+    expect(rects[1]!.fill).toBe(rects[3]!.fill);
+    for (const r of rects) expect(r.fillOpacity).toBe(1);
+  });
+
+  it('does not apply the stacked opacity step-down with a uniform color', () => {
+    const scene = bar([[1, 2]], { mode: 'grouped', color: 'purple' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) {
+      expect(r.fill).toBe('purple');
+      expect(r.fillOpacity).toBe(1);
+    }
+  });
+
+  it('draws one track per bar in grouped mode', () => {
+    const scene = bar([[3, 6]], { mode: 'grouped', track: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    // 2 tracks + 2 bars
+    expect(rects).toHaveLength(4);
+    // tracks span the full value domain height (18)
+    expect(rects[0]).toMatchObject({ height: 18 });
+    expect(rects[1]).toMatchObject({ height: 18 });
+  });
+
+  it('defaults to stacked and matches an explicit stacked mode', () => {
+    const data = [[3, 2], [5, 4]];
+    const implicit = bar(data);
+    const explicit = bar(data, { mode: 'stacked' });
+    expect(explicit.marks).toEqual(implicit.marks);
+    expect(explicit.points).toEqual(implicit.points);
+  });
+
+  it('exposes one point per segment with row/col', () => {
+    const scene = bar([[3, 6], [9, 2]], { mode: 'grouped' });
+    expect(scene.points).toHaveLength(4);
+    expect(scene.points[0]).toMatchObject({ col: 0, row: 0, value: 3 });
+    expect(scene.points[3]).toMatchObject({ col: 1, row: 1, value: 2 });
+  });
+});

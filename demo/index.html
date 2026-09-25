@@ -556,6 +556,16 @@
         [6, 4],
       ];
       const stackColors = ['var(--c1)', 'var(--c2)'];
+      // Two series per category (e.g. signups: free vs paid). In grouped
+      // mode each series takes its color from the categorical palette.
+      const groupedBars = [
+        [12, 9],
+        [18, 14],
+        [15, 12],
+        [21, 16],
+        [17, 13],
+        [24, 19],
+      ];
       const palette = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)'];
 
       // 10x10 correlation-style matrix: symmetric, 1s on the diagonal,
@@ -585,6 +595,7 @@
               negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
             ),
           },
+          { title: 'Grouped', scene: bar(groupedBars, { mode: 'grouped' }) },
           {
             title: 'Horizontal single',
             scene: bar(
@@ -612,6 +623,11 @@
               ),
               { horizontal: true, height: 40 },
             ),
+            tall: true,
+          },
+          {
+            title: 'Grouped horizontal',
+            scene: bar(groupedBars, { mode: 'grouped', horizontal: true, height: 40 }),
             tall: true,
           },
         ],
