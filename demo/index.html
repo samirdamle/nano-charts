@@ -800,6 +800,34 @@
         { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
       ]);
 
+      group('Radar', [
+        {
+          title: 'Single series (shorthand)',
+          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
+        },
+        {
+          title: 'Multi-series overlay — hover the dots',
+          scene: radar(
+            [
+              { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
+              {
+                data: [7, 3, 8, 4, 6],
+                name: 'Mobile',
+                color: 'var(--c4)',
+                dot: 'all',
+                dotRadius: 2.5,
+              },
+            ],
+            { width: 120, height: 120, gridOpacity: 0.35 },
+          ),
+          interactive: true,
+        },
+        {
+          title: 'Custom max, no grid',
+          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
+        },
+      ]);
+
       group('Heatmap', [
         {
           title: 'Correlation matrix',
@@ -829,34 +857,6 @@
               v === 0 ? 'hsla(0, 0%, 55%, 0.2)' : `hsla(140, 70%, 60%, ${v * 0.25})`,
           }),
           blockScale: 1.6,
-        },
-      ]);
-
-      group('Radar', [
-        {
-          title: 'Single series (shorthand)',
-          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
-        },
-        {
-          title: 'Multi-series overlay — hover the dots',
-          scene: radar(
-            [
-              { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
-              {
-                data: [7, 3, 8, 4, 6],
-                name: 'Mobile',
-                color: 'var(--c4)',
-                dot: 'all',
-                dotRadius: 2.5,
-              },
-            ],
-            { width: 120, height: 120, gridOpacity: 0.35 },
-          ),
-          interactive: true,
-        },
-        {
-          title: 'Custom max, no grid',
-          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
         },
       ]);
 
