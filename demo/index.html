@@ -74,7 +74,7 @@
         background: var(--bg);
         color: var(--text);
         font-family: var(--mono);
-        font-size: 13px;
+        font-size: 16px;
         line-height: 1.7;
         counter-reset: group;
       }
@@ -97,7 +97,7 @@
       }
       .kicker {
         margin: 0;
-        font-size: 12px;
+        font-size: 16px;
         color: var(--accent);
       }
       .hero-top {
@@ -144,6 +144,26 @@
         font-weight: 700;
         letter-spacing: -0.04em;
         line-height: 1.15;
+        color: var(--c3);
+      }
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        align-items: start;
+      }
+      .hero-features ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .hero-features li {
+        padding: 3px 0;
+        color: var(--muted);
+      }
+      .hero-features li::before {
+        content: '· ';
+        color: var(--accent);
       }
       .lede {
         margin: 0;
@@ -152,11 +172,11 @@
       }
       .meta {
         margin: 18px 0 0;
-        font-size: 12px;
-        color: var(--faint);
+        font-size: 16px;
+        color: var(--text);
       }
       .meta a {
-        color: var(--text);
+        color: var(--c1);
         text-decoration: none;
         border-bottom: 1px solid var(--line);
       }
@@ -265,7 +285,7 @@
         color: var(--muted);
       }
       footer a {
-        color: var(--muted);
+        color: var(--c1);
       }
       footer a:hover {
         color: var(--accent);
@@ -277,6 +297,9 @@
         }
         .hero h1 {
           font-size: 30px;
+        }
+        .hero-grid {
+          grid-template-columns: 1fr;
         }
         .cell {
           padding: 16px 18px;
@@ -294,17 +317,35 @@
             <button type="button" data-set-theme="light" aria-pressed="false">Light</button>
           </div>
         </div>
-        <h1>Nano Charts - Tiny Minimal Charts</h1>
-        <p class="lede">
-          This is a demo of all the nano chart types with their variations. Nano charts is an open
-          source, very light weight, pure JavaScript + SVG data visualization library.
-        </p>
-        <p class="meta">
-          <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
-          by Samir Damle ·
-          v0.1.0 ·
-          7.4 kB for all 12 charts (minified + Brotli)
-        </p>
+        <div class="hero-grid">
+          <div>
+            <h1>Nano Charts - Tiny Minimal Charts</h1>
+            <p class="lede">
+              This is a demo of all the nano chart types with their variations. Nano charts is an open
+              source, very light weight, pure JavaScript + SVG data visualization library.
+            </p>
+            <p class="meta">
+              <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
+              <a href="https://www.npmjs.com/package/@samirdamle/nano-charts">NPM</a> ·
+              by Samir Damle ·
+              v0.1.0 ·
+              7.4 kB for all 12 charts (minified + Brotli)
+            </p>
+          </div>
+          <aside class="hero-features">
+            <ul>
+              <li>8 kB minified</li>
+              <li>12 charts</li>
+              <li>No dependencies</li>
+              <li>Pure JS + SVG</li>
+              <li>Hover and click events</li>
+              <li>Customizable and theme-able</li>
+              <li>Accessible</li>
+              <li>React wrapper in nano-charts-react</li>
+              <li>MIT License</li>
+            </ul>
+          </aside>
+        </div>
       </header>
       <div id="root"></div>
       <footer>
