@@ -198,7 +198,7 @@
         align-items: baseline;
         gap: 12px;
         padding-bottom: 12px;
-        font-size: 12px;
+        font-size: 16px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         color: var(--muted);
@@ -481,7 +481,11 @@
       group('Line', [
         { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
         { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
-        { title: 'Single point — renders as a dot', scene: line([5]) },
+        {
+          title: 'Hover & click',
+          scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
+          interactive: true,
+        },
         {
           title: 'Multiple series',
           scene: lines([
@@ -495,21 +499,15 @@
             { data: [1, 2, 1, 3, 2, 3], name: 'Forecast', color: 'var(--c3)', strokeWidth: 2.5 },
           ]),
         },
-        {
-          title: 'Hover & click',
-          scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
-          interactive: true,
-        },
       ]);
 
       group('Area', [
         { title: 'Basic', scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42]) },
-        { title: 'Single point — renders as a dot', scene: area([5]) },
         {
           title: 'Custom fill color',
           scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42], {
             color: 'var(--c1)',
-            fillColor: 'var(--c4)',
+            fillColor: 'var(--c3)',
             fillOpacity: 0.35,
           }),
         },
