@@ -275,6 +275,10 @@
       .chart.tall svg {
         max-height: 220px;
       }
+      .chart.stacked {
+        flex-direction: column;
+        gap: 2px;
+      }
       .readout {
         min-height: 16px;
         padding-top: 10px;
@@ -340,6 +344,7 @@
             <p class="meta">
               <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
               <a href="https://www.npmjs.com/package/@samirdamle/nano-charts">NPM</a> ·
+              <a href="https://www.npmjs.com/package/@samirdamle/nano-charts-react">React on npm</a> ·
               by Samir Damle ·
               v0.1.0
             </p>
@@ -358,18 +363,6 @@
             </ul>
           </aside>
         </div>
-        <h1>Nano Charts - Tiny Minimal Charts</h1>
-        <p>
-          This is a demo of all the nano chart types with their variations. Nano charts is an open
-          source, very light weight, pure JavaScript + SVG data visualization library.
-        </p>
-        <p class="meta">
-          <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
-          by Samir Damle ·
-          <a href="https://www.npmjs.com/package/@samirdamle/nano-charts">v0.1.0</a> ·
-          <a href="https://www.npmjs.com/package/@samirdamle/nano-charts-react">React on npm</a> ·
-          7.4 kB for all 12 charts (minified + Brotli)
-        </p>
       </header>
       <div id="root"></div>
       <footer>
@@ -429,7 +422,7 @@
         const grid = document.createElement('div');
         grid.className = columns ? `grid grid-cols-${columns}` : 'grid';
 
-        for (const { title: cardTitle, scene, fixed, tall, interactive } of entries) {
+        for (const { title: cardTitle, scene, scenes, fixed, tall, stacked, interactive } of entries) {
           const cell = document.createElement('div');
           cell.className = 'cell';
 
@@ -449,7 +442,13 @@
           const chart = document.createElement('div');
           chart.className = 'chart';
           if (tall) chart.classList.add('tall');
-          chart.innerHTML = toSVG(scene);
+          if (stacked) chart.classList.add('stacked');
+          for (const s of scenes ?? [scene]) {
+            const holder = document.createElement('div');
+            holder.innerHTML = toSVG(s);
+            const svg = holder.firstElementChild;
+            if (svg) chart.append(svg);
+          }
 
           cell.append(cellHead, chart);
 
@@ -788,6 +787,34 @@
         },
       ]);
 
+      // September 2026 activity calendar: one pictogram row per week. Each
+      // datum is a single day block, so per-day color carries the value —
+      // grey at 0.2 opacity for empty days, green at increasing opacity
+      // for days with activity. (Pictogram itself is 1D, so the month is
+      // composed from five week rows.)
+      const septLevels = [
+        0, 2, 1, 3, 2, 0, 1,
+        3, 4, 2, 3, 1, 0, 2,
+        2, 3, 4, 2, 3, 1, 0,
+        4, 2, 3, 4, 2, 0, 1,
+        3, 2, 4, 0, 0, 0, 0,
+      ];
+      const septDayColor = (level) =>
+        level === 0 ? 'hsla(0, 0%, 55%, 0.2)' : `hsla(140, 70%, 60%, ${level * 0.25})`;
+      const septWeeks = [0, 1, 2, 3, 4].map((week) =>
+        pictogram(
+          septLevels.slice(week * 7, week * 7 + 7).map((level, d) => {
+            const date = week * 7 + d; // 1-30 = September, otherwise padding
+            return {
+              value: 1,
+              label: date >= 1 && date <= 30 ? `Sep ${date}` : 'outside month',
+              color: septDayColor(level),
+            };
+          }),
+          { block: { kind: 'rect', radius: 2 } },
+        ),
+      );
+
       group('Pictogram', [
         { title: 'Basic columns', scene: pictogram([3, 7, 5, 2]) },
         {
@@ -799,7 +826,6 @@
           title: 'Emoji with partial fill',
           scene: pictogram([4.5], {
             block: { kind: 'emoji', emoji: '⭐' },
-            blockSize: 16,
             horizontal: true,
           }),
         },
@@ -809,6 +835,7 @@
           scene: pictogram([3, 2.5, 4]),
           interactive: true,
         },
+        { title: 'September calendar', scenes: septWeeks, stacked: true },
       ]);
     </script>
   </body>
