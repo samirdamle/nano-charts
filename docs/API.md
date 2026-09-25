@@ -69,6 +69,7 @@ line([4, 9, 2, 7, 5], { strokeWidth: 1.5, dot: 'last' });
 
 | Option                   | Type                            | Default  | Description                            |
 | ------------------------ | ------------------------------- | -------- | -------------------------------------- |
+| `mode`                   | `'linear' \| 'spline'`          | `'linear'` | Straight segments or smooth curve      |
 | `dot`                    | `'none' \| 'last' \| 'all'`     | `'none'` | Dot markers on the line                |
 | `strokeWidth`            | `number`                        | `1`      | Line thickness                         |
 | `dotRadius`              | `number`                        | `1`      | Dot radius                             |
