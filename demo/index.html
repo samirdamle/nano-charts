@@ -601,7 +601,15 @@
         3,
       );
 
-      group('Win / Loss', [{ title: 'Basic', scene: winLoss([1, -2, 3, -1, 2, -3]) }]);
+      group('Win / Loss', [
+        {
+          title: 'Basic',
+          scene: winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
+            winColor: 'var(--c3)',
+            lossColor: 'var(--c4)',
+          }),
+        },
+      ]);
 
       group('Bullet', [
         { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
