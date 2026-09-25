@@ -556,6 +556,8 @@
         [6, 4],
       ];
       const stackColors = ['var(--c1)', 'var(--c2)'];
+      // Grouped series colors: chalk blue then chalk yellow.
+      const groupColors = ['var(--c1)', 'var(--c2)'];
       // Two series per category (e.g. signups: free vs paid). In grouped
       // mode each series takes its color from the categorical palette.
       const groupedBars = [
@@ -590,24 +592,12 @@
           { title: 'Basic', scene: bar(barValuesDense, { gap: 0.6 }) },
           { title: 'Rounded caps', scene: bar(barValuesDense, { radius: 1, gap: 0.6 }) },
           {
-            title: 'Negative values',
+            title: 'Grouped',
             scene: bar(
-              negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
-            ),
-          },
-          { title: 'Grouped', scene: bar(groupedBars, { mode: 'grouped' }) },
-          {
-            title: 'Horizontal single',
-            scene: bar(
-              [
-                [
-                  { value: 3, color: 'var(--c1)' },
-                  { value: 5, color: 'var(--c2)' },
-                  { value: 2, color: 'var(--c3)' },
-                  { value: 4, color: 'var(--c4)' },
-                ],
-              ],
-              { horizontal: true },
+              groupedBars.map((pair) =>
+                pair.map((value, row) => ({ value, color: groupColors[row] })),
+              ),
+              { mode: 'grouped' },
             ),
           },
           {
@@ -627,8 +617,33 @@
           },
           {
             title: 'Grouped horizontal',
-            scene: bar(groupedBars, { mode: 'grouped', horizontal: true, height: 40 }),
+            scene: bar(
+              groupedBars.map((pair) =>
+                pair.map((value, row) => ({ value, color: groupColors[row] })),
+              ),
+              { mode: 'grouped', horizontal: true, height: 40 },
+            ),
             tall: true,
+          },
+          {
+            title: 'Horizontal single',
+            scene: bar(
+              [
+                [
+                  { value: 3, color: 'var(--c1)' },
+                  { value: 5, color: 'var(--c2)' },
+                  { value: 2, color: 'var(--c3)' },
+                  { value: 4, color: 'var(--c4)' },
+                ],
+              ],
+              { horizontal: true },
+            ),
+          },
+          {
+            title: 'Negative values',
+            scene: bar(
+              negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
+            ),
           },
         ],
         3,
