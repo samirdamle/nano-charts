@@ -411,24 +411,38 @@ describe('bar (waterfall)', () => {
     expect(scene.marks.filter((m) => m.type === 'rect')).toHaveLength(3);
   });
 
-  it('draws dashed connectors between consecutive columns by default', () => {
+  it('draws solid connectors between consecutive columns by default', () => {
     const scene = bar([3, 2, -1], { mode: 'waterfall' });
     const paths = scene.marks.filter((m) => m.type === 'path');
     expect(paths).toHaveLength(2);
     const rects = scene.marks.filter((m) => m.type === 'rect');
     for (const p of paths) {
-      expect(p.strokeDasharray).toBe('3 2');
+      expect(p.strokeDasharray).toBeUndefined();
       expect(p.fill).toBe('none');
       // level: both endpoints share one y
       const nums = p.d.match(/[\d.]+/g)!.map(Number);
       expect(nums[1]).toBeCloseTo(nums[3]!, 5);
     }
     // first connector sits at the 3-level: the top edge of the first bar,
-    // spanning the gap to the second bar
+    // spanning the full width of both columns
     const nums = paths[0]!.d.match(/[\d.]+/g)!.map(Number);
     expect(nums[1]).toBeCloseTo(rects[0]!.y, 5);
-    expect(nums[0]).toBeCloseTo(rects[0]!.x + rects[0]!.width, 5);
-    expect(nums[2]).toBeCloseTo(rects[1]!.x, 5);
+    expect(nums[0]).toBeCloseTo(rects[0]!.x, 5);
+    expect(nums[2]).toBeCloseTo(rects[1]!.x + rects[1]!.width, 5);
+  });
+
+  it('colors connectors with connectorColor, defaulting to the chart color', () => {
+    const fallback = bar([3, 2, -1], { mode: 'waterfall', color: 'navy' });
+    const fallbackPaths = fallback.marks.filter((m) => m.type === 'path');
+    expect(fallbackPaths).toHaveLength(2);
+    for (const p of fallbackPaths) {
+      expect(p.stroke).toBe('navy');
+      expect(p.strokeOpacity).toBeUndefined();
+    }
+    const explicit = bar([3, 2, -1], { mode: 'waterfall', connectorColor: 'white' });
+    for (const p of explicit.marks.filter((m) => m.type === 'path')) {
+      expect(p.stroke).toBe('white');
+    }
   });
 
   it('skips connectors when connectors: false', () => {

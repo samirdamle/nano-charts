@@ -62,9 +62,9 @@ describe('BarChart mode', () => {
   it("passes mode='waterfall' through to the core bar() function", () => {
     const data = [3, 2, -1];
     const { container } = render(
-      <BarChart data={data} mode="waterfall" upColor="green" downColor="red" total />,
+      <BarChart data={data} mode="waterfall" upColor="green" downColor="red" total connectorColor="blue" />,
     );
-    const scene = bar(data, { mode: 'waterfall', upColor: 'green', downColor: 'red', total: true });
+    const scene = bar(data, { mode: 'waterfall', upColor: 'green', downColor: 'red', total: true, connectorColor: 'blue' });
     const rendered = container.querySelectorAll('svg > rect');
     const expected = scene.marks.filter((m) => m.type === 'rect');
     expect(rendered).toHaveLength(expected.length);
@@ -72,8 +72,8 @@ describe('BarChart mode', () => {
     expect(rendered).toHaveLength(4);
     expect(rendered[0]!.getAttribute('fill')).toBe('green');
     expect(rendered[2]!.getAttribute('fill')).toBe('red');
-    // connectors render as dashed paths
-    const connectors = container.querySelectorAll('svg > path[stroke-dasharray]');
+    // connectors render as solid paths in the connector color
+    const connectors = container.querySelectorAll('svg > path[stroke="blue"]');
     expect(connectors).toHaveLength(scene.marks.filter((m) => m.type === 'path').length);
   });
 });
