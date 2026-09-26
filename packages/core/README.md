@@ -50,7 +50,7 @@ bundle-size positioning.
 | `line` | trend — straight or smooth spline | `number[]`, `{id,label,value}[]`, or accessors |
 | `lines` | multi-series trend overlay | `LineSeries[]` — each series is `{ data, name?, color?, strokeWidth?, strokeDasharray?, strokeLinecap?, dot?, dotRadius? }` |
 | `area` | filled trend | same shapes as `line` |
-| `bar` | magnitude — simple, stacked, or grouped | series, or nested arrays for stacks/groups |
+| `bar` | magnitude — simple, stacked, grouped, or waterfall | series, or nested arrays for stacks/groups |
 | `donut` | proportion — full or partial dial | `{ value, max }` (gauge) or segments |
 | `gauge` | dial gauge — arc/needle, zones | `{ value, max }` |
 | `scatter` | 2D relationship — per-point colors | `[x,y][]`, `{x,y}[]` (+ `color`), or accessors |
