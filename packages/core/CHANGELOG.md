@@ -1,5 +1,16 @@
 # @samirdamle/nano-charts
 
+## 0.4.0
+
+### Minor Changes
+
+- 6d6bc2d: Add `mode: 'waterfall'` to `bar()`: each column renders as a cumulative step starting where the previous one ended, so `[3, 2, -1]` draws 0→3, 3→5, 5→4. New options: `upColor` / `downColor` color steps by delta sign (defaulting to the chart color; an explicit per-datum color still wins), `total` appends a final column spanning 0 to the grand total (with `totalColor`), and `connectors` (default `true`) draws thin solid lines between consecutive columns: each connector sits at the level where one column ends and the next begins and spans the full width of both columns, and the new `connectorColor` option sets their color (defaulting to the chart color). Works vertically and horizontally; `<BarChart mode="waterfall">` in React picks it up automatically.
+
+### Patch Changes
+
+- 6d6bc2d: Refactor: `donut()` with gauge input (`{ value, max }`) now delegates to `gauge()` in arc mode instead of maintaining a parallel inline implementation (closes #22). Rendering, points, and a11y are unchanged for valid inputs; non-finite values now follow gauge's clamp policy (pinned at the dial bottom) instead of leaking `NaN` into labels.
+- 6d6bc2d: Fix hover/click lookups on heatmap cells: `rect` marks now support the optional `index` field (the mark's dense position in the points array, matching the circle-mark contract), serialized as `data-index` by both `toSVG` and the React renderer. Heatmap cells are tagged, so `scene.points[Number(rect.dataset.index)]` resolves to the hovered cell.
+
 ## 0.3.0
 
 ### Minor Changes
