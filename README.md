@@ -11,7 +11,7 @@ cards.
 | `line`                             | Trend sparkline                                     |
 | `area`                             | Filled trend                                        |
 | `lines`                            | Multi-series overlay                                |
-| `bar`                              | Magnitude bars, simple or stacked                   |
+| `bar`                              | Magnitude bars — simple, stacked, grouped, or waterfall |
 | `winLoss`                          | Direction / sign (wins vs. losses)                  |
 | `bullet`                           | Value vs. target with ranges                        |
 | `donut`                            | Proportion, full or partial dial                    |

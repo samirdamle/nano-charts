@@ -42,7 +42,7 @@ bundle-size positioning.
 |----------|---------|------|
 | `line` / `area` | trend | `number[]`, `{id,label,value}[]`, or accessors |
 | `lines` | multi-series trend overlay | `LineSeries[]` — each series is `{ data, name?, color?, strokeWidth?, strokeDasharray?, strokeLinecap?, dot?, dotRadius? }` |
-| `bar` | magnitude (simple or **stacked**) | series, or nested arrays for stacks |
+| `bar` | magnitude — simple, stacked, grouped, or waterfall | series, or nested arrays for stacks/groups |
 | `winLoss` | direction/sign | series |
 | `bullet` | value vs target | `{ value, target, ranges? }` |
 | `donut` | proportion | `{ value, max }` (gauge) or segments |
