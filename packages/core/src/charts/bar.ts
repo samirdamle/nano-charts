@@ -55,6 +55,9 @@ export interface BarOptions<T = number>
   /** Draw thin dashed connector lines from the end of each waterfall column
    * to the start of the next. Defaults to `true` (waterfall mode only). */
   connectors?: boolean;
+  /** Color of the waterfall connector lines. Defaults to the chart's
+   * `color` (waterfall mode only). */
+  connectorColor?: string;
 }
 
 type BarSegment<T> =
@@ -295,24 +298,25 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     });
   });
 
-  // Waterfall connectors: thin dashed lines from the end of each column to
-  // the start of the next, spanning the gap between bars. The end of one
-  // column is the start of the next, so each connector is level; the total
-  // column's connector meets its top at the grand-total level. Decorative:
-  // they emit no points.
+  // Waterfall connectors: thin dashed lines at the level where one column
+  // ends and the next begins, spanning the full width of both columns so
+  // the steps read as one continuous staircase. The end of one column is
+  // the start of the next, so each connector is level; the total column's
+  // connector meets its top at the grand-total level. Decorative: they
+  // emit no points.
   if (waterfall && options.connectors !== false && columns.length > 1) {
+    const connectorStroke = options.connectorColor ?? color;
     for (let col = 0; col < columns.length - 1; col++) {
       const endValue = (bases[col] ?? 0) + columns[col]![0]!.value;
       const v = round(valueScale(endValue));
-      const edge = round(round(slot.x(col)) + barW);
-      const next = round(slot.x(col + 1));
+      const from = round(slot.x(col));
+      const to = round(round(slot.x(col + 1)) + barW);
       marks.push({
         type: 'path',
-        d: horizontal ? `M ${v} ${edge} L ${v} ${next}` : `M ${edge} ${v} L ${next} ${v}`,
+        d: horizontal ? `M ${v} ${from} L ${v} ${to}` : `M ${from} ${v} L ${to} ${v}`,
         fill: 'none',
-        stroke: color,
+        stroke: connectorStroke,
         strokeWidth: 1,
-        strokeOpacity: 0.45,
         strokeDasharray: '3 2',
       });
     }
