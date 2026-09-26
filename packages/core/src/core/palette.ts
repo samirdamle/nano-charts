@@ -11,7 +11,7 @@ export function categoricalColor(index: number, total: number): string {
  * read well as countable unit blocks. Cycles when there are more categories
  * than colors.
  */
-const PASTELS = ['#8fe6c4', '#7fd8e6', '#f3a8c7', '#c6a6e8', '#f0dd82'];
+const PASTELS = ['#8fe6c4', '#f3a8c7', '#7fd8e6', '#c6a6e8', '#f0dd82'];
 
 export function pastelColor(index: number): string {
   return PASTELS[((index % PASTELS.length) + PASTELS.length) % PASTELS.length]!;

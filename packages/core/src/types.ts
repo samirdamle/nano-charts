@@ -24,9 +24,10 @@ export type Mark =
       stroke?: string;
       strokeWidth?: number;
       strokeOpacity?: number;
+      strokeDasharray?: string;
       strokeLinecap?: 'butt' | 'round' | 'square';
     }
-  | { type: 'rect'; x: number; y: number; width: number; height: number; fill?: string; fillOpacity?: number; rx?: number }
+  | { type: 'rect'; x: number; y: number; width: number; height: number; fill?: string; fillOpacity?: number; rx?: number; index?: number }
   | {
       type: 'circle';
       cx: number;

@@ -62,4 +62,17 @@ describe('heatmap', () => {
     expect(scene.height).toBe(12);
     for (const r of rects) expect(r.fill).not.toContain('NaN');
   });
+
+  it('tags rect marks with their dense position in the points array', () => {
+    const scene = heatmap([[1, undefined, 3], [4]], { cellSize: 6, gap: 0 });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(3); // the undefined cell emits nothing
+    expect(rects.map((r) => r.index)).toEqual([0, 1, 2]);
+    // each data-index resolves back to the hovered cell's point
+    for (const r of rects) {
+      const point = scene.points[r.index!];
+      expect(point).toBeDefined();
+      expect(point!.value).toBe([1, 3, 4][r.index!]);
+    }
+  });
 });
