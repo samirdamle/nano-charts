@@ -43,6 +43,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 fill={mark.fill}
                 fillOpacity={mark.fillOpacity}
                 stroke="none"
+                data-index={mark.index}
               />
             );
           case 'circle':
