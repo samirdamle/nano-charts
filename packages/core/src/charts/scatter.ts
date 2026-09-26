@@ -7,8 +7,6 @@ export interface ScatterPoint {
   label?: string;
   x: number;
   y: number;
-  /** Per-point fill. Falls back to the chart's `color` option when omitted. */
-  color?: string;
 }
 
 export interface ScatterAccessors<T> {
@@ -16,7 +14,6 @@ export interface ScatterAccessors<T> {
   y: (row: T, i: number) => number;
   label?: (row: T, i: number) => string;
   id?: (row: T, i: number) => string | number;
-  colorAccessor?: (row: T, i: number) => string | undefined;
 }
 
 // ScatterPoint is just the default T; keeping it out of the union lets TS infer T
@@ -35,20 +32,18 @@ interface XY {
   x: number;
   y: number;
   index: number;
-  color?: string;
 }
 
 function toXY<T>(data: ScatterInput<T>, options: ScatterOptions<T>): XY[] {
   if (data.length === 0) return [];
   if (options.x && options.y) {
-    const { x, y, label, id, colorAccessor } = options;
+    const { x, y, label, id } = options;
     return (data as T[]).map((row, i) => ({
       id: id ? id(row, i) : i,
       label: label ? label(row, i) : `${x(row, i)}, ${y(row, i)}`,
       x: x(row, i),
       y: y(row, i),
       index: i,
-      color: colorAccessor ? colorAccessor(row, i) : undefined,
     }));
   }
   if (Array.isArray(data[0])) {
@@ -66,7 +61,6 @@ function toXY<T>(data: ScatterInput<T>, options: ScatterOptions<T>): XY[] {
     x: p.x,
     y: p.y,
     index: i,
-    color: p.color,
   }));
 }
 
@@ -99,7 +93,7 @@ export function scatter<T = ScatterPoint>(
   for (const p of pts) {
     const cx = round(xScale(p.x));
     const cy = round(yScale(p.y));
-    marks.push({ type: 'circle', cx, cy, r: radius, fill: p.color ?? color });
+    marks.push({ type: 'circle', cx, cy, r: radius, fill: color });
     points.push({ id: p.id, label: p.label, value: p.y, index: p.index, x: cx, y: cy });
   }
   return { ...base, marks, points };

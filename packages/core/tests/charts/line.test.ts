@@ -83,46 +83,4 @@ describe('line', () => {
     const circle = scene.marks.find((m) => m.type === 'circle');
     expect(circle).toMatchObject({ r: 4, index: 0 });
   });
-
-  it("mode 'linear' renders the classic polyline", () => {
-    const scene = line([0, 10, 5], { mode: 'linear' });
-    expect(scene.marks.find((m) => m.type === 'polyline')).toBeDefined();
-    expect(scene.marks.find((m) => m.type === 'path')).toBeUndefined();
-  });
-
-  it("mode 'spline' renders a smooth path through the points instead of a polyline", () => {
-    const scene = line([0, 10, 5], { mode: 'spline' });
-    expect(scene.marks.find((m) => m.type === 'polyline')).toBeUndefined();
-    const path = scene.marks.find((m) => m.type === 'path');
-    expect(path).toMatchObject({
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: 1,
-    });
-    expect(path?.d).toBe('M1,19 C9.17,16 33.67,2.5 50,1 C66.33,-0.5 90.83,8.5 99,10');
-  });
-
-  it('spline keeps strokeDasharray, strokeLinecap and dots working', () => {
-    const scene = line([0, 10, 5], {
-      mode: 'spline',
-      strokeDasharray: [4, 2],
-      strokeLinecap: 'round',
-      dot: 'all',
-    });
-    const path = scene.marks.find((m) => m.type === 'path');
-    expect(path).toMatchObject({ strokeDasharray: '4 2', strokeLinecap: 'round' });
-    expect(scene.marks.filter((m) => m.type === 'circle')).toHaveLength(3);
-  });
-
-  it('spline renders a single point as a dot (no degenerate path)', () => {
-    const scene = line([5], { mode: 'spline' });
-    expect(scene.marks.find((m) => m.type === 'path')).toBeUndefined();
-    expect(scene.marks.find((m) => m.type === 'circle')).toMatchObject({ index: 0 });
-  });
-
-  it('spline renders two points as a straight cubic', () => {
-    const scene = line([0, 10], { mode: 'spline' });
-    const path = scene.marks.find((m) => m.type === 'path');
-    expect(path?.d).toBe('M1,19 C17.33,16 82.67,4 99,1');
-  });
 });

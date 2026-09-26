@@ -27,7 +27,6 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 stroke={mark.stroke}
                 strokeWidth={mark.strokeWidth}
                 strokeOpacity={mark.strokeOpacity}
-                strokeDasharray={mark.strokeDasharray}
                 strokeLinecap={mark.strokeLinecap}
               />
             );

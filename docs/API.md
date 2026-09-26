@@ -69,7 +69,6 @@ line([4, 9, 2, 7, 5], { strokeWidth: 1.5, dot: 'last' });
 
 | Option                   | Type                            | Default  | Description                            |
 | ------------------------ | ------------------------------- | -------- | -------------------------------------- |
-| `mode`                   | `'linear' \| 'spline'`          | `'linear'` | Straight segments or smooth curve      |
 | `dot`                    | `'none' \| 'last' \| 'all'`     | `'none'` | Dot markers on the line                |
 | `strokeWidth`            | `number`                        | `1`      | Line thickness                         |
 | `dotRadius`              | `number`                        | `1`      | Dot radius                             |
@@ -404,7 +403,7 @@ size-limit); all figures below are minified + Brotli.
 | -------------------------------------------------------- | ------ | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 1.5 kB | **1.19 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB   | **878 B**   |
-| `@samirdamle/nano-charts` — full barrel                  | 9 kB   | **7.36 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 8 kB   | **7.36 kB** |
 | `@samirdamle/nano-charts-react` — `LineChart` standalone | 2 kB   | **1.89 kB** |
 | `@samirdamle/nano-charts-react` — full barrel            | 12 kB  | **7.27 kB** |
 
