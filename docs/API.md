@@ -109,7 +109,7 @@ when the caller passed one) → algorithmic categorical palette. The palette is
 positional — a pure function of `(seriesIndex, seriesCount)` — so colors can
 shift if the series count changes.
 
-### `bar(data, options?)` — magnitude bars, simple or stacked
+### `bar(data, options?)` — magnitude bars: simple, stacked, grouped, or waterfall
 
 ```ts
 bar([4, 9, 2]); // simple bars
@@ -119,6 +119,7 @@ bar([
   [2, 5],
 ]); // stacked: one inner array per column
 bar(data, { horizontal: true }); // horizontal orientation
+bar([120, -45, 60], { mode: 'waterfall', upColor: 'green', downColor: 'red' }); // cumulative steps
 ```
 
 Each column is a number, an object point (`{ value, label?, id?, color? }`), a
@@ -130,7 +131,13 @@ Stacked segments fall back to the categorical palette when no color is given.
 | `gap`                    | `number`                        | `0.2`                  | Fraction of the slot left empty between columns |
 | `radius`                 | `number`                        | —                      | Corner radius (`rx`) on bars                    |
 | `horizontal`             | `boolean`                       | `false`                | Draw bars left-to-right instead of bottom-up    |
+| `mode`                   | `'stacked' \| 'grouped' \| 'waterfall'` | `'stacked'`    | Segment layout: piled, side-by-side, or cumulative |
 | `track`                  | `boolean \| BarTrackOptions`    | —                      | Background track behind each bar spanning the full value domain |
+| `upColor`                | `string`                        | chart `color`          | Waterfall: column color for positive deltas     |
+| `downColor`              | `string`                        | chart `color`          | Waterfall: column color for negative deltas     |
+| `total`                  | `boolean`                       | `false`                | Waterfall: append a total column (0 → grand total) |
+| `totalColor`             | `string`                        | chart `color`          | Waterfall: color of the total column            |
+| `connectors`             | `boolean`                       | `true`                 | Waterfall: dashed connectors between columns    |
 | `colorAccessor`          | `(row, i) => string`            | —                      | Per-row color for custom object arrays          |
 | `value` / `label` / `id` | accessors                       | —                      | For custom object arrays                        |
 
@@ -139,6 +146,15 @@ opacity) behind the bars — the "100%" reference for progress-style bars.
 `track: { max, color, opacity, radius }` tunes it: `max` extends the value
 domain when larger than the data max, and `radius` defaults to the bar's own
 `radius` so rounded caps match. Tracks are decorative (no points).
+
+`mode: 'waterfall'` draws cumulative columns: each bar starts where the
+previous one ended, so `[3, 2, -1]` renders as 0→3, 3→5, 5→4. The input values
+are the deltas (nested arrays sum to one net step per column); the value domain
+spans the running totals. Steps are colored by delta sign via `upColor` /
+`downColor` (an explicit per-datum `color` still wins, and omitting both keeps
+the single chart `color`). `total: true` appends a final column spanning 0 to
+the grand total, and `connectors` (default `true`) draws thin dashed lines from
+the end of each column to the start of the next. Works horizontally too.
 
 ### `winLoss(data, options?)` — direction / sign
 
@@ -404,9 +420,9 @@ size-limit); all figures below are minified + Brotli.
 | -------------------------------------------------------- | ------ | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 1.5 kB | **1.19 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB   | **878 B**   |
-| `@samirdamle/nano-charts` — full barrel                  | 9 kB   | **7.36 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 9 kB   | **8.04 kB** |
 | `@samirdamle/nano-charts-react` — `LineChart` standalone | 2 kB   | **1.89 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 12 kB  | **7.27 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 12 kB  | **7.98 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 

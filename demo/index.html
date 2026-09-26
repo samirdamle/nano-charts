@@ -646,6 +646,15 @@
               negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
             ),
           },
+          {
+            title: 'Waterfall',
+            scene: bar([120, -45, 60, -30, 25, -80], {
+              mode: 'waterfall',
+              upColor: 'var(--c3)',
+              downColor: 'var(--c4)',
+              total: true,
+            }),
+          },
         ],
         3,
       );
