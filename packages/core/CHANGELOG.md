@@ -1,5 +1,12 @@
 # @samirdamle/nano-charts
 
+## 0.3.0
+
+### Minor Changes
+
+- b04ea81: Add `mode: 'spline'` to `line()` for smooth Catmull-Rom curves through the points (`mode: 'linear'` remains the default). Also adds `strokeDasharray` support to the `path` mark so dashed curves render in both SVG and React output.
+- fc11e77: Add per-point `color` to scatter: `ScatterPoint` gains an optional `color` field and `ScatterAccessors` gains a `colorAccessor`, so one chart can render multiple series (e.g. clusters) in different colors. Per-point color takes precedence over the uniform `color` option; colorless points behave exactly as before.
+
 ## 0.2.0
 
 ### Minor Changes
