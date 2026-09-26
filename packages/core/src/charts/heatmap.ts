@@ -67,6 +67,9 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
         height: size,
         fill: scale(value, { min: domain[0], max: domain[1] }),
         rx: options.radius,
+        // Dense position in the points array (skipped cells emit nothing),
+        // matching the circle-mark contract the demo's hover lookup uses.
+        index: points.length,
       });
       points.push({ id: `${r}-${c}`, label: String(value), value, index: r * cols + c, row: r, col: c, x, y, w: size, h: size });
     }

@@ -28,7 +28,7 @@ function renderMark(m: Mark): string {
     case 'rect':
       // rect marks are fill-only; stroke="none" overrides the root svg's inherited
       // stroke="currentColor" so plain rects never pick up an unwanted border.
-      return `<rect${attr('x', m.x)}${attr('y', m.y)}${attr('width', m.width)}${attr('height', m.height)}${attr('rx', m.rx)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', 'none')}/>`;
+      return `<rect${attr('x', m.x)}${attr('y', m.y)}${attr('width', m.width)}${attr('height', m.height)}${attr('rx', m.rx)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', 'none')}${attr('data-index', m.index)}/>`;
     case 'circle':
       // Like rects, circles default to stroke="none" so fill-based marks never pick
       // up the root svg's inherited stroke="currentColor"; an explicit mark stroke

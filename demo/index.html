@@ -283,6 +283,9 @@
         color: var(--faint);
         font-variant-numeric: tabular-nums;
       }
+      .readout.value {
+        color: var(--text);
+      }
 
       footer {
         margin-top: 72px;
@@ -423,7 +426,7 @@
         const grid = document.createElement('div');
         grid.className = columns ? `grid grid-cols-${columns}` : 'grid';
 
-        for (const { title: cardTitle, scene, fixed, tall, interactive, blockScale: entryScale } of entries) {
+        for (const { title: cardTitle, scene, fixed, tall, interactive, blockScale: entryScale, describe } of entries) {
           const cell = document.createElement('div');
           cell.className = 'cell';
 
@@ -465,9 +468,14 @@
             info.textContent = idleText;
 
             let selectedText = null;
+            const setReadout = (text, isValue) => {
+              info.textContent = text;
+              info.classList.toggle('value', isValue);
+            };
             const describePoint = (indexAttr) => {
               const point = scene.points[Number(indexAttr)];
               if (!point) return null;
+              if (describe) return describe(point);
               const series = point.seriesLabel ? ` (${point.seriesLabel})` : '';
               const block = point.blockNumber
                 ? ` — block ${point.blockNumber} of ${point.blocksTotal}${point.partial ? ' (partial)' : ''}`
@@ -478,11 +486,12 @@
             chart.addEventListener('pointermove', (event) => {
               const indexAttr = event.target?.dataset?.index;
               const desc = indexAttr === undefined ? null : describePoint(indexAttr);
-              info.textContent = desc ? `Hovering: ${desc}` : (selectedText ?? idleText);
+              if (desc) setReadout(desc, true);
+              else setReadout(selectedText ?? idleText, selectedText !== null);
             });
 
             chart.addEventListener('pointerleave', () => {
-              info.textContent = selectedText ?? idleText;
+              setReadout(selectedText ?? idleText, selectedText !== null);
             });
 
             chart.addEventListener('click', (event) => {
@@ -491,7 +500,7 @@
               const desc = describePoint(indexAttr);
               if (desc) {
                 selectedText = `Selected: ${desc}`;
-                info.textContent = selectedText;
+                setReadout(selectedText, true);
               }
             });
 
@@ -712,7 +721,7 @@
               endAngle: 360,
               zones: [
                 { to: 50, color: 'var(--c3)' },
-                { to: 80, color: 'var(--c5)' },
+                { to: 80, color: 'var(--accent)' },
                 { to: 100, color: 'var(--c4)' },
               ],
               centerLabel: '72',
@@ -829,13 +838,13 @@
       group('Radar', [
         {
           title: 'Single series (shorthand)',
-          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
+          scene: radar([4, 9, 2, 7, 5], { color: '#f3a8c7', gridOpacity: 0.35 }),
         },
         {
           title: 'Multi-series overlay — hover the dots',
           scene: radar(
             [
-              { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
+              { data: [4, 9, 2, 7, 5], name: 'Web', color: '#f3a8c7', dot: 'all', dotRadius: 2.5 },
               {
                 data: [7, 3, 8, 4, 6],
                 name: 'Mobile',
@@ -850,7 +859,7 @@
         },
         {
           title: 'Custom max, no grid',
-          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
+          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false, color: '#f3a8c7' }),
         },
       ]);
 
@@ -883,6 +892,15 @@
               v === 0 ? 'hsla(0, 0%, 55%, 0.2)' : `hsla(140, 70%, 60%, ${v * 0.25})`,
           }),
           blockScale: 1.6,
+          interactive: true,
+          // Sept 1 2026 is a Tuesday, so column 0 = Monday (padding cells
+          // emit no points, hence no hover there).
+          describe: (point) => {
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const date = point.row * 7 + point.col;
+            if (date < 1 || date > 30) return null;
+            return `${days[point.col]}, Sep ${date} = ${point.value}`;
+          },
         },
       ]);
 
