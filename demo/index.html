@@ -283,6 +283,9 @@
         color: var(--faint);
         font-variant-numeric: tabular-nums;
       }
+      .readout.value {
+        color: var(--text);
+      }
 
       footer {
         margin-top: 72px;
@@ -465,6 +468,10 @@
             info.textContent = idleText;
 
             let selectedText = null;
+            const setReadout = (text, isValue) => {
+              info.textContent = text;
+              info.classList.toggle('value', isValue);
+            };
             const describePoint = (indexAttr) => {
               const point = scene.points[Number(indexAttr)];
               if (!point) return null;
@@ -479,11 +486,12 @@
             chart.addEventListener('pointermove', (event) => {
               const indexAttr = event.target?.dataset?.index;
               const desc = indexAttr === undefined ? null : describePoint(indexAttr);
-              info.textContent = desc ? `Hovering: ${desc}` : (selectedText ?? idleText);
+              if (desc) setReadout(desc, true);
+              else setReadout(selectedText ?? idleText, selectedText !== null);
             });
 
             chart.addEventListener('pointerleave', () => {
-              info.textContent = selectedText ?? idleText;
+              setReadout(selectedText ?? idleText, selectedText !== null);
             });
 
             chart.addEventListener('click', (event) => {
@@ -492,7 +500,7 @@
               const desc = describePoint(indexAttr);
               if (desc) {
                 selectedText = `Selected: ${desc}`;
-                info.textContent = selectedText;
+                setReadout(selectedText, true);
               }
             });
 
