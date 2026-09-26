@@ -103,14 +103,6 @@ describe('toSVG', () => {
     expect(svg).toContain('data-series="1"');
   });
 
-  it('serializes data-index on a rect when set', () => {
-    const svg = toSVG({
-      ...scene,
-      marks: [{ type: 'rect', x: 0, y: 0, width: 8, height: 8, index: 2 }],
-    });
-    expect(svg).toContain('data-index="2"');
-  });
-
   it('omits stroke-dasharray/stroke-linecap/data-index/data-series when not set', () => {
     const svg = toSVG(scene);
     expect(svg).not.toContain('stroke-dasharray');

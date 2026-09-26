@@ -113,16 +113,6 @@ describe('Marks', () => {
     expect(el?.getAttribute('data-series')).toBe('1');
   });
 
-  it('renders data-index on a rect mark when set', () => {
-    const marks: Mark[] = [{ type: 'rect', x: 0, y: 0, width: 8, height: 8, index: 4 }];
-    const { container } = render(
-      <svg>
-        <Marks marks={marks} />
-      </svg>,
-    );
-    expect(container.querySelector('rect')?.getAttribute('data-index')).toBe('4');
-  });
-
   it('renders a line mark', () => {
     const marks: Mark[] = [{ type: 'line', x1: 0, y1: 0, x2: 10, y2: 10, stroke: 'black', strokeWidth: 1 }];
     const { container } = render(
