@@ -347,7 +347,7 @@
           </div>
           <aside class="hero-features">
             <ul>
-              <li>8 kB minified</li>
+              <li>9 kB minified</li>
               <li>12 charts</li>
               <li>No dependencies</li>
               <li>Pure JS + SVG</li>
@@ -508,6 +508,7 @@
       group('Line', [
         { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
         { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
+        { title: 'Spline', scene: line([4, 1, 7, 2, 8, 3, 9, 5], { mode: 'spline' }) },
         {
           title: 'Hover & click',
           scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
@@ -556,6 +557,8 @@
         [6, 4],
       ];
       const stackColors = ['var(--c1)', 'var(--c2)'];
+      // Grouped series colors: chalk blue then chalk yellow.
+      const groupColors = ['var(--c1)', 'var(--c2)'];
       // Two series per category (e.g. signups: free vs paid). In grouped
       // mode each series takes its color from the categorical palette.
       const groupedBars = [
@@ -590,24 +593,12 @@
           { title: 'Basic', scene: bar(barValuesDense, { gap: 0.6 }) },
           { title: 'Rounded caps', scene: bar(barValuesDense, { radius: 1, gap: 0.6 }) },
           {
-            title: 'Negative values',
+            title: 'Grouped',
             scene: bar(
-              negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
-            ),
-          },
-          { title: 'Grouped', scene: bar(groupedBars, { mode: 'grouped' }) },
-          {
-            title: 'Horizontal single',
-            scene: bar(
-              [
-                [
-                  { value: 3, color: 'var(--c1)' },
-                  { value: 5, color: 'var(--c2)' },
-                  { value: 2, color: 'var(--c3)' },
-                  { value: 4, color: 'var(--c4)' },
-                ],
-              ],
-              { horizontal: true },
+              groupedBars.map((pair) =>
+                pair.map((value, row) => ({ value, color: groupColors[row] })),
+              ),
+              { mode: 'grouped' },
             ),
           },
           {
@@ -627,26 +618,37 @@
           },
           {
             title: 'Grouped horizontal',
-            scene: bar(groupedBars, { mode: 'grouped', horizontal: true, height: 40 }),
+            scene: bar(
+              groupedBars.map((pair) =>
+                pair.map((value, row) => ({ value, color: groupColors[row] })),
+              ),
+              { mode: 'grouped', horizontal: true, height: 40 },
+            ),
             tall: true,
+          },
+          {
+            title: 'Horizontal single',
+            scene: bar(
+              [
+                [
+                  { value: 3, color: 'var(--c1)' },
+                  { value: 5, color: 'var(--c2)' },
+                  { value: 2, color: 'var(--c3)' },
+                  { value: 4, color: 'var(--c4)' },
+                ],
+              ],
+              { horizontal: true },
+            ),
+          },
+          {
+            title: 'Negative values',
+            scene: bar(
+              negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
+            ),
           },
         ],
         3,
       );
-
-      group('Win / Loss', [
-        {
-          title: 'Basic',
-          scene: winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
-            winColor: 'var(--c3)',
-            lossColor: 'var(--c4)',
-          }),
-        },
-      ]);
-
-      group('Bullet', [
-        { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
-      ]);
 
       group('Donut', [
         { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
@@ -754,10 +756,30 @@
         scatterOutliers.push(scatterPoint(x, y));
       }
 
+      // Three gaussian clusters, one per series, for the multi-series example.
+      // Seeded separately so the point cloud above renders unchanged.
+      const clusterRand = mulberry32(20260925);
+      const gauss = () => (clusterRand() + clusterRand() + clusterRand() - 1.5) * 2;
+      const scatterCluster = (cx, cy, spread, n, color) =>
+        Array.from({ length: n }, () => ({
+          x: Math.round((cx + gauss() * spread) * 10) / 10,
+          y: Math.round((cy + gauss() * spread) * 10) / 10,
+          color,
+        }));
+      const scatterClusters = [
+        ...scatterCluster(2, 8, 1.1, 45, 'var(--c1)'), // chalk blue
+        ...scatterCluster(8, 7.5, 1.4, 45, 'var(--c4)'), // chalk red
+        ...scatterCluster(6, 2, 1.1, 45, 'var(--c2)'), // chalk yellow
+      ];
+
       group('Scatter', [
         {
           title: 'Dense point cloud with outliers',
           scene: scatter([...scatterTrend, ...scatterOutliers]),
+        },
+        {
+          title: 'Multiple series',
+          scene: scatter(scatterClusters),
         },
       ]);
 
@@ -779,6 +801,48 @@
           return date >= 1 && date <= 30 ? level : undefined;
         }),
       );
+
+      group('Win / Loss', [
+        {
+          title: 'Basic',
+          scene: winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
+            winColor: 'var(--c3)',
+            lossColor: 'var(--c4)',
+          }),
+        },
+      ]);
+
+      group('Bullet', [
+        { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
+      ]);
+
+      group('Radar', [
+        {
+          title: 'Single series (shorthand)',
+          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
+        },
+        {
+          title: 'Multi-series overlay — hover the dots',
+          scene: radar(
+            [
+              { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
+              {
+                data: [7, 3, 8, 4, 6],
+                name: 'Mobile',
+                color: 'var(--c4)',
+                dot: 'all',
+                dotRadius: 2.5,
+              },
+            ],
+            { width: 120, height: 120, gridOpacity: 0.35 },
+          ),
+          interactive: true,
+        },
+        {
+          title: 'Custom max, no grid',
+          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
+        },
+      ]);
 
       group('Heatmap', [
         {
@@ -809,34 +873,6 @@
               v === 0 ? 'hsla(0, 0%, 55%, 0.2)' : `hsla(140, 70%, 60%, ${v * 0.25})`,
           }),
           blockScale: 1.6,
-        },
-      ]);
-
-      group('Radar', [
-        {
-          title: 'Single series (shorthand)',
-          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
-        },
-        {
-          title: 'Multi-series overlay — hover the dots',
-          scene: radar(
-            [
-              { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
-              {
-                data: [7, 3, 8, 4, 6],
-                name: 'Mobile',
-                color: 'var(--c4)',
-                dot: 'all',
-                dotRadius: 2.5,
-              },
-            ],
-            { width: 120, height: 120, gridOpacity: 0.35 },
-          ),
-          interactive: true,
-        },
-        {
-          title: 'Custom max, no grid',
-          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
         },
       ]);
 

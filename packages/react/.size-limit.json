@@ -3,7 +3,7 @@
     "name": "LineChart (standalone)",
     "path": "dist/line.js",
     "import": "{ LineChart }",
-    "limit": "2 kB"
+    "limit": "2.25 kB"
   },
   { "name": "full barrel", "path": "dist/index.js", "limit": "12 kB" }
 ]

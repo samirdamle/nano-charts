@@ -17,6 +17,15 @@ describe('LineChart', () => {
     expect(container.querySelector('svg')?.getAttribute('aria-label')).toBe('my chart');
   });
 
+  it('passes mode="spline" through to a smooth path mark', () => {
+    const { container } = render(<LineChart data={[4, 9, 2, 7, 5]} mode="spline" />);
+    const scene = line([4, 9, 2, 7, 5], { mode: 'spline' });
+    const paths = container.querySelectorAll('svg > path');
+    expect(paths).toHaveLength(scene.marks.filter((m) => m.type === 'path').length);
+    expect(container.querySelectorAll('svg > polyline')).toHaveLength(0);
+    expect(paths[0]?.getAttribute('d')).toContain('C');
+  });
+
   it('fires onPointHover with the point on enter and null on leave', () => {
     const onPointHover = vi.fn();
     const { container } = render(<LineChart data={[4, 9, 2]} onPointHover={onPointHover} />);
