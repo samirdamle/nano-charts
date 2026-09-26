@@ -24,8 +24,9 @@ export interface BarTrackOptions {
 
 /** How multi-segment columns are laid out: `'stacked'` (default) piles
  * segments end to end into one bar per column; `'grouped'` places them
- * side by side as one bar per segment. */
-export type BarMode = 'stacked' | 'grouped';
+ * side by side as one bar per segment; `'waterfall'` draws one cumulative
+ * bar per column, each starting where the previous one ended. */
+export type BarMode = 'stacked' | 'grouped' | 'waterfall';
 
 export interface BarOptions<T = number>
   extends BaseOptions,
@@ -39,6 +40,21 @@ export interface BarOptions<T = number>
   /** Background track behind each bar spanning the full value domain.
    * `true` enables it with defaults; an object tunes it. */
   track?: boolean | BarTrackOptions;
+  /** Column color for positive deltas in waterfall mode. Defaults to the
+   * chart's `color`. */
+  upColor?: string;
+  /** Column color for negative deltas in waterfall mode. Defaults to the
+   * chart's `color`. */
+  downColor?: string;
+  /** Append a final total column spanning 0 to the cumulative sum
+   * (waterfall mode only). Defaults to `false`. */
+  total?: boolean;
+  /** Color of the total column in waterfall mode. Defaults to the chart's
+   * `color`. */
+  totalColor?: string;
+  /** Draw thin dashed connector lines from the end of each waterfall column
+   * to the start of the next. Defaults to `true` (waterfall mode only). */
+  connectors?: boolean;
 }
 
 type BarSegment<T> =
@@ -53,6 +69,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   const horizontal = options.horizontal ?? false;
   const mode = options.mode ?? 'stacked';
   const grouped = mode === 'grouped';
+  const waterfall = mode === 'waterfall';
   const accessors = options.value
     ? {
         value: options.value,
@@ -63,27 +80,81 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     : undefined;
 
   // Normalize into columns of segment-datums.
-  const columns: Datum[][] = data.map((d, col) => {
+  let columns: Datum[][] = data.map((d, col) => {
     const segs = (Array.isArray(d) ? d : [d]) as SeriesInput<T>;
     return normalizeSeries(segs, accessors).map((s) => ({ ...s, index: col }));
   });
 
   const totals = columns.map((segs) => segs.reduce((sum, s) => sum + s.value, 0));
+  const grandTotal = totals.reduce((sum, t) => sum + t, 0);
+
+  // Waterfall: each column collapses to a single cumulative step whose delta
+  // is the column total (nested segments sum to the step's net change); the
+  // running base is tracked separately below. An optional total column
+  // spanning 0 → grand total is appended as an ordinary column.
+  let totalIndex = -1;
+  if (waterfall) {
+    columns = columns.map((segs, col) => {
+      const first = segs[0];
+      return [
+        {
+          id: first?.id ?? col,
+          label: first?.label ?? String(totals[col]),
+          value: totals[col] ?? 0,
+          index: col,
+          ...(first?.color !== undefined ? { color: first.color } : {}),
+        },
+      ];
+    });
+    if (options.total === true) {
+      totalIndex = columns.length;
+      columns.push([
+        {
+          id: 'total',
+          label: 'Total',
+          value: grandTotal,
+          index: totalIndex,
+          color: options.totalColor ?? color,
+        },
+      ]);
+    }
+  }
+
+  // Running bases for waterfall columns: each bar starts where the previous
+  // one ended. The total column always starts at 0.
+  const bases: number[] = [];
+  if (waterfall) {
+    let run = 0;
+    columns.forEach((_segs, col) => {
+      if (col === totalIndex) {
+        bases.push(0);
+      } else {
+        bases.push(run);
+        run += totals[col] ?? 0;
+      }
+    });
+  }
+
   // Grouped bars stand alone, so the value domain spans individual segment
-  // values; stacked bars accumulate, so it spans column totals. The a11y
-  // summary follows the same split: per segment when grouped, per column
-  // when stacked.
+  // values; stacked bars accumulate, so it spans column totals; waterfall
+  // bars span cumulative levels, so it spans every running base plus the
+  // final total. The a11y summary follows the same split: per segment when
+  // grouped, per column otherwise.
   const domainValues = grouped
     ? columns.flatMap((segs) => segs.map((s) => s.value))
-    : totals;
+    : waterfall
+      ? [...bases, grandTotal]
+      : totals;
   const flat: Datum[] = grouped
     ? columns.flatMap((segs, col) => segs.map((s) => ({ ...s, index: col })))
-    : columns.map((_segs, col) => ({
-        id: col,
-        label: String(totals[col]),
-        value: totals[col]!,
-        index: col,
-      }));
+    : waterfall
+      ? columns.map((segs, col) => ({ ...segs[0]!, index: col }))
+      : columns.map((_segs, col) => ({
+          id: col,
+          label: String(totals[col]),
+          value: totals[col]!,
+          index: col,
+        }));
   const a11y = resolveA11y('bar', flat, options);
   const base = sceneShell({ width, height }, a11y);
   if (columns.length === 0) return base;
@@ -163,10 +234,11 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     let cursor = 0; // running stacked value
     segs.forEach((seg, row) => {
       // Grouped bars each start at the zero baseline; stacked segments
-      // accumulate from a running cursor. Either way the segment spans the
-      // two mapped scale outputs — take min/max rather than assuming
+      // accumulate from a running cursor; waterfall steps start at the
+      // running base tracked across columns. Either way the segment spans
+      // the two mapped scale outputs — take min/max rather than assuming
       // value >= 0 (else length goes negative).
-      const startValue = grouped ? 0 : cursor;
+      const startValue = grouped ? 0 : waterfall ? (bases[col] ?? 0) : cursor;
       const vStart = valueScale(startValue);
       const vEnd = valueScale(startValue + seg.value);
       const posRaw = Math.min(vStart, vEnd);
@@ -182,13 +254,18 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
       const h = horizontal ? bw : len;
 
       const explicitColor = seg.color;
-      const segmentColor = resolveSegmentColor({
-        explicit: explicitColor,
-        uniform: color,
-        usePalette: multi && !hasUniformColor,
-        paletteIndex: row,
-        paletteTotal: segs.length,
-      });
+      // Waterfall steps are colored by the sign of their delta (up/down,
+      // defaulting to the chart color); an explicit per-datum color still wins.
+      const segmentColor = waterfall
+        ? (explicitColor ??
+          (seg.value >= 0 ? (options.upColor ?? color) : (options.downColor ?? color)))
+        : resolveSegmentColor({
+            explicit: explicitColor,
+            uniform: color,
+            usePalette: multi && !hasUniformColor,
+            paletteIndex: row,
+            paletteTotal: segs.length,
+          });
       // The opacity step-down distinguishes stacked segments sharing one hue;
       // grouped bars are distinct series, so they stay at full opacity.
       const useStripe = !grouped && multi && explicitColor === undefined && hasUniformColor;
@@ -217,6 +294,29 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
       });
     });
   });
+
+  // Waterfall connectors: thin dashed lines from the end of each column to
+  // the start of the next, spanning the gap between bars. The end of one
+  // column is the start of the next, so each connector is level; the total
+  // column's connector meets its top at the grand-total level. Decorative:
+  // they emit no points.
+  if (waterfall && options.connectors !== false && columns.length > 1) {
+    for (let col = 0; col < columns.length - 1; col++) {
+      const endValue = (bases[col] ?? 0) + columns[col]![0]!.value;
+      const v = round(valueScale(endValue));
+      const edge = round(round(slot.x(col)) + barW);
+      const next = round(slot.x(col + 1));
+      marks.push({
+        type: 'path',
+        d: horizontal ? `M ${v} ${edge} L ${v} ${next}` : `M ${edge} ${v} L ${next} ${v}`,
+        fill: 'none',
+        stroke: color,
+        strokeWidth: 1,
+        strokeOpacity: 0.45,
+        strokeDasharray: '3 2',
+      });
+    }
+  }
 
   return { ...base, marks, points };
 }

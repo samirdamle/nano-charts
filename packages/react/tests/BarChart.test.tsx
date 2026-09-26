@@ -58,4 +58,22 @@ describe('BarChart mode', () => {
     // grouped bars sit side by side: first two rects share a column, differ in x
     expect(rendered[0]!.getAttribute('x')).not.toBe(rendered[1]!.getAttribute('x'));
   });
+
+  it("passes mode='waterfall' through to the core bar() function", () => {
+    const data = [3, 2, -1];
+    const { container } = render(
+      <BarChart data={data} mode="waterfall" upColor="green" downColor="red" total />,
+    );
+    const scene = bar(data, { mode: 'waterfall', upColor: 'green', downColor: 'red', total: true });
+    const rendered = container.querySelectorAll('svg > rect');
+    const expected = scene.marks.filter((m) => m.type === 'rect');
+    expect(rendered).toHaveLength(expected.length);
+    // 3 deltas + total column, colored by sign
+    expect(rendered).toHaveLength(4);
+    expect(rendered[0]!.getAttribute('fill')).toBe('green');
+    expect(rendered[2]!.getAttribute('fill')).toBe('red');
+    // connectors render as dashed paths
+    const connectors = container.querySelectorAll('svg > path[stroke-dasharray]');
+    expect(connectors).toHaveLength(scene.marks.filter((m) => m.type === 'path').length);
+  });
 });

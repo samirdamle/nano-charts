@@ -335,3 +335,154 @@ describe('bar (grouped)', () => {
     expect(scene.points[3]).toMatchObject({ col: 1, row: 1, value: 2 });
   });
 });
+
+describe('bar (waterfall)', () => {
+  it("chains each column from the previous column's end value", () => {
+    const scene = bar([3, 2, -1], { mode: 'waterfall' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(3);
+    // domain [0,5] (cumulative levels) -> unit = 18/5 = 3.6; y(5)=1, y(0)=19
+    expect(rects[0]).toMatchObject({ y: 8.2, height: 10.8 }); // 0 -> 3
+    expect(rects[1]).toMatchObject({ y: 1, height: 7.2 }); // 3 -> 5
+    expect(rects[2]).toMatchObject({ y: 1, height: 3.6 }); // 5 -> 4
+    // chained: each bar starts where the previous one ended
+    expect(rects[1]!.y + rects[1]!.height).toBeCloseTo(rects[0]!.y, 5);
+    expect(rects[2]!.y).toBeCloseTo(rects[1]!.y, 5);
+    // points report the deltas
+    expect(scene.points.map((p) => p.value)).toEqual([3, 2, -1]);
+  });
+
+  it('scales the domain to cumulative levels, not deltas', () => {
+    // deltas peak at 3 but the running total reaches 5: the 3 -> 5 bar
+    // tops the plot, which a delta-scaled domain could not do
+    const scene = bar([3, 2, -1], { mode: 'waterfall' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects[1]).toMatchObject({ y: 1 });
+  });
+
+  it('colors steps by delta sign with upColor/downColor', () => {
+    const scene = bar([3, -2, 1], {
+      mode: 'waterfall',
+      upColor: 'green',
+      downColor: 'red',
+    });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects.map((r) => r.fill)).toEqual(['green', 'red', 'green']);
+  });
+
+  it('falls back to the chart color when up/down colors are absent', () => {
+    const scene = bar([3, -2], { mode: 'waterfall', color: 'blue' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const r of rects) expect(r.fill).toBe('blue');
+  });
+
+  it('lets an explicit per-datum color win over up/down colors', () => {
+    const scene = bar([{ value: 3, color: 'purple' }, -2], {
+      mode: 'waterfall',
+      upColor: 'green',
+      downColor: 'red',
+    });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects.map((r) => r.fill)).toEqual(['purple', 'red']);
+  });
+
+  it('appends a total column spanning 0 to the grand total when asked', () => {
+    const scene = bar([3, 2, -1], { mode: 'waterfall', total: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(4);
+    // grand total 4 -> 0 -> 4: y(4)=4.6, height 14.4
+    expect(rects[3]).toMatchObject({ y: 4.6, height: 14.4 });
+    expect(scene.points[3]).toMatchObject({ value: 4, label: 'Total', id: 'total' });
+  });
+
+  it('paints the total column with totalColor', () => {
+    const scene = bar([3, 2], {
+      mode: 'waterfall',
+      total: true,
+      totalColor: 'navy',
+      upColor: 'green',
+    });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects.map((r) => r.fill)).toEqual(['green', 'green', 'navy']);
+  });
+
+  it('does not append a total column by default', () => {
+    const scene = bar([3, 2, -1], { mode: 'waterfall' });
+    expect(scene.marks.filter((m) => m.type === 'rect')).toHaveLength(3);
+  });
+
+  it('draws dashed connectors between consecutive columns by default', () => {
+    const scene = bar([3, 2, -1], { mode: 'waterfall' });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(2);
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    for (const p of paths) {
+      expect(p.strokeDasharray).toBe('3 2');
+      expect(p.fill).toBe('none');
+      // level: both endpoints share one y
+      const nums = p.d.match(/[\d.]+/g)!.map(Number);
+      expect(nums[1]).toBeCloseTo(nums[3]!, 5);
+    }
+    // first connector sits at the 3-level: the top edge of the first bar,
+    // spanning the gap to the second bar
+    const nums = paths[0]!.d.match(/[\d.]+/g)!.map(Number);
+    expect(nums[1]).toBeCloseTo(rects[0]!.y, 5);
+    expect(nums[0]).toBeCloseTo(rects[0]!.x + rects[0]!.width, 5);
+    expect(nums[2]).toBeCloseTo(rects[1]!.x, 5);
+  });
+
+  it('skips connectors when connectors: false', () => {
+    const scene = bar([3, 2, -1], { mode: 'waterfall', connectors: false });
+    expect(scene.marks.filter((m) => m.type === 'path')).toHaveLength(0);
+  });
+
+  it('connects the last delta column to the total column', () => {
+    const scene = bar([3, 2, -1], { mode: 'waterfall', total: true });
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(3);
+    // the last connector meets the total bar's top at the grand-total level
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    const nums = paths[2]!.d.match(/[\d.]+/g)!.map(Number);
+    expect(nums[1]).toBeCloseTo(rects[3]!.y, 5);
+  });
+
+  it('chains bars along x when horizontal', () => {
+    const scene = bar([3, 2, -1], { mode: 'waterfall', horizontal: true });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(3);
+    // each bar starts where the previous one ended, along x
+    expect(rects[1]!.x).toBeCloseTo(rects[0]!.x + rects[0]!.width, 5);
+    expect(rects[2]!.x + rects[2]!.width).toBeCloseTo(rects[1]!.x + rects[1]!.width, 5);
+    // connectors run vertically between the rows
+    const paths = scene.marks.filter((m) => m.type === 'path');
+    expect(paths).toHaveLength(2);
+    const nums = paths[0]!.d.match(/[\d.]+/g)!.map(Number);
+    expect(nums[0]).toBeCloseTo(nums[2]!, 5);
+  });
+
+  it('sums nested segments into one net step per column', () => {
+    const scene = bar([[3, -1], [2]], { mode: 'waterfall' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(2);
+    expect(scene.points.map((p) => p.value)).toEqual([2, 2]);
+    // second bar starts where the first ended
+    expect(rects[1]!.y + rects[1]!.height).toBeCloseTo(rects[0]!.y, 5);
+  });
+
+  it('steps downward from zero for all-negative deltas', () => {
+    const scene = bar([-2, -3], { mode: 'waterfall', downColor: 'red' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(2);
+    for (const r of rects) expect(r.fill).toBe('red');
+    // second bar hangs below the first: its top is the first bar's bottom
+    expect(rects[1]!.y).toBeCloseTo(rects[0]!.y + rects[0]!.height, 5);
+  });
+
+  it('handles zero deltas and empty data', () => {
+    const scene = bar([3, 0, -1], { mode: 'waterfall' });
+    const rects = scene.marks.filter((m) => m.type === 'rect');
+    expect(rects).toHaveLength(3);
+    expect(rects[1]!.height).toBe(0);
+    expect(bar([], { mode: 'waterfall' }).marks).toHaveLength(0);
+  });
+});
