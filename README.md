@@ -28,9 +28,9 @@ import { bar } from '@samirdamle/nano-charts/bar';
 
 Every chart is `(data, options?) => Scene`. `scene.points` exposes each data point's
 computed `{ id, label, value, x, y }` so UI wrappers can attach hover/click handlers.
-Rendered dot circles also carry `data-index`/`data-series` attributes in the `toSVG`
-output, so hit-testing a specific point no longer requires reverse-mapping coordinates —
-the DOM node names its own point index.
+Rendered dots and heatmap cells also carry `data-index` attributes (dots add
+`data-series`) in the `toSVG` output, so hit-testing a specific point no longer
+requires reverse-mapping coordinates — the DOM node names its own point index.
 
 ## Charts
 
@@ -39,7 +39,7 @@ the DOM node names its own point index.
 | `line`      | Trend sparkline — straight segments or smooth spline (`mode`)      |
 | `lines`     | Multi-series line overlay (core only)                             |
 | `area`      | Filled trend                                                      |
-| `bar`       | Magnitude bars — simple, stacked, or side-by-side grouped         |
+| `bar`       | Magnitude bars — simple, stacked, grouped, or waterfall            |
 | `donut`     | Proportion — full or partial dial, segment gaps                   |
 | `gauge`     | Dial gauge with arc/needle modes, zones, center label             |
 | `scatter`   | 2D relationship — per-point colors for multi-series clouds        |
