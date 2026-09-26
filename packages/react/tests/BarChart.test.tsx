@@ -43,37 +43,3 @@ describe('BarChart', () => {
     expect(onPointClick).toHaveBeenCalledWith(expect.objectContaining({ col: 1, row: 1, value: 4 }));
   });
 });
-
-describe('BarChart mode', () => {
-  it("passes mode='grouped' through to the core bar() function", () => {
-    const data = [
-      [1, 2],
-      [3, 4],
-    ];
-    const { container } = render(<BarChart data={data} mode="grouped" />);
-    const scene = bar(data, { mode: 'grouped' });
-    const rendered = container.querySelectorAll('svg > rect');
-    const expected = scene.marks.filter((m) => m.type === 'rect');
-    expect(rendered).toHaveLength(expected.length);
-    // grouped bars sit side by side: first two rects share a column, differ in x
-    expect(rendered[0]!.getAttribute('x')).not.toBe(rendered[1]!.getAttribute('x'));
-  });
-
-  it("passes mode='waterfall' through to the core bar() function", () => {
-    const data = [3, 2, -1];
-    const { container } = render(
-      <BarChart data={data} mode="waterfall" upColor="green" downColor="red" total connectorColor="blue" />,
-    );
-    const scene = bar(data, { mode: 'waterfall', upColor: 'green', downColor: 'red', total: true, connectorColor: 'blue' });
-    const rendered = container.querySelectorAll('svg > rect');
-    const expected = scene.marks.filter((m) => m.type === 'rect');
-    expect(rendered).toHaveLength(expected.length);
-    // 3 deltas + total column, colored by sign
-    expect(rendered).toHaveLength(4);
-    expect(rendered[0]!.getAttribute('fill')).toBe('green');
-    expect(rendered[2]!.getAttribute('fill')).toBe('red');
-    // connectors render as solid paths in the connector color
-    const connectors = container.querySelectorAll('svg > path[stroke="blue"]');
-    expect(connectors).toHaveLength(scene.marks.filter((m) => m.type === 'path').length);
-  });
-});

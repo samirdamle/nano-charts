@@ -4,16 +4,9 @@ Extremely lightweight, zero-dependency TypeScript library for **tiny SVG charts*
 sparklines, micro bars, donuts, bullets, scatter, and heatmaps — the kind you repeat
 hundreds of times across table cells and metric cards.
 
-- **9 kB** minified for all 12 charts — zero runtime dependencies, pure JS + SVG.
+- Zero runtime dependencies, tree-shakeable (import one chart, ship ~1 kB).
 - Framework-agnostic **scene model** core (`data → Scene`) + a `toSVG` serializer.
 - SSR-safe & deterministic. Inherits text color via `currentColor`. Accessible by default.
-- Hover and click events; customizable and theme-able.
-- React wrapper: [`@samirdamle/nano-charts-react`](https://www.npmjs.com/package/@samirdamle/nano-charts-react).
-- MIT licensed.
-
-**[Live demo](https://samirdamle.github.io/nano-charts/)** ·
-[GitHub](https://github.com/samirdamle/nano-charts) ·
-[API reference](https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md)
 
 ## Install
 
@@ -47,18 +40,14 @@ bundle-size positioning.
 
 | Function | Encodes | Data |
 |----------|---------|------|
-| `line` | trend — straight or smooth spline | `number[]`, `{id,label,value}[]`, or accessors |
+| `line` / `area` | trend | `number[]`, `{id,label,value}[]`, or accessors |
 | `lines` | multi-series trend overlay | `LineSeries[]` — each series is `{ data, name?, color?, strokeWidth?, strokeDasharray?, strokeLinecap?, dot?, dotRadius? }` |
-| `area` | filled trend | same shapes as `line` |
 | `bar` | magnitude — simple, stacked, grouped, or waterfall | series, or nested arrays for stacks/groups |
-| `donut` | proportion — full or partial dial | `{ value, max }` (gauge) or segments |
-| `gauge` | dial gauge — arc/needle, zones | `{ value, max }` |
-| `scatter` | 2D relationship — per-point colors | `[x,y][]`, `{x,y}[]` (+ `color`), or accessors |
 | `winLoss` | direction/sign | series |
 | `bullet` | value vs target | `{ value, target, ranges? }` |
-| `radar` | multi-axis spider | `number[]` (one value per axis) |
+| `donut` | proportion | `{ value, max }` (gauge) or segments |
+| `scatter` | 2D relationship | `[x,y][]`, `{x,y}[]`, or accessors |
 | `heatmap` | intensity grid | `number[][]` (+ `colorScale`) |
-| `pictogram` | countable unit blocks | counts (`number[]`) |
 
 ## License
 

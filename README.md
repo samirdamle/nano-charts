@@ -4,59 +4,30 @@ A monorepo for **tiny SVG charts** — sparklines, micro bars, donuts, bullets, 
 and heatmaps — the kind you repeat hundreds of times across table cells and metric
 cards.
 
-- **9 kB** minified for all 12 charts — zero runtime dependencies, pure JS + SVG.
-- Framework-agnostic core (`data → Scene`) + a `toSVG` serializer; SSR-safe and deterministic.
-- Hover and click events, accessible by default, themeable via `currentColor` and CSS variables.
-- React wrapper in [`@samirdamle/nano-charts-react`](https://www.npmjs.com/package/@samirdamle/nano-charts-react).
-- MIT licensed.
-
-**[Live demo](https://samirdamle.github.io/nano-charts/)** ·
-[API reference](docs/API.md) ·
-[npm](https://www.npmjs.com/package/@samirdamle/nano-charts)
-
-## Usage
-
-```ts
-import { line, toSVG } from '@samirdamle/nano-charts';
-
-const scene = line([4, 9, 2, 7, 5]);
-const svg = toSVG(scene); // '<svg …>…</svg>' — drop into any HTML
-
-// Import just one chart for the smallest bundle:
-import { bar } from '@samirdamle/nano-charts/bar';
-```
-
-Every chart is `(data, options?) => Scene`. `scene.points` exposes each data point's
-computed `{ id, label, value, x, y }` so UI wrappers can attach hover/click handlers.
-Rendered dots and heatmap cells also carry `data-index` attributes (dots add
-`data-series`) in the `toSVG` output, so hit-testing a specific point no longer
-requires reverse-mapping coordinates — the DOM node names its own point index.
-
 ## Charts
 
-| Chart       | What it's for                                                     |
-| ----------- | ----------------------------------------------------------------- |
-| `line`      | Trend sparkline — straight segments or smooth spline (`mode`)      |
-| `lines`     | Multi-series line overlay (core only)                             |
-| `area`      | Filled trend                                                      |
-| `bar`       | Magnitude bars — simple, stacked, grouped, or waterfall            |
-| `donut`     | Proportion — full or partial dial, segment gaps                   |
-| `gauge`     | Dial gauge with arc/needle modes, zones, center label             |
-| `scatter`   | 2D relationship — per-point colors for multi-series clouds        |
-| `winLoss`   | Win/loss direction bars                                           |
-| `bullet`    | Value vs. target with ranges                                      |
-| `radar`     | Multi-axis spider chart                                           |
-| `heatmap`   | Intensity grid — ragged rows, calendar month                      |
-| `pictogram` | Countable unit blocks (shapes or emoji)                           |
+| Chart                              | What it's for                                       |
+| ---------------------------------- | --------------------------------------------------- |
+| `line`                             | Trend sparkline                                     |
+| `area`                             | Filled trend                                        |
+| `lines`                            | Multi-series overlay                                |
+| `bar`                              | Magnitude bars — simple, stacked, grouped, or waterfall |
+| `winLoss`                          | Direction / sign (wins vs. losses)                  |
+| `bullet`                           | Value vs. target with ranges                        |
+| `donut`                            | Proportion, full or partial dial                    |
+| `gauge`                            | Dial gauge with arc/needle modes, zones, center label |
+| `scatter`                          | 2D relationship                                     |
+| `heatmap`                          | Intensity grid                                      |
+| `radar`                            | Multi-axis spider chart                             |
+| `pictogram`                        | Countable unit blocks                               |
 
-Every chart has a matching React component (`LineChart`, `AreaChart`, …) — except
-`lines`, which is core-only.
+Every chart has a matching React component (`LineChart`, `AreaChart`, …).
 Full options for each are in the [API reference](docs/API.md#charts).
 
 ## Demo
 
 Explore every chart live at the **[demo site](https://samirdamle.github.io/nano-charts/)** —
-automatically redeployed on every push to `develop` or `main` that touches the demo, the core
+automatically redeployed on every push to `develop` that touches the demo, the core
 package, or the deploy workflow.
 
 To run it locally:
@@ -70,8 +41,8 @@ pnpm dev:demo # builds core, then serves demo/ with live reload
 
 | Package                                                     | Description                                                                                                |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [`@samirdamle/nano-charts`](packages/core/README.md) ([npm](https://www.npmjs.com/package/@samirdamle/nano-charts)) | Framework-agnostic core: `data → Scene` chart functions + a `toSVG` serializer. Zero runtime dependencies. |
-| [`@samirdamle/nano-charts-react`](packages/react/README.md) ([npm](https://www.npmjs.com/package/@samirdamle/nano-charts-react)) | React components wrapping the core, with hover/click interactivity. |
+| [`@samirdamle/nano-charts`](packages/core/README.md)        | Framework-agnostic core: `data → Scene` chart functions + a `toSVG` serializer. Zero runtime dependencies. |
+| [`@samirdamle/nano-charts-react`](packages/react/README.md) | React components wrapping the core, with hover/click interactivity.                                        |
 
 Both are independently versioned and published (via [Changesets](https://github.com/changesets/changesets)).
 
@@ -87,15 +58,15 @@ Built for pages that render _hundreds_ of tiny charts, where per-chart byte
 cost dominates. Zero runtime dependencies in core; React is a peer dependency
 of the React package. Import one chart per subpath and ship only what you use.
 Budgets are enforced in CI (`pnpm size`); all figures minified + Brotli,
-measured 2026-09-25:
+measured 2026-09-21:
 
 | Entry                                        | Budget | Measured    |
 | -------------------------------------------- | ------ | ----------- |
-| Core — `line` standalone                     | 1.5 kB | **1.37 kB** |
-| Core — `toSVG` standalone                    | 1 kB   | **889 B**   |
-| Core — full barrel (all 12 charts + `toSVG`) | 9 kB   | **7.79 kB** |
-| React — `LineChart` standalone               | 2 kB   | **1.91 kB** |
-| React — full barrel                          | 12 kB  | **7.55 kB** |
+| Core — `line` standalone                     | 1.5 kB | **1.19 kB** |
+| Core — `toSVG` standalone                    | 1 kB   | **878 B**   |
+| Core — full barrel (all 12 charts + `toSVG`) | 8 kB   | **7.36 kB** |
+| React — `LineChart` standalone               | 2 kB   | **1.89 kB** |
+| React — full barrel                          | 12 kB  | **7.27 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 

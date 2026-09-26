@@ -22,12 +22,6 @@ export interface BarTrackOptions {
   radius?: number;
 }
 
-/** How multi-segment columns are laid out: `'stacked'` (default) piles
- * segments end to end into one bar per column; `'grouped'` places them
- * side by side as one bar per segment; `'waterfall'` draws one cumulative
- * bar per column, each starting where the previous one ended. */
-export type BarMode = 'stacked' | 'grouped' | 'waterfall';
-
 export interface BarOptions<T = number>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
@@ -35,29 +29,9 @@ export interface BarOptions<T = number>
   gap?: number;
   radius?: number;
   horizontal?: boolean;
-  /** Segment layout within a column. Defaults to `'stacked'`. */
-  mode?: BarMode;
   /** Background track behind each bar spanning the full value domain.
    * `true` enables it with defaults; an object tunes it. */
   track?: boolean | BarTrackOptions;
-  /** Column color for positive deltas in waterfall mode. Defaults to the
-   * chart's `color`. */
-  upColor?: string;
-  /** Column color for negative deltas in waterfall mode. Defaults to the
-   * chart's `color`. */
-  downColor?: string;
-  /** Append a final total column spanning 0 to the cumulative sum
-   * (waterfall mode only). Defaults to `false`. */
-  total?: boolean;
-  /** Color of the total column in waterfall mode. Defaults to the chart's
-   * `color`. */
-  totalColor?: string;
-  /** Draw thin connector lines from the end of each waterfall column
-   * to the start of the next. Defaults to `true` (waterfall mode only). */
-  connectors?: boolean;
-  /** Color of the waterfall connector lines. Defaults to the chart's
-   * `color` (waterfall mode only). */
-  connectorColor?: string;
 }
 
 type BarSegment<T> =
@@ -70,9 +44,6 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   const { width, height, color, padding } = resolveChartShell(options);
   const gap = options.gap ?? 0.2;
   const horizontal = options.horizontal ?? false;
-  const mode = options.mode ?? 'stacked';
-  const grouped = mode === 'grouped';
-  const waterfall = mode === 'waterfall';
   const accessors = options.value
     ? {
         value: options.value,
@@ -83,86 +54,23 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     : undefined;
 
   // Normalize into columns of segment-datums.
-  let columns: Datum[][] = data.map((d, col) => {
+  const columns: Datum[][] = data.map((d, col) => {
     const segs = (Array.isArray(d) ? d : [d]) as SeriesInput<T>;
     return normalizeSeries(segs, accessors).map((s) => ({ ...s, index: col }));
   });
 
   const totals = columns.map((segs) => segs.reduce((sum, s) => sum + s.value, 0));
-  const grandTotal = totals.reduce((sum, t) => sum + t, 0);
-
-  // Waterfall: each column collapses to a single cumulative step whose delta
-  // is the column total (nested segments sum to the step's net change); the
-  // running base is tracked separately below. An optional total column
-  // spanning 0 → grand total is appended as an ordinary column.
-  let totalIndex = -1;
-  if (waterfall) {
-    columns = columns.map((segs, col) => {
-      const first = segs[0];
-      return [
-        {
-          id: first?.id ?? col,
-          label: first?.label ?? String(totals[col]),
-          value: totals[col] ?? 0,
-          index: col,
-          ...(first?.color !== undefined ? { color: first.color } : {}),
-        },
-      ];
-    });
-    if (options.total === true) {
-      totalIndex = columns.length;
-      columns.push([
-        {
-          id: 'total',
-          label: 'Total',
-          value: grandTotal,
-          index: totalIndex,
-          color: options.totalColor ?? color,
-        },
-      ]);
-    }
-  }
-
-  // Running bases for waterfall columns: each bar starts where the previous
-  // one ended. The total column always starts at 0.
-  const bases: number[] = [];
-  if (waterfall) {
-    let run = 0;
-    columns.forEach((_segs, col) => {
-      if (col === totalIndex) {
-        bases.push(0);
-      } else {
-        bases.push(run);
-        run += totals[col] ?? 0;
-      }
-    });
-  }
-
-  // Grouped bars stand alone, so the value domain spans individual segment
-  // values; stacked bars accumulate, so it spans column totals; waterfall
-  // bars span cumulative levels, so it spans every running base plus the
-  // final total. The a11y summary follows the same split: per segment when
-  // grouped, per column otherwise.
-  const domainValues = grouped
-    ? columns.flatMap((segs) => segs.map((s) => s.value))
-    : waterfall
-      ? [...bases, grandTotal]
-      : totals;
-  const flat: Datum[] = grouped
-    ? columns.flatMap((segs, col) => segs.map((s) => ({ ...s, index: col })))
-    : waterfall
-      ? columns.map((segs, col) => ({ ...segs[0]!, index: col }))
-      : columns.map((_segs, col) => ({
-          id: col,
-          label: String(totals[col]),
-          value: totals[col]!,
-          index: col,
-        }));
+  const flat: Datum[] = columns.map((_segs, col) => ({
+    id: col,
+    label: String(totals[col]),
+    value: totals[col]!,
+    index: col,
+  }));
   const a11y = resolveA11y('bar', flat, options);
   const base = sceneShell({ width, height }, a11y);
   if (columns.length === 0) return base;
 
-  const [minT, maxT] = extent(domainValues.length > 0 ? domainValues : [0]);
+  const [minT, maxT] = extent(totals);
   const track = options.track === true ? {} : options.track || undefined;
   // An explicit track max larger than the data extends the domain so the
   // track genuinely represents 100% instead of being squashed to the data max.
@@ -182,24 +90,16 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     : slotLayout(columns.length, layout.left, layout.right, gap);
   const barW = round(slot.barWidth);
 
-  // Grouped mode subdivides each column slot into one sub-slot per segment.
-  // Sizing by the widest column keeps bar widths uniform when columns are
-  // ragged; shorter columns center their bars within the group.
-  const groupCount = grouped ? Math.max(1, ...columns.map((segs) => segs.length)) : 0;
-  const subSlot = grouped ? slotLayout(groupCount, 0, barW, gap) : undefined;
-  const subW = subSlot ? round(subSlot.barWidth) : barW;
-
   // Precedence, matching donut: explicit per-segment color (field/accessor)
   // > uniform options.color, with the legacy opacity step-down as its only
-  // differentiator > categorical palette per segment (series index).
+  // differentiator > categorical palette per stacked segment.
   const hasUniformColor = options.color !== undefined;
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
-  // One track rect per bar, drawn first (behind the segments), spanning the
-  // full value domain. In stacked mode a column is one bar; in grouped mode
-  // each segment is. Tracks are decorative: they emit no points.
+  // One track rect per column, drawn first (behind the segments), spanning
+  // the full value domain. Tracks are decorative: they emit no points.
   if (track) {
     const tStart = valueScale(domain[0]);
     const tEnd = valueScale(domain[1]);
@@ -208,70 +108,49 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     const trackFill = track.color ?? color;
     const trackOpacity = round(track.opacity ?? 0.15);
     const trackRx = track.radius ?? options.radius;
-    columns.forEach((segs, col) => {
+    columns.forEach((_segs, col) => {
       const slotPos = round(slot.x(col));
-      const lead = subSlot ? (groupCount - segs.length) / 2 : 0;
-      const bars = subSlot
-        ? segs.map((_, row) => round(slotPos + subSlot.x(lead + row)))
-        : [slotPos];
-      const tw = subSlot ? subW : barW;
-      bars.forEach((bp) => {
-        marks.push({
-          type: 'rect',
-          x: horizontal ? tPos : bp,
-          y: horizontal ? bp : tPos,
-          width: horizontal ? tLen : tw,
-          height: horizontal ? tw : tLen,
-          fill: trackFill,
-          fillOpacity: trackOpacity,
-          rx: trackRx,
-        });
+      marks.push({
+        type: 'rect',
+        x: horizontal ? tPos : slotPos,
+        y: horizontal ? slotPos : tPos,
+        width: horizontal ? tLen : barW,
+        height: horizontal ? barW : tLen,
+        fill: trackFill,
+        fillOpacity: trackOpacity,
+        rx: trackRx,
       });
     });
   }
 
   columns.forEach((segs, col) => {
     const slotPos = round(slot.x(col));
-    const lead = subSlot ? (groupCount - segs.length) / 2 : 0;
-    const multi = segs.length > 1;
+    const stacked = segs.length > 1;
     let cursor = 0; // running stacked value
     segs.forEach((seg, row) => {
-      // Grouped bars each start at the zero baseline; stacked segments
-      // accumulate from a running cursor; waterfall steps start at the
-      // running base tracked across columns. Either way the segment spans
-      // the two mapped scale outputs — take min/max rather than assuming
-      // value >= 0 (else length goes negative).
-      const startValue = grouped ? 0 : waterfall ? (bases[col] ?? 0) : cursor;
-      const vStart = valueScale(startValue);
-      const vEnd = valueScale(startValue + seg.value);
+      // Handle negative values: the segment spans between the two mapped
+      // scale outputs, so take min/max rather than assuming value >= 0
+      // (else length goes negative).
+      const vStart = valueScale(cursor);
+      const vEnd = valueScale(cursor + seg.value);
       const posRaw = Math.min(vStart, vEnd);
       const pos = round(posRaw);
       const len = round(Math.max(vStart, vEnd) - posRaw);
-      if (!grouped) cursor += seg.value;
 
-      const barPos = subSlot ? round(slotPos + subSlot.x(lead + row)) : slotPos;
-      const bw = subSlot ? subW : barW;
-      const x = horizontal ? pos : barPos;
-      const y = horizontal ? barPos : pos;
-      const w = horizontal ? len : bw;
-      const h = horizontal ? bw : len;
+      const x = horizontal ? pos : slotPos;
+      const y = horizontal ? slotPos : pos;
+      const w = horizontal ? len : barW;
+      const h = horizontal ? barW : len;
 
       const explicitColor = seg.color;
-      // Waterfall steps are colored by the sign of their delta (up/down,
-      // defaulting to the chart color); an explicit per-datum color still wins.
-      const segmentColor = waterfall
-        ? (explicitColor ??
-          (seg.value >= 0 ? (options.upColor ?? color) : (options.downColor ?? color)))
-        : resolveSegmentColor({
-            explicit: explicitColor,
-            uniform: color,
-            usePalette: multi && !hasUniformColor,
-            paletteIndex: row,
-            paletteTotal: segs.length,
-          });
-      // The opacity step-down distinguishes stacked segments sharing one hue;
-      // grouped bars are distinct series, so they stay at full opacity.
-      const useStripe = !grouped && multi && explicitColor === undefined && hasUniformColor;
+      const segmentColor = resolveSegmentColor({
+        explicit: explicitColor,
+        uniform: color,
+        usePalette: stacked && !hasUniformColor,
+        paletteIndex: row,
+        paletteTotal: segs.length,
+      });
+      const useStripe = stacked && explicitColor === undefined && hasUniformColor;
 
       marks.push({
         type: 'rect',
@@ -295,31 +174,9 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         w,
         h,
       });
+      cursor += seg.value;
     });
   });
-
-  // Waterfall connectors: thin solid lines at the level where one column
-  // ends and the next begins, spanning the full width of both columns so
-  // the steps read as one continuous staircase. The end of one column is
-  // the start of the next, so each connector is level; the total column's
-  // connector meets its top at the grand-total level. Decorative: they
-  // emit no points.
-  if (waterfall && options.connectors !== false && columns.length > 1) {
-    const connectorStroke = options.connectorColor ?? color;
-    for (let col = 0; col < columns.length - 1; col++) {
-      const endValue = (bases[col] ?? 0) + columns[col]![0]!.value;
-      const v = round(valueScale(endValue));
-      const from = round(slot.x(col));
-      const to = round(round(slot.x(col + 1)) + barW);
-      marks.push({
-        type: 'path',
-        d: horizontal ? `M ${v} ${from} L ${v} ${to}` : `M ${from} ${v} L ${to} ${v}`,
-        fill: 'none',
-        stroke: connectorStroke,
-        strokeWidth: 1,
-      });
-    }
-  }
 
   return { ...base, marks, points };
 }
