@@ -411,13 +411,13 @@ describe('bar (waterfall)', () => {
     expect(scene.marks.filter((m) => m.type === 'rect')).toHaveLength(3);
   });
 
-  it('draws dashed connectors between consecutive columns by default', () => {
+  it('draws solid connectors between consecutive columns by default', () => {
     const scene = bar([3, 2, -1], { mode: 'waterfall' });
     const paths = scene.marks.filter((m) => m.type === 'path');
     expect(paths).toHaveLength(2);
     const rects = scene.marks.filter((m) => m.type === 'rect');
     for (const p of paths) {
-      expect(p.strokeDasharray).toBe('3 2');
+      expect(p.strokeDasharray).toBeUndefined();
       expect(p.fill).toBe('none');
       // level: both endpoints share one y
       const nums = p.d.match(/[\d.]+/g)!.map(Number);

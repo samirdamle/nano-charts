@@ -52,7 +52,7 @@ export interface BarOptions<T = number>
   /** Color of the total column in waterfall mode. Defaults to the chart's
    * `color`. */
   totalColor?: string;
-  /** Draw thin dashed connector lines from the end of each waterfall column
+  /** Draw thin connector lines from the end of each waterfall column
    * to the start of the next. Defaults to `true` (waterfall mode only). */
   connectors?: boolean;
   /** Color of the waterfall connector lines. Defaults to the chart's
@@ -298,7 +298,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     });
   });
 
-  // Waterfall connectors: thin dashed lines at the level where one column
+  // Waterfall connectors: thin solid lines at the level where one column
   // ends and the next begins, spanning the full width of both columns so
   // the steps read as one continuous staircase. The end of one column is
   // the start of the next, so each connector is level; the total column's
@@ -317,7 +317,6 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         fill: 'none',
         stroke: connectorStroke,
         strokeWidth: 1,
-        strokeDasharray: '3 2',
       });
     }
   }

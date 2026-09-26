@@ -137,7 +137,7 @@ Stacked segments fall back to the categorical palette when no color is given.
 | `downColor`              | `string`                        | chart `color`          | Waterfall: column color for negative deltas     |
 | `total`                  | `boolean`                       | `false`                | Waterfall: append a total column (0 → grand total) |
 | `totalColor`             | `string`                        | chart `color`          | Waterfall: color of the total column            |
-| `connectors`             | `boolean`                       | `true`                 | Waterfall: dashed connectors between columns    |
+| `connectors`             | `boolean`                       | `true`                 | Waterfall: solid connectors between columns     |
 | `connectorColor`         | `string`                        | chart `color`          | Waterfall: color of the connector lines         |
 | `colorAccessor`          | `(row, i) => string`            | —                      | Per-row color for custom object arrays          |
 | `value` / `label` / `id` | accessors                       | —                      | For custom object arrays                        |
@@ -154,7 +154,7 @@ are the deltas (nested arrays sum to one net step per column); the value domain
 spans the running totals. Steps are colored by delta sign via `upColor` /
 `downColor` (an explicit per-datum `color` still wins, and omitting both keeps
 the single chart `color`). `total: true` appends a final column spanning 0 to
-the grand total, and `connectors` (default `true`) draws thin dashed lines at
+the grand total, and `connectors` (default `true`) draws thin solid lines at
 the level where each column ends and the next begins, spanning the full width
 of both columns; `connectorColor` sets their color (default: the chart color).
 Works horizontally too.
