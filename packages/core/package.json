@@ -1,6 +1,6 @@
 {
   "name": "@samirdamle/nano-charts",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Extremely lightweight, zero-dependency TypeScript library for tiny SVG charts.",
   "keywords": [
     "charts",
