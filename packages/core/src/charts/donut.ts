@@ -2,14 +2,12 @@ import type { BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '.
 import { arcPath, dialSpan, polar, round } from '../core/geometry';
 import {
   normalizeSeries,
-  toFiniteNumber,
   type SeriesAccessors,
   type SeriesColorAccessor,
   type SeriesInput,
 } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
-import { gauge } from './gauge';
 
 export interface DonutGauge {
   value: number;
@@ -111,27 +109,51 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   const trackOpt = options.track;
 
   if (isGauge(data)) {
-    // Gauge input is a 2-arc dial: delegate to the standalone gauge chart
-    // (issue #22) instead of maintaining a parallel implementation here.
-    // The overrides below preserve donut's historical gauge contract —
-    // full-circle dial by default, background track on by default, and
-    // donut-flavored a11y — while everything else (including the
-    // width/height/color defaults) flows through untouched, so only the
-    // scene-building is shared.
-    const validMax = Number.isFinite(data.max) && data.max > 0;
-    const frac = !validMax ? 0 : Math.max(0, Math.min(1, toFiniteNumber(data.value) / data.max));
-    return gauge(
-      { value: data.value, max: data.max },
-      {
-        ...options,
-        mode: 'arc',
-        min: 0,
-        startAngle,
-        endAngle: startAngle + span,
-        title: options.title ?? 'donut chart',
-        desc: options.desc ?? `donut gauge, ${round(frac * 100)} percent of ${data.max}`,
-      },
-    );
+    const frac = data.max === 0 ? 0 : Math.max(0, Math.min(1, data.value / data.max));
+    // The background ring predates the track option: it stays on by default
+    // (unchanged rendering), the option customizes it, `false` hides it.
+    if (trackOpt !== false) {
+      const t: DonutTrackOptions = trackOpt === true || trackOpt === undefined ? {} : trackOpt;
+      marks.push({
+        type: 'path',
+        d: arcPath(cx, cy, rMid, startAngle, startAngle + span),
+        fill: 'none',
+        stroke: t.color ?? color,
+        strokeWidth: round(thickness),
+        strokeOpacity: t.opacity ?? 0.25,
+        ...strokeLinecap,
+      });
+    }
+    if (frac > 0) {
+      marks.push({
+        type: 'path',
+        d: arcPath(cx, cy, rMid, startAngle, startAngle + span * frac),
+        fill: 'none',
+        stroke: color,
+        strokeWidth: round(thickness),
+        ...strokeLinecap,
+      });
+    }
+    points.push({
+      id: 0,
+      label: `${round(frac * 100)}%`,
+      value: data.value,
+      index: 0,
+      x: round(cx),
+      y: round(cy),
+    });
+    pushCenterLabel({ value: data.value, min: 0, max: data.max, frac });
+    return {
+      ...sceneShell(
+        { width, height },
+        {
+          title: options.title ?? 'donut chart',
+          desc: options.desc ?? `donut gauge, ${round(frac * 100)} percent of ${data.max}`,
+        },
+      ),
+      marks,
+      points,
+    };
   }
 
   const accessors = options.value

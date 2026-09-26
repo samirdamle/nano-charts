@@ -4,364 +4,218 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>nano-charts</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <script>
-      // set the theme before first paint to avoid a flash; the module script below
-      // wires up the switch buttons and keeps this in sync
-      try {
-        document.documentElement.dataset.theme =
-          localStorage.getItem('nc-theme') ||
-          (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-      } catch {
-        document.documentElement.dataset.theme = 'dark';
-      }
-    </script>
     <style>
       :root {
-        color-scheme: dark;
+        color-scheme: light dark;
+        --bg: #fbfbfa;
+        --border-soft: #f0efec;
+        --text: #1c1b1a;
+        --text-muted: #6b6862;
+        --text-faint: #a6a29a;
+        --new-badge-bg: #eef2fb;
+        --new-badge-text: #3a5dae;
 
-        /* chalk palette (dark) */
-        --bg: hsl(240, 15%, 10%);
-        --line: hsla(45, 25%, 95%, 0.1); /* thin light hairline */
-        --text: hsl(45, 25%, 95%);
-        --muted: hsl(40, 5%, 80%);
-        --faint: hsl(45, 5%, 40%);
-        --chalk-yellow: hsl(50, 80%, 75%);
-        --accent: var(--chalk-yellow);
+        /* restored from the pre-#48 chalk theme for headings */
+        --chalk-yellow: #f0dd82;
 
-        /* categorical chart palette, readable on dark */
-        --c1: hsl(215, 100%, 70%);
-        --c2: hsl(35, 90%, 55%);
-        --c3: hsl(140, 70%, 60%);
-        --c4: hsl(0, 90%, 70%);
-        --c5: hsl(250, 95%, 85%);
+        /* categorical chart palette: readable on the page background
+       in both light and dark modes */
+        --c1: #2f6fdd;
+        --c2: #e8833a;
+        --c3: #2e9e4f;
+        --c4: #d64545;
+        --c5: #8e6cc8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121218;
+          --border-soft: #23232e;
+          --text: #f3f1ec;
+          --text-muted: #a19d94;
+          --text-faint: #6f6c64;
+          --new-badge-bg: #23283a;
+          --new-badge-text: #8ea6e0;
 
-        --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas,
-          monospace;
+          --c1: #6ea8fe;
+          --c2: #f5a524;
+          --c3: #4ade80;
+          --c4: #f87171;
+          --c5: #c4b5fd;
+        }
       }
 
-      /* light theme: same chalk model, dark hairlines, darker gold accent
-         (chalk yellow is unreadable on white at 1.3:1; the darkened gold holds 4.7:1) */
-      :root[data-theme='light'] {
-        color-scheme: light;
-        --bg: hsl(60, 10%, 100%);
-        --line: hsla(30, 5%, 10%, 0.12); /* thin dark hairline */
-        --text: hsl(30, 5%, 10%);
-        --muted: hsl(40, 5%, 40%);
-        --faint: hsl(40, 5%, 65%);
-        --accent: hsl(45, 70%, 30%);
-
-        --c1: hsl(220, 70%, 55%);
-        --c2: hsl(25, 80%, 55%);
-        --c3: hsl(140, 55%, 40%);
-        --c4: hsl(0, 65%, 55%);
-        --c5: hsl(260, 45%, 60%);
+      /* categorical palette utility classes */
+      .c1 {
+        color: var(--c1);
+      }
+      .c2 {
+        color: var(--c2);
+      }
+      .c3 {
+        color: var(--c3);
+      }
+      .c4 {
+        color: var(--c4);
+      }
+      .c5 {
+        color: var(--c5);
       }
 
       * {
         box-sizing: border-box;
       }
-      html {
-        -webkit-font-smoothing: antialiased;
-      }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--text);
-        font-family: var(--mono);
-        font-size: 16px;
-        line-height: 1.7;
-        counter-reset: group;
-      }
-      ::selection {
-        background: var(--accent);
-        color: var(--bg);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
 
-      .wrap {
-        max-width: 1200px;
+      .page {
+        max-width: 1080px;
         margin: 0 auto;
-        padding-inline: 24px;
+        padding: 40px 32px 64px;
       }
 
-      /* hero */
-      .hero {
-        padding: 56px 0 36px;
-        border-bottom: 1px solid var(--line);
-        margin-bottom: 44px;
+      header.hero {
+        margin-bottom: 32px;
       }
-      .kicker {
-        margin: 0;
+      header.hero h1 {
+        font-size: 34px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+        margin: 0 0 10px;
+      }
+      header.hero p {
         font-size: 16px;
-        color: var(--accent);
-      }
-      .hero-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 16px;
-      }
-      .theme-switch {
-        display: inline-flex;
-        flex: none;
-        border: 1px solid var(--line);
-      }
-      .theme-switch button {
-        appearance: none;
-        background: transparent;
-        border: 0;
-        padding: 6px 12px;
-        font: inherit;
-        font-size: 10px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--faint);
-        cursor: pointer;
-      }
-      .theme-switch button + button {
-        border-left: 1px solid var(--line);
-      }
-      .theme-switch button:hover {
-        color: var(--text);
-      }
-      .theme-switch button[aria-pressed='true'] {
-        background: var(--accent);
-        color: var(--bg);
-      }
-      .theme-switch button:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: 2px;
-      }
-      .hero h1 {
-        margin: 0 0 14px;
-        font-size: 38px;
-        font-weight: 700;
-        letter-spacing: -0.04em;
-        line-height: 1.15;
-        color: var(--c3);
-      }
-      .title-sub {
-        display: block;
-        color: var(--text);
-      }
-      .hero-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 32px;
-        align-items: start;
-      }
-      .hero-features ul {
+        line-height: 1.55;
+        color: var(--text-muted);
         margin: 0;
-        padding: 0;
-        list-style: none;
+        max-width: 46em;
       }
-      .hero-features li {
-        padding: 3px 0;
-        color: var(--muted);
+      header.hero p.meta {
+        font-size: 14px;
+        margin-top: 12px;
       }
-      .hero-features li::before {
-        content: '· ';
-        color: var(--accent);
-      }
-      .lede {
-        margin: 0;
-        max-width: 62ch;
-        color: var(--muted);
-      }
-      .meta {
-        margin: 18px 0 0;
-        font-size: 16px;
+      header.hero p.meta a {
         color: var(--text);
-      }
-      .meta a {
-        color: var(--c1);
-        text-decoration: none;
-        border-bottom: 1px solid var(--line);
-      }
-      .meta a:hover {
-        color: var(--accent);
-        border-color: var(--accent);
+        font-weight: 550;
       }
 
-      /* chart groups */
-      .group {
-        margin-bottom: 44px;
+      section.group {
+        margin-bottom: 28px;
       }
-      .group-label {
+      .group-heading {
         display: flex;
         align-items: baseline;
-        gap: 12px;
-        padding-bottom: 12px;
-        font-size: 16px;
-        letter-spacing: 0.12em;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .group-heading h2 {
+        font-size: 20px;
+        font-weight: 650;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
-        color: var(--muted);
-      }
-      .group-label::before {
-        counter-increment: group;
-        content: counter(group, decimal-leading-zero);
-        color: var(--accent);
-      }
-      .group-label h2 {
+        color: var(--chalk-yellow);
         margin: 0;
-        font: inherit;
-        color: inherit;
       }
 
-      /* thin border grid: outer frame on the grid, shared hairlines on cells */
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        border-top: 1px solid var(--line);
-        border-left: 1px solid var(--line);
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
       }
-      .grid-cols-3 {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .cell {
+
+      .card {
         display: flex;
         flex-direction: column;
-        gap: 14px;
-        min-width: 0;
-        padding: 20px 22px;
-        border-right: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
+        gap: 10px;
       }
-      .cell-head {
+      .card-head {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 10px;
+        gap: 8px;
       }
-      .cell-title {
-        margin: 0;
-        font-size: 12px;
+      .card-head h3 {
+        font-size: 13px;
         font-weight: 600;
-        letter-spacing: 0.04em;
+        color: var(--text);
+        margin: 0;
+        line-height: 1.4;
       }
-      .badge {
+      .card-head .badge {
         flex: none;
-        padding: 2px 7px;
-        border: 1px solid var(--line);
         font-size: 10px;
-        letter-spacing: 0.08em;
+        font-weight: 650;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
-        color: var(--muted);
+        color: var(--new-badge-text);
+        background: var(--new-badge-bg);
+        border-radius: 999px;
+        padding: 3px 8px;
         white-space: nowrap;
       }
 
-      /* the library renders uncolored series in currentColor,
-         so the chart box sets the page-friendly default */
       .chart {
+        /* default series color: the library renders uncolored series in
+       currentColor, so the chart box sets the page-friendly default */
         color: var(--c1);
         display: flex;
         align-items: center;
         justify-content: center;
         min-height: 96px;
+        margin-right: 20px;
       }
       .chart svg {
         width: 100%;
         height: auto;
-        max-height: 110px;
+        max-height: 96px;
         display: block;
         overflow: visible;
       }
-      .chart.tall svg {
-        max-height: 220px;
-      }
-      .readout {
+      .chart-info {
+        font-size: 12px;
+        color: var(--text-muted);
         min-height: 16px;
-        padding-top: 10px;
-        border-top: 1px dashed var(--line);
-        font-size: 11px;
-        color: var(--faint);
         font-variant-numeric: tabular-nums;
-      }
-      .readout.value {
-        color: var(--text);
       }
 
       footer {
-        margin-top: 72px;
-        padding: 20px 0 48px;
-        border-top: 1px solid var(--line);
-        font-size: 11px;
-        color: var(--faint);
+        margin-top: 80px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-soft);
+        font-size: 13px;
+        color: var(--text-faint);
       }
       footer code {
-        color: var(--muted);
+        background: var(--border-soft);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 12px;
       }
       footer a {
-        color: var(--c1);
-      }
-      footer a:hover {
-        color: var(--accent);
-      }
-
-      @media (max-width: 640px) {
-        .wrap {
-          padding-inline: 16px;
-        }
-        .hero h1 {
-          font-size: 30px;
-        }
-        .hero-grid {
-          grid-template-columns: 1fr;
-        }
-        .grid-cols-3 {
-          grid-template-columns: 1fr;
-        }
-        .cell {
-          padding: 16px 18px;
-        }
+        color: var(--text-muted);
       }
     </style>
   </head>
   <body>
-    <div class="wrap">
+    <div class="page">
       <header class="hero">
-        <div class="hero-top">
-          <p class="kicker">OPEN-SOURCE · MIT LICENSED</p>
-          <div class="theme-switch" role="group" aria-label="Color theme">
-            <button type="button" data-set-theme="dark" aria-pressed="true">Dark</button>
-            <button type="button" data-set-theme="light" aria-pressed="false">Light</button>
-          </div>
-        </div>
-        <div class="hero-grid">
-          <div>
-            <h1>Nano Charts<span class="title-sub">Tiny Minimal Charts</span></h1>
-            <p class="lede">
-              This is a demo of all the nano chart types with their variations. Nano charts is an open
-              source, very light weight, pure JavaScript + SVG data visualization library.
-            </p>
-            <p class="meta">
-              <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
-              <a href="https://www.npmjs.com/package/@samirdamle/nano-charts">NPM</a> ·
-              <a href="https://www.npmjs.com/package/@samirdamle/nano-charts-react">React on npm</a> ·
-              by Samir Damle ·
-              v0.1.0
-            </p>
-          </div>
-          <aside class="hero-features">
-            <ul>
-              <li>9 kB minified</li>
-              <li>12 charts</li>
-              <li>No dependencies</li>
-              <li>Pure JS + SVG</li>
-              <li>Hover and click events</li>
-              <li>Customizable and theme-able</li>
-              <li>Accessible</li>
-              <li>React wrapper in nano-charts-react</li>
-              <li>MIT License</li>
-            </ul>
-          </aside>
-        </div>
+        <h1>Nano Charts - Tiny Minimal Charts</h1>
+        <p>
+          This is a demo of all the nano chart types with their variations. Nano charts is an open
+          source, very light weight, pure JavaScript + SVG data visualization library.
+        </p>
+        <p class="meta">
+          <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
+          by Samir Damle ·
+          v0.1.0 ·
+          7.4 kB for all 12 charts (minified + Brotli)
+        </p>
       </header>
       <div id="root"></div>
       <footer>
@@ -390,92 +244,51 @@
 
       const root = document.getElementById('root');
 
-      // theme switch: <html data-theme> drives the CSS variables; the choice persists
-      const themeButtons = [...document.querySelectorAll('[data-set-theme]')];
-      function setTheme(theme) {
-        document.documentElement.dataset.theme = theme;
-        try {
-          localStorage.setItem('nc-theme', theme);
-        } catch {
-          /* storage unavailable — theme just won't persist */
-        }
-        for (const btn of themeButtons) {
-          btn.setAttribute('aria-pressed', String(btn.dataset.setTheme === theme));
-        }
-      }
-      for (const btn of themeButtons) {
-        btn.addEventListener('click', () => setTheme(btn.dataset.setTheme));
-      }
-      setTheme(document.documentElement.dataset.theme || 'dark');
-
-      function group(title, entries, columns = 2, opts = {}) {
-        if (columns && typeof columns === 'object') {
-          opts = columns;
-          columns = opts.columns ?? 2;
-        }
-        const { blockScale } = opts;
+      function group(title, entries) {
         const section = document.createElement('section');
         section.className = 'group';
 
         const heading = document.createElement('div');
-        heading.className = 'group-label';
+        heading.className = 'group-heading';
         const h2 = document.createElement('h2');
         h2.textContent = title;
         heading.append(h2);
 
         const grid = document.createElement('div');
-        grid.className = columns ? `grid grid-cols-${columns}` : 'grid';
+        grid.className = 'grid';
 
-        for (const { title: cardTitle, scene, fixed, tall, interactive, blockScale: entryScale, describe } of entries) {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
+        for (const { title: cardTitle, scene, fixed, interactive } of entries) {
+          const card = document.createElement('div');
+          card.className = 'card';
 
-          const cellHead = document.createElement('div');
-          cellHead.className = 'cell-head';
+          const head = document.createElement('div');
+          head.className = 'card-head';
           const h3 = document.createElement('h3');
-          h3.className = 'cell-title';
           h3.textContent = cardTitle;
-          cellHead.append(h3);
+          head.append(h3);
           if (fixed) {
             const badge = document.createElement('span');
             badge.className = 'badge';
             badge.textContent = 'Fixed';
-            cellHead.append(badge);
+            head.append(badge);
           }
 
           const chart = document.createElement('div');
           chart.className = 'chart';
-          if (tall) chart.classList.add('tall');
-          const scale = entryScale ?? blockScale;
-          const holder = document.createElement('div');
-          holder.innerHTML = toSVG(scene);
-          const svg = holder.firstElementChild;
-          if (svg) {
-            // fixed px-per-unit so blocks render at the same size in every example
-            if (scale) {
-              svg.style.width = `${scene.width * scale}px`;
-              svg.style.height = `${scene.height * scale}px`;
-            }
-            chart.append(svg);
-          }
+          chart.innerHTML = toSVG(scene);
 
-          cell.append(cellHead, chart);
+          card.append(head, chart);
 
           if (interactive) {
             const info = document.createElement('div');
-            info.className = 'readout';
+            info.className = 'chart-info';
             const idleText = 'Hover or click a point';
             info.textContent = idleText;
 
             let selectedText = null;
-            const setReadout = (text, isValue) => {
-              info.textContent = text;
-              info.classList.toggle('value', isValue);
-            };
             const describePoint = (indexAttr) => {
               const point = scene.points[Number(indexAttr)];
               if (!point) return null;
-              if (describe) return describe(point);
               const series = point.seriesLabel ? ` (${point.seriesLabel})` : '';
               const block = point.blockNumber
                 ? ` — block ${point.blockNumber} of ${point.blocksTotal}${point.partial ? ' (partial)' : ''}`
@@ -486,12 +299,11 @@
             chart.addEventListener('pointermove', (event) => {
               const indexAttr = event.target?.dataset?.index;
               const desc = indexAttr === undefined ? null : describePoint(indexAttr);
-              if (desc) setReadout(desc, true);
-              else setReadout(selectedText ?? idleText, selectedText !== null);
+              info.textContent = desc ? `Hovering: ${desc}` : (selectedText ?? idleText);
             });
 
             chart.addEventListener('pointerleave', () => {
-              setReadout(selectedText ?? idleText, selectedText !== null);
+              info.textContent = selectedText ?? idleText;
             });
 
             chart.addEventListener('click', (event) => {
@@ -500,14 +312,14 @@
               const desc = describePoint(indexAttr);
               if (desc) {
                 selectedText = `Selected: ${desc}`;
-                setReadout(selectedText, true);
+                info.textContent = selectedText;
               }
             });
 
-            cell.append(info);
+            card.append(info);
           }
 
-          grid.append(cell);
+          grid.append(card);
         }
 
         section.append(heading, grid);
@@ -517,12 +329,7 @@
       group('Line', [
         { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
         { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
-        { title: 'Spline', scene: line([4, 1, 7, 2, 8, 3, 9, 5], { mode: 'spline' }) },
-        {
-          title: 'Hover & click',
-          scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
-          interactive: true,
-        },
+        { title: 'Single point — renders as a dot', scene: line([5]) },
         {
           title: 'Multiple series',
           scene: lines([
@@ -536,22 +343,27 @@
             { data: [1, 2, 1, 3, 2, 3], name: 'Forecast', color: 'var(--c3)', strokeWidth: 2.5 },
           ]),
         },
+        {
+          title: 'Hover & click',
+          scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
+          interactive: true,
+        },
       ]);
 
       group('Area', [
         { title: 'Basic', scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42]) },
+        { title: 'Single point — renders as a dot', scene: area([5]) },
         {
           title: 'Custom fill color',
           scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42], {
             color: 'var(--c1)',
-            fillColor: 'var(--c3)',
+            fillColor: 'var(--c4)',
             fillOpacity: 0.35,
           }),
         },
       ]);
 
       const barValues = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4];
-      const barValuesDense = [4, 9, 2, 7, 5, 8, 3, 6, 9, 4, 7, 3, 8, 5, 2, 9, 6, 4, 7, 3];
       const negValues = [4, -3, 6, -2, 1, -5, 3, -4, 2, -1];
       const stackedBarPairs = [
         [3, 2],
@@ -566,18 +378,6 @@
         [6, 4],
       ];
       const stackColors = ['var(--c1)', 'var(--c2)'];
-      // Grouped series colors: chalk blue then chalk yellow.
-      const groupColors = ['var(--c1)', 'var(--c2)'];
-      // Two series per category (e.g. signups: free vs paid). In grouped
-      // mode each series takes its color from the categorical palette.
-      const groupedBars = [
-        [12, 9],
-        [18, 14],
-        [15, 12],
-        [21, 16],
-        [17, 13],
-        [24, 19],
-      ];
       const palette = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)'];
 
       // 10x10 correlation-style matrix: symmetric, 1s on the diagonal,
@@ -596,78 +396,46 @@
         return m;
       })();
 
-      group(
-        'Bar',
-        [
-          { title: 'Basic', scene: bar(barValuesDense, { gap: 0.6 }) },
-          { title: 'Rounded caps', scene: bar(barValuesDense, { radius: 1, gap: 0.6 }) },
-          {
-            title: 'Grouped',
-            scene: bar(
-              groupedBars.map((pair) =>
-                pair.map((value, row) => ({ value, color: groupColors[row] })),
-              ),
-              { mode: 'grouped' },
-            ),
-          },
-          {
-            title: 'Horizontal multiple',
-            scene: bar(barValues, { horizontal: true, height: 40 }),
-            tall: true,
-          },
-          {
-            title: 'Horizontal multiple stacked',
-            scene: bar(
-              stackedBarPairs.map((pair) =>
-                pair.map((value, row) => ({ value, color: stackColors[row] })),
-              ),
-              { horizontal: true, height: 40 },
-            ),
-            tall: true,
-          },
-          {
-            title: 'Grouped horizontal',
-            scene: bar(
-              groupedBars.map((pair) =>
-                pair.map((value, row) => ({ value, color: groupColors[row] })),
-              ),
-              { mode: 'grouped', horizontal: true, height: 40 },
-            ),
-            tall: true,
-          },
-          {
-            title: 'Horizontal single',
-            scene: bar(
+      group('Bar', [
+        { title: 'Basic', scene: bar(barValues) },
+        { title: 'Rounded caps', scene: bar(barValues, { radius: 4 }) },
+        {
+          title: 'Negative values',
+          scene: bar(
+            negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
+          ),
+        },
+        {
+          title: 'Horizontal, single bar (stacked)',
+          scene: bar(
+            [
               [
-                [
-                  { value: 3, color: 'var(--c1)' },
-                  { value: 5, color: 'var(--c2)' },
-                  { value: 2, color: 'var(--c3)' },
-                  { value: 4, color: 'var(--c4)' },
-                ],
+                { value: 3, color: 'var(--c1)' },
+                { value: 5, color: 'var(--c2)' },
+                { value: 2, color: 'var(--c3)' },
+                { value: 4, color: 'var(--c4)' },
               ],
-              { horizontal: true },
+            ],
+            { horizontal: true },
+          ),
+        },
+        { title: 'Horizontal, multiple bars', scene: bar(barValues, { horizontal: true }) },
+        {
+          title: 'Horizontal, multiple bars (stacked)',
+          scene: bar(
+            stackedBarPairs.map((pair) =>
+              pair.map((value, row) => ({ value, color: stackColors[row] })),
             ),
-          },
-          {
-            title: 'Negative values',
-            scene: bar(
-              negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
-            ),
-          },
-          {
-            title: 'Waterfall',
-            scene: bar([120, -45, 60, -30, 25, -80], {
-              mode: 'waterfall',
-              upColor: 'var(--c3)',
-              downColor: 'var(--c4)',
-              total: true,
-              connectorColor: 'var(--text)',
-            }),
-          },
-        ],
-        3,
-      );
+            { horizontal: true },
+          ),
+        },
+      ]);
+
+      group('Win / Loss', [{ title: 'Basic', scene: winLoss([1, -2, 3, -1, 2, -3]) }]);
+
+      group('Bullet', [
+        { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
+      ]);
 
       group('Donut', [
         { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
@@ -721,7 +489,7 @@
               endAngle: 360,
               zones: [
                 { to: 50, color: 'var(--c3)' },
-                { to: 80, color: 'var(--accent)' },
+                { to: 80, color: 'var(--c5)' },
                 { to: 100, color: 'var(--c4)' },
               ],
               centerLabel: '72',
@@ -775,91 +543,10 @@
         scatterOutliers.push(scatterPoint(x, y));
       }
 
-      // Three gaussian clusters, one per series, for the multi-series example.
-      // Seeded separately so the point cloud above renders unchanged.
-      const clusterRand = mulberry32(20260925);
-      const gauss = () => (clusterRand() + clusterRand() + clusterRand() - 1.5) * 2;
-      const scatterCluster = (cx, cy, spread, n, color) =>
-        Array.from({ length: n }, () => ({
-          x: Math.round((cx + gauss() * spread) * 10) / 10,
-          y: Math.round((cy + gauss() * spread) * 10) / 10,
-          color,
-        }));
-      const scatterClusters = [
-        ...scatterCluster(2, 8, 1.1, 45, 'var(--c1)'), // chalk blue
-        ...scatterCluster(8, 7.5, 1.4, 45, 'var(--c4)'), // chalk red
-        ...scatterCluster(6, 2, 1.1, 45, 'var(--c2)'), // chalk yellow
-      ];
-
       group('Scatter', [
         {
           title: 'Dense point cloud with outliers',
           scene: scatter([...scatterTrend, ...scatterOutliers]),
-        },
-        {
-          title: 'Multiple series',
-          scene: scatter(scatterClusters),
-        },
-      ]);
-
-      // September 2026 activity as a heatmap: one row per week, one cell
-      // per day. Padding days (Aug 31, Oct 1-4) are undefined, which
-      // heatmap skips, leaving transparent slots. A custom color scale
-      // paints empty days grey at 0.2 opacity and activity days green at
-      // increasing opacity.
-      const septLevels = [
-        0, 2, 1, 3, 2, 0, 1,
-        3, 4, 2, 3, 1, 0, 2,
-        2, 3, 4, 2, 3, 1, 0,
-        4, 2, 3, 4, 2, 0, 1,
-        3, 2, 4, 0, 0, 0, 0,
-      ];
-      const septMatrix = [0, 1, 2, 3, 4].map((week) =>
-        septLevels.slice(week * 7, week * 7 + 7).map((level, d) => {
-          const date = week * 7 + d; // 1-30 = September, otherwise padding
-          return date >= 1 && date <= 30 ? level : undefined;
-        }),
-      );
-
-      group('Win / Loss', [
-        {
-          title: 'Basic',
-          scene: winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
-            winColor: 'var(--c3)',
-            lossColor: 'var(--c4)',
-          }),
-        },
-      ]);
-
-      group('Bullet', [
-        { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
-      ]);
-
-      group('Radar', [
-        {
-          title: 'Single series (shorthand)',
-          scene: radar([4, 9, 2, 7, 5], { color: '#f3a8c7', gridOpacity: 0.35 }),
-        },
-        {
-          title: 'Multi-series overlay — hover the dots',
-          scene: radar(
-            [
-              { data: [4, 9, 2, 7, 5], name: 'Web', color: '#f3a8c7', dot: 'all', dotRadius: 2.5 },
-              {
-                data: [7, 3, 8, 4, 6],
-                name: 'Mobile',
-                color: 'var(--c4)',
-                dot: 'all',
-                dotRadius: 2.5,
-              },
-            ],
-            { width: 120, height: 120, gridOpacity: 0.35 },
-          ),
-          interactive: true,
-        },
-        {
-          title: 'Custom max, no grid',
-          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false, color: '#f3a8c7' }),
         },
       ]);
 
@@ -881,26 +568,33 @@
             { cellSize: 20, gap: 2 },
           ),
         },
+      ]);
+
+      group('Radar', [
         {
-          title: 'Calendar month',
-          scene: heatmap(septMatrix, {
-            title: 'September 2026 activity',
-            cellSize: 8,
-            gap: 2,
-            radius: 2,
-            colorScale: (v) =>
-              v === 0 ? 'hsla(0, 0%, 55%, 0.2)' : `hsla(140, 70%, 60%, ${v * 0.25})`,
-          }),
-          blockScale: 1.6,
+          title: 'Single series (shorthand)',
+          scene: radar([4, 9, 2, 7, 5], { gridOpacity: 0.35 }),
+        },
+        {
+          title: 'Multi-series overlay — hover the dots',
+          scene: radar(
+            [
+              { data: [4, 9, 2, 7, 5], name: 'Web', dot: 'all', dotRadius: 2.5 },
+              {
+                data: [7, 3, 8, 4, 6],
+                name: 'Mobile',
+                color: 'var(--c4)',
+                dot: 'all',
+                dotRadius: 2.5,
+              },
+            ],
+            { width: 120, height: 120, gridOpacity: 0.35 },
+          ),
           interactive: true,
-          // Sept 1 2026 is a Tuesday, so column 0 = Monday (padding cells
-          // emit no points, hence no hover there).
-          describe: (point) => {
-            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const date = point.row * 7 + point.col;
-            if (date < 1 || date > 30) return null;
-            return `${days[point.col]}, Sep ${date} = ${point.value}`;
-          },
+        },
+        {
+          title: 'Custom max, no grid',
+          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false }),
         },
       ]);
 
@@ -910,21 +604,22 @@
           title: 'Rounded blocks',
           scene: pictogram([4, 6, 3], { block: { kind: 'rect', radius: 2 } }),
         },
+        { title: 'Dots', scene: pictogram([4, 6, 3], { block: { kind: 'circle' } }) },
         {
           title: 'Emoji with partial fill',
           scene: pictogram([4.5], {
             block: { kind: 'emoji', emoji: '⭐' },
+            blockSize: 16,
             horizontal: true,
           }),
         },
-        { title: 'Dots', scene: pictogram([4, 6, 3], { block: { kind: 'circle' } }) },
         { title: 'Horizontal rows', scene: pictogram([5, 3, 7], { horizontal: true }) },
         {
           title: 'Hover the blocks',
           scene: pictogram([3, 2.5, 4]),
           interactive: true,
         },
-      ], { blockScale: 1.6 });
+      ]);
     </script>
   </body>
 </html>
