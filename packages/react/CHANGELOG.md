@@ -1,21 +1,5 @@
 # @samirdamle/nano-charts-react
 
-## 0.1.2
-
-### Patch Changes
-
-- Updated dependencies [b04ea81]
-- Updated dependencies [fc11e77]
-  - @samirdamle/nano-charts@0.3.0
-
-## 0.1.1
-
-### Patch Changes
-
-- Updated dependencies [7022741]
-- Updated dependencies [591e715]
-  - @samirdamle/nano-charts@0.2.0
-
 ## 0.1.0
 
 ### Minor Changes

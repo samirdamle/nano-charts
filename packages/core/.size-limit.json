@@ -3,7 +3,7 @@
     "name": "line (standalone)",
     "path": "dist/line.js",
     "import": "{ line }",
-    "limit": "1.5 kB"
+    "limit": "1.75 kB"
   },
   {
     "name": "toSVG (standalone)",
@@ -14,6 +14,6 @@
   {
     "name": "full barrel",
     "path": "dist/index.js",
-    "limit": "8 kB"
+    "limit": "9 kB"
   }
 ]

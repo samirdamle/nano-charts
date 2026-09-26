@@ -69,6 +69,7 @@ line([4, 9, 2, 7, 5], { strokeWidth: 1.5, dot: 'last' });
 
 | Option                   | Type                            | Default  | Description                            |
 | ------------------------ | ------------------------------- | -------- | -------------------------------------- |
+| `mode`                   | `'linear' \| 'spline'`          | `'linear'` | Straight segments or smooth curve      |
 | `dot`                    | `'none' \| 'last' \| 'all'`     | `'none'` | Dot markers on the line                |
 | `strokeWidth`            | `number`                        | `1`      | Line thickness                         |
 | `dotRadius`              | `number`                        | `1`      | Dot radius                             |
@@ -108,7 +109,7 @@ when the caller passed one) → algorithmic categorical palette. The palette is
 positional — a pure function of `(seriesIndex, seriesCount)` — so colors can
 shift if the series count changes.
 
-### `bar(data, options?)` — magnitude bars, simple or stacked
+### `bar(data, options?)` — magnitude bars: simple, stacked, grouped, or waterfall
 
 ```ts
 bar([4, 9, 2]); // simple bars
@@ -118,6 +119,7 @@ bar([
   [2, 5],
 ]); // stacked: one inner array per column
 bar(data, { horizontal: true }); // horizontal orientation
+bar([120, -45, 60], { mode: 'waterfall', upColor: 'green', downColor: 'red' }); // cumulative steps
 ```
 
 Each column is a number, an object point (`{ value, label?, id?, color? }`), a
@@ -129,7 +131,14 @@ Stacked segments fall back to the categorical palette when no color is given.
 | `gap`                    | `number`                        | `0.2`                  | Fraction of the slot left empty between columns |
 | `radius`                 | `number`                        | —                      | Corner radius (`rx`) on bars                    |
 | `horizontal`             | `boolean`                       | `false`                | Draw bars left-to-right instead of bottom-up    |
+| `mode`                   | `'stacked' \| 'grouped' \| 'waterfall'` | `'stacked'`    | Segment layout: piled, side-by-side, or cumulative |
 | `track`                  | `boolean \| BarTrackOptions`    | —                      | Background track behind each bar spanning the full value domain |
+| `upColor`                | `string`                        | chart `color`          | Waterfall: column color for positive deltas     |
+| `downColor`              | `string`                        | chart `color`          | Waterfall: column color for negative deltas     |
+| `total`                  | `boolean`                       | `false`                | Waterfall: append a total column (0 → grand total) |
+| `totalColor`             | `string`                        | chart `color`          | Waterfall: color of the total column            |
+| `connectors`             | `boolean`                       | `true`                 | Waterfall: solid connectors between columns     |
+| `connectorColor`         | `string`                        | chart `color`          | Waterfall: color of the connector lines         |
 | `colorAccessor`          | `(row, i) => string`            | —                      | Per-row color for custom object arrays          |
 | `value` / `label` / `id` | accessors                       | —                      | For custom object arrays                        |
 
@@ -138,6 +147,17 @@ opacity) behind the bars — the "100%" reference for progress-style bars.
 `track: { max, color, opacity, radius }` tunes it: `max` extends the value
 domain when larger than the data max, and `radius` defaults to the bar's own
 `radius` so rounded caps match. Tracks are decorative (no points).
+
+`mode: 'waterfall'` draws cumulative columns: each bar starts where the
+previous one ended, so `[3, 2, -1]` renders as 0→3, 3→5, 5→4. The input values
+are the deltas (nested arrays sum to one net step per column); the value domain
+spans the running totals. Steps are colored by delta sign via `upColor` /
+`downColor` (an explicit per-datum `color` still wins, and omitting both keeps
+the single chart `color`). `total: true` appends a final column spanning 0 to
+the grand total, and `connectors` (default `true`) draws thin solid lines at
+the level where each column ends and the next begins, spanning the full width
+of both columns; `connectorColor` sets their color (default: the chart color).
+Works horizontally too.
 
 ### `winLoss(data, options?)` — direction / sign
 
@@ -397,36 +417,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + Brotli.
 
-**Enforced budgets (measured 2026-09-21):**
+**Enforced budgets (measured 2026-09-26):**
 
-| Entry                                                    | Budget | Measured    |
-| -------------------------------------------------------- | ------ | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 1.5 kB | **1.19 kB** |
-| `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB   | **878 B**   |
-| `@samirdamle/nano-charts` — full barrel                  | 8 kB   | **7.36 kB** |
-| `@samirdamle/nano-charts-react` — `LineChart` standalone | 2 kB   | **1.89 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 12 kB  | **7.27 kB** |
+| Entry                                                    | Budget  | Measured    |
+| -------------------------------------------------------- | ------- | ----------- |
+| `@samirdamle/nano-charts` — `line` standalone            | 1.75 kB | **1.37 kB** |
+| `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB    | **887 B**   |
+| `@samirdamle/nano-charts` — full barrel                  | 9 kB    | **8.01 kB** |
+| `@samirdamle/nano-charts-react` — `LineChart` standalone | 2.25 kB | **2.08 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 12 kB   | **7.97 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 1.98 kB |
-| `area`     | 1.93 kB |
+| `line`     | 2.16 kB |
+| `area`     | 1.96 kB |
 | `lines`    | 2.07 kB |
-| `bar`      | 2.38 kB |
+| `bar`      | 2.88 kB |
 | `win-loss` | 1.83 kB |
-| `bullet`   | 1.52 kB |
-| `donut`    | 2.24 kB |
-| `gauge`    | 1.26 kB |
-| `scatter`  | 1.54 kB |
-| `heatmap`  | 1.74 kB |
+| `bullet`   | 1.51 kB |
+| `donut`    | 2.79 kB |
+| `gauge`    | 2.09 kB |
+| `scatter`  | 1.58 kB |
+| `heatmap`  | 1.75 kB |
 | `radar`    | 2.34 kB |
-| `pictogram`| 2.33 kB |
+| `pictogram`| 2.34 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2 kB; the whole core library (all twelve charts plus `toSVG`) is 7.36 kB, roughly
+2 kB; the whole core library (all twelve charts plus `toSVG`) is 8.01 kB, roughly
 the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

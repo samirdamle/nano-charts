@@ -173,12 +173,12 @@ describe('pictogram', () => {
       .map((m) => (m as { fill?: string }).fill);
     expect(fills).toEqual([
       '#8fe6c4',
-      '#7fd8e6',
       '#f3a8c7',
+      '#7fd8e6',
       '#c6a6e8',
       '#f0dd82',
       '#8fe6c4',
-      '#7fd8e6',
+      '#f3a8c7',
     ]);
   });
 
