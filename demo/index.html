@@ -555,6 +555,15 @@
             xAxis: { show: true, ticks: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
           }),
         },
+        {
+          title: 'Ticks only',
+          scene: line([3, 7, 2, 9, 5, 6], {
+            color: 'var(--c3)',
+            padding: { top: 2, right: 4, bottom: 6, left: 5 },
+            xAxis: { show: true, line: false, ticks: true, color: 'var(--text)', tickSize: 2 },
+            yAxis: { show: true, line: false, ticks: true, color: 'var(--text)', tickSize: 2 },
+          }),
+        },
       ]);
 
       group('Area', [
@@ -702,6 +711,21 @@
                 tickSize: 2,
               },
               yAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
+            }),
+          },
+          {
+            title: 'Vertical gridlines',
+            scene: bar([4, 9, 2, 7, 5, 8, 3, 6], {
+              color: 'var(--c1)',
+              padding: { top: 2, right: 4, bottom: 6, left: 4 },
+              xAxis: {
+                show: true,
+                line: false,
+                ticks: true,
+                color: 'var(--text)',
+                tickSize: 2,
+                gridlines: { show: true, color: 'var(--line)' },
+              },
             }),
           },
         ],
@@ -863,6 +887,25 @@
                 tickSize: 2,
                 gridlines: { show: true, style: 'dotted', color: 'var(--line)' },
               },
+              yAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
+            },
+          ),
+        },
+        {
+          title: 'Axes with ticks & labels',
+          scene: scatter(
+            [
+              [4, 12],
+              [15, 30],
+              [28, 18],
+              [42, 44],
+              [55, 26],
+              [70, 52],
+            ],
+            {
+              color: 'var(--c1)',
+              padding: { top: 2, right: 4, bottom: 10, left: 13 },
+              xAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
               yAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
             },
           ),
