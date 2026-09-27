@@ -854,6 +854,9 @@
       ];
       // Same clusters scaled x10 so axis ticks can sit at 0, 25, 50, 75, 100.
       const scaledClusters = scatterClusters.map((pt) => ({ ...pt, x: pt.x * 10, y: pt.y * 10 }));
+      // Exact data-domain centers, so the quadrant gridlines split the plot dead center.
+      const midX = (Math.min(...scaledClusters.map((pt) => pt.x)) + Math.max(...scaledClusters.map((pt) => pt.x))) / 2;
+      const midY = (Math.min(...scaledClusters.map((pt) => pt.y)) + Math.max(...scaledClusters.map((pt) => pt.y))) / 2;
 
       group('Scatter', [
         {
@@ -901,14 +904,14 @@
             xAxis: {
               show: true,
               line: false,
-              ticks: [50],
+              ticks: [midX],
               tickSize: 0,
               gridlines: { show: true, color: 'var(--text)' },
             },
             yAxis: {
               show: true,
               line: false,
-              ticks: [50],
+              ticks: [midY],
               tickSize: 0,
               gridlines: { show: true, color: 'var(--text)' },
             },
