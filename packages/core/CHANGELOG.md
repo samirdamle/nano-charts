@@ -1,5 +1,39 @@
 # @samirdamle/nano-charts
 
+## 0.5.0
+
+### Minor Changes
+
+- f88ad18: Add optional cartesian axes to `line()`, `area()`, `lines()`, `bar()`, `scatter()`, and `heatmap()` via new `xAxis` / `yAxis` options (off by default, so existing charts render unchanged). Each axis supports an axis line (or ticks-only with `line: false`), configurable line/tick color and thickness, automatic nice-number ticks (`ticks: true`) or explicit tick values, optional tick labels (`labels: true` or a formatter function), per-axis gridlines with configurable color, thickness, and `solid` / `dashed` / `dotted` style, and `position` to draw the axis at a specific data value (e.g. an x-axis at `y = 20` instead of `y = 0`). React chart components pick up the new props automatically.
+
+## 0.4.0
+
+### Minor Changes
+
+- 6d6bc2d: Add `mode: 'waterfall'` to `bar()`: each column renders as a cumulative step starting where the previous one ended, so `[3, 2, -1]` draws 0→3, 3→5, 5→4. New options: `upColor` / `downColor` color steps by delta sign (defaulting to the chart color; an explicit per-datum color still wins), `total` appends a final column spanning 0 to the grand total (with `totalColor`), and `connectors` (default `true`) draws thin solid lines between consecutive columns: each connector sits at the level where one column ends and the next begins and spans the full width of both columns, and the new `connectorColor` option sets their color (defaulting to the chart color). Works vertically and horizontally; `<BarChart mode="waterfall">` in React picks it up automatically.
+
+### Patch Changes
+
+- 6d6bc2d: Refactor: `donut()` with gauge input (`{ value, max }`) now delegates to `gauge()` in arc mode instead of maintaining a parallel inline implementation (closes #22). Rendering, points, and a11y are unchanged for valid inputs; non-finite values now follow gauge's clamp policy (pinned at the dial bottom) instead of leaking `NaN` into labels.
+- 6d6bc2d: Fix hover/click lookups on heatmap cells: `rect` marks now support the optional `index` field (the mark's dense position in the points array, matching the circle-mark contract), serialized as `data-index` by both `toSVG` and the React renderer. Heatmap cells are tagged, so `scene.points[Number(rect.dataset.index)]` resolves to the hovered cell.
+
+## 0.3.0
+
+### Minor Changes
+
+- b04ea81: Add `mode: 'spline'` to `line()` for smooth Catmull-Rom curves through the points (`mode: 'linear'` remains the default). Also adds `strokeDasharray` support to the `path` mark so dashed curves render in both SVG and React output.
+- fc11e77: Add per-point `color` to scatter: `ScatterPoint` gains an optional `color` field and `ScatterAccessors` gains a `colorAccessor`, so one chart can render multiple series (e.g. clusters) in different colors. Per-point color takes precedence over the uniform `color` option; colorless points behave exactly as before.
+
+## 0.2.0
+
+### Minor Changes
+
+- 7022741: Add `mode: 'grouped'` to `bar()`: multi-segment columns render side by side as one bar per segment instead of stacking. The value domain spans individual segment values, each bar starts at the zero baseline, and series are colored from the categorical palette. Works vertically and horizontally; `<BarChart mode="grouped">` in React picks it up automatically.
+
+### Patch Changes
+
+- 591e715: Move pink to the second position in the pastel palette used by pictogram blocks.
+
 ## 0.1.0
 
 ### Minor Changes

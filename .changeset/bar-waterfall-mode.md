@@ -1,5 +1,0 @@
----
-'@samirdamle/nano-charts': minor
----
-
-Add `mode: 'waterfall'` to `bar()`: each column renders as a cumulative step starting where the previous one ended, so `[3, 2, -1]` draws 0→3, 3→5, 5→4. New options: `upColor` / `downColor` color steps by delta sign (defaulting to the chart color; an explicit per-datum color still wins), `total` appends a final column spanning 0 to the grand total (with `totalColor`), and `connectors` (default `true`) draws thin solid lines between consecutive columns: each connector sits at the level where one column ends and the next begins and spans the full width of both columns, and the new `connectorColor` option sets their color (defaulting to the chart color). Works vertically and horizontally; `<BarChart mode="waterfall">` in React picks it up automatically.

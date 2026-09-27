@@ -1,5 +1,38 @@
 # @samirdamle/nano-charts-react
 
+## 0.1.4
+
+### Patch Changes
+
+- f88ad18: Add optional cartesian axes to `line()`, `area()`, `lines()`, `bar()`, `scatter()`, and `heatmap()` via new `xAxis` / `yAxis` options (off by default, so existing charts render unchanged). Each axis supports an axis line (or ticks-only with `line: false`), configurable line/tick color and thickness, automatic nice-number ticks (`ticks: true`) or explicit tick values, optional tick labels (`labels: true` or a formatter function), per-axis gridlines with configurable color, thickness, and `solid` / `dashed` / `dotted` style, and `position` to draw the axis at a specific data value (e.g. an x-axis at `y = 20` instead of `y = 0`). React chart components pick up the new props automatically.
+- Updated dependencies [f88ad18]
+  - @samirdamle/nano-charts@0.5.0
+
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [6d6bc2d]
+- Updated dependencies [6d6bc2d]
+- Updated dependencies [6d6bc2d]
+  - @samirdamle/nano-charts@0.4.0
+
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [b04ea81]
+- Updated dependencies [fc11e77]
+  - @samirdamle/nano-charts@0.3.0
+
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [7022741]
+- Updated dependencies [591e715]
+  - @samirdamle/nano-charts@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes
