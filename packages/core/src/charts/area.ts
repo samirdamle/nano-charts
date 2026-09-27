@@ -1,11 +1,9 @@
-import type { BaseOptions, Mark, Scene } from '../types';
+import type { Mark, Scene } from '../types';
 import { round } from '../core/geometry';
-import { type SeriesAccessors, type SeriesInput } from '../core/normalize';
-import { renderSeriesChart, singlePointDot } from '../core/series-chart';
+import { type SeriesInput } from '../core/normalize';
+import { renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
 
-export interface AreaOptions<T = number>
-  extends BaseOptions,
-    Partial<SeriesAccessors<T>> {
+export interface AreaOptions<T = number> extends SeriesChartOptions<T> {
   strokeWidth?: number;
   fillOpacity?: number;
   fillColor?: string;

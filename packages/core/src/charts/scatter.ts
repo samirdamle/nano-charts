@@ -1,6 +1,7 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, linearScale, round } from '../core/geometry';
 import { paddedBox, resolvePadding } from '../core/plot';
+import { axisMarks, type AxisOptions } from '../core/axis';
 
 export interface ScatterPoint {
   id?: string | number;
@@ -27,6 +28,10 @@ export interface ScatterOptions<T = ScatterPoint>
   extends BaseOptions,
     Partial<ScatterAccessors<T>> {
   radius?: number;
+  /** X axis. Disabled by default. */
+  xAxis?: AxisOptions;
+  /** Y axis. Disabled by default. */
+  yAxis?: AxisOptions;
 }
 
 interface XY {
@@ -91,8 +96,10 @@ export function scatter<T = ScatterPoint>(
   if (pts.length === 0) return base;
 
   const box = paddedBox({ width, height, padding });
-  const xScale = linearScale(extent(pts.map((p) => p.x)), [box.left, box.right]);
-  const yScale = linearScale(extent(pts.map((p) => p.y)), [box.bottom, box.top]);
+  const xDomain = extent(pts.map((p) => p.x));
+  const yDomain = extent(pts.map((p) => p.y));
+  const xScale = linearScale(xDomain, [box.left, box.right]);
+  const yScale = linearScale(yDomain, [box.bottom, box.top]);
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
@@ -102,5 +109,25 @@ export function scatter<T = ScatterPoint>(
     marks.push({ type: 'circle', cx, cy, r: radius, fill: p.color ?? color });
     points.push({ id: p.id, label: p.label, value: p.y, index: p.index, x: cx, y: cy });
   }
-  return { ...base, marks, points };
+
+  const xA = axisMarks(options.xAxis, {
+    orientation: 'x',
+    domain: xDomain,
+    scale: xScale,
+    crossDomain: yDomain,
+    crossScale: yScale,
+    span: [box.left, box.right],
+    crossSpan: [box.top, box.bottom],
+  });
+  const yA = axisMarks(options.yAxis, {
+    orientation: 'y',
+    domain: yDomain,
+    scale: yScale,
+    crossDomain: xDomain,
+    crossScale: xScale,
+    span: [box.top, box.bottom],
+    crossSpan: [box.left, box.right],
+  });
+
+  return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

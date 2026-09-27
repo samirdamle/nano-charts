@@ -2,6 +2,7 @@ import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round } from '../core/geometry';
 import { makeColorScale, type ColorScale } from '../core/color-scale';
 import { paddedBox, resolvePadding } from '../core/plot';
+import { axisMarks, type AxisOptions } from '../core/axis';
 
 export interface HeatmapOptions<T = number> extends BaseOptions {
   value?: (cell: T, row: number, col: number) => number;
@@ -9,6 +10,10 @@ export interface HeatmapOptions<T = number> extends BaseOptions {
   gap?: number;
   radius?: number;
   cellSize?: number;
+  /** X axis (column indices). Disabled by default; labels need padding. */
+  xAxis?: AxisOptions;
+  /** Y axis (row indices). Disabled by default; labels need padding. */
+  yAxis?: AxisOptions;
 }
 
 export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = {}): Scene {
@@ -74,5 +79,30 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
       points.push({ id: `${r}-${c}`, label: String(value), value, index: r * cols + c, row: r, col: c, x, y, w: size, h: size });
     }
   }
-  return { ...base, marks, points };
+
+  // Both axes are categorical: ticks sit at cell centers.
+  const colCenter = (c: number): number => box.left + c * cell + cell / 2;
+  const rowCenter = (r: number): number => box.top + r * cell + cell / 2;
+  const xA = axisMarks(options.xAxis, {
+    orientation: 'x',
+    domain: [0, cols - 1],
+    scale: colCenter,
+    crossDomain: [0, rows - 1],
+    crossScale: rowCenter,
+    span: [box.left, box.right],
+    crossSpan: [box.top, box.bottom],
+    integerTicks: true,
+  });
+  const yA = axisMarks(options.yAxis, {
+    orientation: 'y',
+    domain: [0, rows - 1],
+    scale: rowCenter,
+    crossDomain: [0, cols - 1],
+    crossScale: colCenter,
+    span: [box.top, box.bottom],
+    crossSpan: [box.left, box.right],
+    integerTicks: true,
+  });
+
+  return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

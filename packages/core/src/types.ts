@@ -39,7 +39,7 @@ export type Mark =
       index?: number;
       seriesIndex?: number;
     }
-  | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number }
+  | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number; strokeDasharray?: string; strokeLinecap?: 'butt' | 'round' | 'square' }
   | {
       type: 'text';
       x: number;

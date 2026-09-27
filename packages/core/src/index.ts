@@ -24,3 +24,5 @@ export { toSVG } from './render/to-svg';
 export type { Scene, Mark, ScenePoint, BaseOptions, Datum, CenterLabelContext } from './types';
 export type { ColorScale } from './core/color-scale';
 export type { SeriesInput } from './core/normalize';
+export type { AxisOptions, AxisGridlineOptions, AxisGridlineStyle, AxisLayout } from './core/axis';
+export { niceTicks } from './core/axis';

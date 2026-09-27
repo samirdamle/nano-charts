@@ -4,6 +4,7 @@ import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core
 import { categoricalColor } from '../core/palette';
 import { seriesLayout } from '../core/plot';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
+import { axisMarks, type AxisOptions } from '../core/axis';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -17,7 +18,12 @@ export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   dotRadius?: number;
 }
 
-export type LinesOptions = BaseOptions;
+export interface LinesOptions extends BaseOptions {
+  /** X axis (index-based). Disabled by default. */
+  xAxis?: AxisOptions;
+  /** Y axis (value-based). Disabled by default. */
+  yAxis?: AxisOptions;
+}
 
 export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions = {}): Scene {
   const { width, height, color: defaultColor, padding } = resolveChartShell(options);
@@ -98,5 +104,27 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
     points.push(...seriesPoints);
   });
 
-  return { ...base, marks, points };
+  const valueDomain = extent(allValues);
+  const indexDomain: [number, number] = [0, count - 1];
+  const xA = axisMarks(options.xAxis, {
+    orientation: 'x',
+    domain: indexDomain,
+    scale: layout.x,
+    crossDomain: valueDomain,
+    crossScale: layout.y,
+    span: [layout.left, layout.right],
+    crossSpan: [layout.top, layout.bottom],
+    integerTicks: true,
+  });
+  const yA = axisMarks(options.yAxis, {
+    orientation: 'y',
+    domain: valueDomain,
+    scale: layout.y,
+    crossDomain: indexDomain,
+    crossScale: layout.x,
+    span: [layout.top, layout.bottom],
+    crossSpan: [layout.left, layout.right],
+  });
+
+  return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }
