@@ -540,28 +540,29 @@
         },
         {
           title: 'Axes & gridlines',
-          scene: line([4, 18, 9, 26, 14, 30, 21], {
+          tall: true,
+          scene: line([0, 18, 9, 26, 14, 30, 21], {
             color: 'var(--c3)',
-            padding: { top: 2, right: 4, bottom: 10, left: 13 },
+            height: 60,
+            padding: { top: 2, right: 4, bottom: 6, left: 5 },
             yAxis: {
               show: true,
-              ticks: true,
-              labels: true,
+              tickCount: 3,
               color: 'var(--text)',
-              fontSize: 3.5,
-              tickSize: 2,
               gridlines: { show: true, style: 'dashed', color: 'var(--line)' },
             },
-            xAxis: { show: true, ticks: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
+            xAxis: { show: true, color: 'var(--text)' },
           }),
         },
         {
           title: 'Ticks only',
-          scene: line([3, 7, 2, 9, 5, 6], {
+          tall: true,
+          scene: line([0, 7, 2, 9, 5, 6], {
             color: 'var(--c3)',
+            height: 60,
             padding: { top: 2, right: 4, bottom: 6, left: 5 },
             xAxis: { show: true, line: false, ticks: true, color: 'var(--text)', tickSize: 2 },
-            yAxis: { show: true, line: false, ticks: true, color: 'var(--text)', tickSize: 2 },
+            yAxis: { show: true, line: false, ticks: [0, 3, 6, 9], color: 'var(--text)', tickSize: 2 },
           }),
         },
       ]);
@@ -694,36 +695,34 @@
             }),
           },
           {
-            title: 'X axis at value',
-            scene: bar([120, -45, 70, -30, 15, -80], {
-              mode: 'waterfall',
-              upColor: 'var(--c3)',
-              downColor: 'var(--c4)',
-              connectors: false,
-              padding: { top: 2, right: 4, bottom: 10, left: 14 },
-              xAxis: {
-                show: true,
-                position: 20,
-                ticks: true,
-                labels: true,
-                color: 'var(--text)',
-                fontSize: 3.5,
-                tickSize: 2,
-              },
-              yAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
-            }),
-          },
-          {
-            title: 'Vertical gridlines',
+            title: 'X ticks & labels',
+            tall: true,
             scene: bar([4, 9, 2, 7, 5, 8, 3, 6], {
               color: 'var(--c1)',
-              padding: { top: 2, right: 4, bottom: 6, left: 4 },
+              height: 40,
+              padding: { top: 2, right: 4, bottom: 10, left: 4 },
               xAxis: {
                 show: true,
                 line: false,
                 ticks: true,
+                labels: (v) => 'JFMAMJJA'[v],
                 color: 'var(--text)',
+                fontSize: 3.5,
                 tickSize: 2,
+              },
+            }),
+          },
+          {
+            title: 'Y gridlines',
+            tall: true,
+            scene: bar([4, 9, 2, 7, 5, 8, 3, 6], {
+              color: 'var(--c1)',
+              height: 40,
+              padding: { top: 2, right: 4, bottom: 4, left: 4 },
+              yAxis: {
+                show: true,
+                line: false,
+                tickCount: 3,
                 gridlines: { show: true, color: 'var(--line)' },
               },
             }),
@@ -853,62 +852,70 @@
         ...scatterCluster(8, 7.5, 1.4, 45, 'var(--c4)'), // chalk red
         ...scatterCluster(6, 2, 1.1, 45, 'var(--c2)'), // chalk yellow
       ];
+      // Same clusters scaled x10 so axis ticks can sit at 0, 25, 50, 75, 100.
+      const scaledClusters = scatterClusters.map((pt) => ({ ...pt, x: pt.x * 10, y: pt.y * 10 }));
+      // Exact data-domain centers, so the quadrant gridlines split the plot dead center.
+      const midX = (Math.min(...scaledClusters.map((pt) => pt.x)) + Math.max(...scaledClusters.map((pt) => pt.x))) / 2;
+      const midY = (Math.min(...scaledClusters.map((pt) => pt.y)) + Math.max(...scaledClusters.map((pt) => pt.y))) / 2;
 
       group('Scatter', [
         {
           title: 'Dense point cloud with outliers',
-          scene: scatter([...scatterTrend, ...scatterOutliers]),
+          tall: true,
+          scene: scatter([...scatterTrend, ...scatterOutliers], { height: 60 }),
         },
         {
           title: 'Multiple series',
-          scene: scatter(scatterClusters),
+          tall: true,
+          scene: scatter(scatterClusters, { height: 60 }),
         },
         {
-          title: 'Ticks-only axes',
-          scene: scatter(
-            [
-              [4, 12],
-              [15, 30],
-              [28, 18],
-              [42, 44],
-              [55, 26],
-              [70, 52],
-            ],
-            {
-              color: 'var(--c1)',
-              padding: { top: 2, right: 4, bottom: 10, left: 13 },
-              xAxis: {
-                show: true,
-                line: false,
-                ticks: true,
-                labels: true,
-                color: 'var(--text)',
-                fontSize: 3.5,
-                tickSize: 2,
-                gridlines: { show: true, style: 'dotted', color: 'var(--line)' },
-              },
-              yAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
+          title: 'Ticks & labels',
+          tall: true,
+          scene: scatter(scaledClusters, {
+            height: 60,
+            padding: { top: 2, right: 4, bottom: 10, left: 13 },
+            xAxis: {
+              show: true,
+              line: false,
+              ticks: [0, 25, 50, 75, 100],
+              labels: true,
+              color: 'var(--text)',
+              fontSize: 3.5,
+              tickSize: 2,
             },
-          ),
+            yAxis: {
+              show: true,
+              line: false,
+              ticks: [0, 25, 50, 75, 100],
+              labels: true,
+              color: 'var(--text)',
+              fontSize: 3.5,
+              tickSize: 2,
+            },
+          }),
         },
         {
-          title: 'Axes with ticks & labels',
-          scene: scatter(
-            [
-              [4, 12],
-              [15, 30],
-              [28, 18],
-              [42, 44],
-              [55, 26],
-              [70, 52],
-            ],
-            {
-              color: 'var(--c1)',
-              padding: { top: 2, right: 4, bottom: 10, left: 13 },
-              xAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
-              yAxis: { show: true, ticks: true, labels: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
+          title: 'Quadrant gridlines',
+          tall: true,
+          scene: scatter(scaledClusters, {
+            height: 60,
+            padding: { top: 2, right: 4, bottom: 4, left: 4 },
+            xAxis: {
+              show: true,
+              line: false,
+              ticks: [midX],
+              tickSize: 0,
+              gridlines: { show: true, color: 'var(--text)' },
             },
-          ),
+            yAxis: {
+              show: true,
+              line: false,
+              ticks: [midY],
+              tickSize: 0,
+              gridlines: { show: true, color: 'var(--text)' },
+            },
+          }),
         },
       ]);
 
