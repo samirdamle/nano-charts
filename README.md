@@ -4,7 +4,7 @@ A monorepo for **tiny SVG charts** — sparklines, micro bars, donuts, bullets, 
 and heatmaps — the kind you repeat hundreds of times across table cells and metric
 cards.
 
-- **9 kB** minified for all 12 charts — zero runtime dependencies, pure JS + SVG.
+- **11 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
 - Framework-agnostic core (`data → Scene`) + a `toSVG` serializer; SSR-safe and deterministic.
 - Hover and click events, accessible by default, themeable via `currentColor` and CSS variables.
 - React wrapper in [`@samirdamle/nano-charts-react`](https://www.npmjs.com/package/@samirdamle/nano-charts-react).
@@ -86,16 +86,16 @@ Both are independently versioned and published (via [Changesets](https://github.
 Built for pages that render _hundreds_ of tiny charts, where per-chart byte
 cost dominates. Zero runtime dependencies in core; React is a peer dependency
 of the React package. Import one chart per subpath and ship only what you use.
-Budgets are enforced in CI (`pnpm size`); all figures minified + Brotli,
+Budgets are enforced in CI (`pnpm size`); all figures minified + gzip,
 measured 2026-09-27:
 
 | Entry                                        | Budget  | Measured    |
 | -------------------------------------------- | ------- | ----------- |
-| Core — `line` standalone                     | 2.5 kB  | **2.46 kB** |
-| Core — `toSVG` standalone                    | 1 kB    | **886 B**   |
-| Core — full barrel (all 12 charts + `toSVG`) | 9.5 kB  | **9.33 kB** |
-| React — `LineChart` standalone               | 3.25 kB | **3.19 kB** |
-| React — full barrel                          | 12 kB   | **9.17 kB** |
+| Core — `line` standalone                     | 3 kB    | **2.67 kB** |
+| Core — `toSVG` standalone                    | 1.25 kB | **1.02 kB** |
+| Core — full barrel (all 12 charts + `toSVG`) | 11 kB   | **10.38 kB** |
+| React — `LineChart` standalone               | 3.75 kB | **3.59 kB** |
+| React — full barrel                          | 13 kB   | **10.2 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 
