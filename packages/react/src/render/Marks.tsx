@@ -70,6 +70,8 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 y2={mark.y2}
                 stroke={mark.stroke}
                 strokeWidth={mark.strokeWidth}
+                strokeDasharray={mark.strokeDasharray}
+                strokeLinecap={mark.strokeLinecap}
               />
             );
           case 'text':

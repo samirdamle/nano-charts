@@ -59,6 +59,55 @@ A single datum with no values renders an empty scene (never throws).
 | `title`   | `string`                                     | per-chart default            | `<title>` for screen readers                          |
 | `desc`    | `string`                                     | per-chart default            | `<desc>` for screen readers                           |
 
+## Axes
+
+`line`, `area`, `lines`, `bar`, `scatter`, and `heatmap` accept optional `xAxis`
+and `yAxis` options (the same `AxisOptions` shape on every chart). Axes are off
+by default — pass `xAxis: { show: true }` to draw one.
+
+```ts
+line([4, 18, 9, 26, 14, 30, 21], {
+  yAxis: {
+    show: true,
+    ticks: true,
+    labels: true,
+    gridlines: { show: true, style: 'dashed' },
+  },
+  xAxis: { show: true, ticks: true },
+});
+```
+
+| Option          | Type                                                     | Default            | Description                                                            |
+| --------------- | -------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| `show`          | `boolean`                                                | `false`            | Draw this axis                                                         |
+| `line`          | `boolean`                                                | `true`             | Draw the axis line; `false` gives ticks-only mode                      |
+| `color`         | `string`                                                 | `'currentColor'`   | Axis line color (also the default for ticks and labels)                |
+| `thickness`     | `number`                                                 | `1`                | Axis line thickness in user units                                      |
+| `ticks`         | `boolean \| number[]`                                   | `false`            | `true` for automatic nice ticks, an array for explicit tick values     |
+| `tickCount`     | `number`                                                 | `5`                | Target tick count for automatic ticks                                  |
+| `tickSize`      | `number`                                                 | `4`                | Tick length in user units                                              |
+| `tickColor`     | `string`                                                 | axis `color`       | Tick color                                                             |
+| `tickThickness` | `number`                                                 | axis `thickness`   | Tick thickness in user units                                           |
+| `labels`        | `boolean \| (value: number) => string`                  | `false`            | Tick labels; pass a function for custom formatting                     |
+| `labelColor`    | `string`                                                 | axis `color`       | Label color                                                            |
+| `fontSize`      | `number`                                                 | `10`               | Label font size in user units                                          |
+| `position`      | `number`                                                 | `0`                | Data value on the perpendicular axis the axis line sits at, clamped to the domain |
+| `gridlines`     | `{ show?, color?, thickness?, style? }`                  | all off / defaults | Gridlines at the tick positions; `style`: `'solid' \| 'dashed' \| 'dotted'` |
+
+Notes:
+
+- On index-based charts (`line`, `area`, `bar`), x-axis ticks are integer data
+  indices; explicit tick arrays are snapped to valid indices. `scatter` and
+  `heatmap` use data values (heatmap: row/column indices at cell centers).
+- Gridlines render at the tick positions even when `ticks` is `false` — set
+  `gridlines: { show: true }` alone for label-free grids.
+- `position` places an axis mid-plot, e.g. `xAxis: { show: true, position: 20 }`
+  draws the X axis at y = 20. Ticks always point outward from the plot area.
+- Gridlines draw behind the chart data; the axis line, ticks, and labels draw
+  in front of it. Leave extra `padding` on the label sides so labels fit.
+- React components (`LineChart`, `BarChart`, …) accept the same `xAxis` /
+  `yAxis` props.
+
 ## Charts
 
 ### `line(data, options?)` — trend sparkline
@@ -417,36 +466,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + Brotli.
 
-**Enforced budgets (measured 2026-09-26):**
+**Enforced budgets (measured 2026-09-27):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 1.75 kB | **1.37 kB** |
-| `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB    | **887 B**   |
-| `@samirdamle/nano-charts` — full barrel                  | 9 kB    | **8.01 kB** |
-| `@samirdamle/nano-charts-react` — `LineChart` standalone | 2.25 kB | **2.08 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 12 kB   | **7.97 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 2.5 kB  | **2.46 kB** |
+| `@samirdamle/nano-charts` — `toSVG` standalone           | 1 kB    | **886 B**   |
+| `@samirdamle/nano-charts` — full barrel                  | 9.5 kB  | **9.33 kB** |
+| `@samirdamle/nano-charts-react` — `LineChart` standalone | 3.25 kB | **3.19 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 12 kB   | **9.17 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 2.16 kB |
-| `area`     | 1.96 kB |
-| `lines`    | 2.07 kB |
-| `bar`      | 2.88 kB |
+| `line`     | 3.21 kB |
+| `area`     | 3.03 kB |
+| `lines`    | 3.13 kB |
+| `bar`      | 3.96 kB |
 | `win-loss` | 1.83 kB |
 | `bullet`   | 1.51 kB |
-| `donut`    | 2.79 kB |
-| `gauge`    | 2.09 kB |
-| `scatter`  | 1.58 kB |
-| `heatmap`  | 1.75 kB |
+| `donut`    | 2.80 kB |
+| `gauge`    | 2.07 kB |
+| `scatter`  | 2.65 kB |
+| `heatmap`  | 2.84 kB |
 | `radar`    | 2.34 kB |
-| `pictogram`| 2.34 kB |
+| `pictogram`| 2.35 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2 kB; the whole core library (all twelve charts plus `toSVG`) is 8.01 kB, roughly
+2–4 kB; the whole core library (all twelve charts plus `toSVG`) is 9.33 kB, roughly
 the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.
