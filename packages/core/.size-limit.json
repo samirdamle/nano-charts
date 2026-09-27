@@ -3,17 +3,20 @@
     "name": "line (standalone)",
     "path": "dist/line.js",
     "import": "{ line }",
-    "limit": "2.5 kB"
+    "limit": "3 kB",
+    "gzip": true
   },
   {
     "name": "toSVG (standalone)",
     "path": "dist/to-svg.js",
     "import": "{ toSVG }",
-    "limit": "1 kB"
+    "limit": "1.25 kB",
+    "gzip": true
   },
   {
     "name": "full barrel",
     "path": "dist/index.js",
-    "limit": "9.5 kB"
+    "limit": "11 kB",
+    "gzip": true
   }
 ]

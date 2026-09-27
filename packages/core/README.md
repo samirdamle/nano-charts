@@ -4,7 +4,7 @@ Extremely lightweight, zero-dependency TypeScript library for **tiny SVG charts*
 sparklines, micro bars, donuts, bullets, scatter, and heatmaps — the kind you repeat
 hundreds of times across table cells and metric cards.
 
-- **9 kB** minified for all 12 charts — zero runtime dependencies, pure JS + SVG.
+- **11 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
 - Framework-agnostic **scene model** core (`data → Scene`) + a `toSVG` serializer.
 - SSR-safe & deterministic. Inherits text color via `currentColor`. Accessible by default.
 - Hover and click events; customizable and theme-able.
