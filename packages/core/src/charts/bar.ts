@@ -9,6 +9,7 @@ import {
 import { resolveSegmentColor } from '../core/palette';
 import { seriesLayout, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
+import { axisMarks, type AxisOptions } from '../core/axis';
 
 export interface BarTrackOptions {
   /** The "100%" the track represents. When larger than the data max it
@@ -58,6 +59,12 @@ export interface BarOptions<T = number>
   /** Color of the waterfall connector lines. Defaults to the chart's
    * `color` (waterfall mode only). */
   connectorColor?: string;
+  /** X axis. For vertical bars this is the category axis; for horizontal
+   * bars it's the value axis. Disabled by default. */
+  xAxis?: AxisOptions;
+  /** Y axis. For vertical bars this is the value axis; for horizontal
+   * bars it's the category axis. Disabled by default. */
+  yAxis?: AxisOptions;
 }
 
 type BarSegment<T> =
@@ -321,5 +328,33 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     }
   }
 
-  return { ...base, marks, points };
+  // The category axis runs along the slots (bar centers); the value axis
+  // along the value scale. Which is "x" flips with `horizontal`.
+  const catScale = (i: number): number => slot.x(i) + barW / 2;
+  const catDomain: [number, number] = [0, columns.length - 1];
+  const valueLayout = horizontal
+    ? {
+        x: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
+        y: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
+      }
+    : {
+        x: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
+        y: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
+      };
+  const xA = axisMarks(options.xAxis, {
+    orientation: 'x',
+    ...valueLayout.x,
+    span: [layout.left, layout.right],
+    crossSpan: [layout.top, layout.bottom],
+    integerTicks: !horizontal,
+  });
+  const yA = axisMarks(options.yAxis, {
+    orientation: 'y',
+    ...valueLayout.y,
+    span: [layout.top, layout.bottom],
+    crossSpan: [layout.left, layout.right],
+    integerTicks: horizontal,
+  });
+
+  return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

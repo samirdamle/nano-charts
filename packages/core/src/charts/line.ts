@@ -1,11 +1,9 @@
-import type { BaseOptions, Mark, Scene } from '../types';
+import type { Mark, Scene } from '../types';
 import { splinePath, toDasharray } from '../core/geometry';
-import { type SeriesAccessors, type SeriesInput } from '../core/normalize';
-import { renderSeriesChart, singlePointDot } from '../core/series-chart';
+import { type SeriesInput } from '../core/normalize';
+import { renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
 
-export interface LineOptions<T = number>
-  extends BaseOptions,
-    Partial<SeriesAccessors<T>> {
+export interface LineOptions<T = number> extends SeriesChartOptions<T> {
   /** 'linear' draws straight segments (default); 'spline' draws a smooth curve through the points. */
   mode?: 'linear' | 'spline';
   dot?: 'none' | 'last' | 'all';

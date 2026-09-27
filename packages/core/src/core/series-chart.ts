@@ -3,6 +3,7 @@ import { extent, round } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
 import { resolvePadding, seriesLayout, type ResolvedPadding, type SeriesLayout } from './plot';
 import { seriesSummary } from './a11y';
+import { axisMarks, type AxisOptions } from './axis';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -48,7 +49,12 @@ export function sceneShell(
   };
 }
 
-export interface SeriesChartOptions<T> extends BaseOptions, Partial<SeriesAccessors<T>> {}
+export interface SeriesChartOptions<T> extends BaseOptions, Partial<SeriesAccessors<T>> {
+  /** X axis (index-based). Disabled by default. */
+  xAxis?: AxisOptions;
+  /** Y axis (value-based). Disabled by default. */
+  yAxis?: AxisOptions;
+}
 
 /**
  * Shared scaffold for single-series, index-based charts (line, area):
@@ -87,7 +93,34 @@ export function renderSeriesChart<T>(
     y: round(layout.y(d.value)),
   }));
 
-  return { ...base, marks: buildMarks(points, layout, color), points };
+  const marks = buildMarks(points, layout, color);
+  const valueDomain = extent(datums.map((d) => d.value));
+  const indexDomain: [number, number] = [0, datums.length - 1];
+  const xA = axisMarks(options.xAxis, {
+    orientation: 'x',
+    domain: indexDomain,
+    scale: layout.x,
+    crossDomain: valueDomain,
+    crossScale: layout.y,
+    span: [layout.left, layout.right],
+    crossSpan: [layout.top, layout.bottom],
+    integerTicks: true,
+  });
+  const yA = axisMarks(options.yAxis, {
+    orientation: 'y',
+    domain: valueDomain,
+    scale: layout.y,
+    crossDomain: indexDomain,
+    crossScale: layout.x,
+    span: [layout.top, layout.bottom],
+    crossSpan: [layout.left, layout.right],
+  });
+
+  return {
+    ...base,
+    marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis],
+    points,
+  };
 }
 
 /**
