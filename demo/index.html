@@ -540,28 +540,29 @@
         },
         {
           title: 'Axes & gridlines',
-          scene: line([4, 18, 9, 26, 14, 30, 21], {
+          tall: true,
+          scene: line([0, 18, 9, 26, 14, 30, 21], {
             color: 'var(--c3)',
-            padding: { top: 2, right: 4, bottom: 10, left: 13 },
+            height: 60,
+            padding: { top: 2, right: 4, bottom: 6, left: 5 },
             yAxis: {
               show: true,
-              ticks: true,
-              labels: true,
+              tickCount: 3,
               color: 'var(--text)',
-              fontSize: 3.5,
-              tickSize: 2,
               gridlines: { show: true, style: 'dashed', color: 'var(--line)' },
             },
-            xAxis: { show: true, ticks: true, color: 'var(--text)', fontSize: 3.5, tickSize: 2 },
+            xAxis: { show: true, color: 'var(--text)' },
           }),
         },
         {
           title: 'Ticks only',
-          scene: line([3, 7, 2, 9, 5, 6], {
+          tall: true,
+          scene: line([0, 7, 2, 9, 5, 6], {
             color: 'var(--c3)',
+            height: 60,
             padding: { top: 2, right: 4, bottom: 6, left: 5 },
             xAxis: { show: true, line: false, ticks: true, color: 'var(--text)', tickSize: 2 },
-            yAxis: { show: true, line: false, ticks: true, color: 'var(--text)', tickSize: 2 },
+            yAxis: { show: true, line: false, ticks: [0, 3, 6, 9], color: 'var(--text)', tickSize: 2 },
           }),
         },
       ]);
