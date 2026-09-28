@@ -8,16 +8,27 @@ describe('area', () => {
     const poly = scene.marks.find((m) => m.type === 'polyline');
     expect(path).toEqual({
       type: 'path',
-      d: 'M1,19 L1,19 L50,1 L99,10 L99,19 Z',
+      d: 'M0.5,19.5 L0.5,19.5 L50,0.5 L99.5,10 L99.5,19.5 Z',
       fill: 'currentColor',
       fillOpacity: 0.2,
       stroke: 'none',
     });
-    expect(poly).toMatchObject({ type: 'polyline', points: [[1, 19], [50, 1], [99, 10]] });
+    expect(poly).toMatchObject({
+      type: 'polyline',
+      points: [
+        [0.5, 19.5],
+        [50, 0.5],
+        [99.5, 10],
+      ],
+    });
   });
 
   it('exposes the same points as line', () => {
-    expect(area([0, 10, 5]).points.map((p) => [p.x, p.y])).toEqual([[1, 19], [50, 1], [99, 10]]);
+    expect(area([0, 10, 5]).points.map((p) => [p.x, p.y])).toEqual([
+      [0.5, 19.5],
+      [50, 0.5],
+      [99.5, 10],
+    ]);
   });
 
   it('renders an empty scene for empty data', () => {

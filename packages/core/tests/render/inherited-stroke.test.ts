@@ -36,7 +36,16 @@ describe('inherited-stroke regression (#9)', () => {
   it('scatter circles do not inherit the root stroke', () => {
     // Contrasting point color: with the bug, each point renders fill="#e11d48"
     // with no stroke attribute and picks up a currentColor (usually black) outline.
-    const svg = toSVG(scatter([[0, 0], [5, 8], [10, 3]], { color: '#e11d48' }));
+    const svg = toSVG(
+      scatter(
+        [
+          [0, 0],
+          [5, 8],
+          [10, 3],
+        ],
+        { color: '#e11d48' },
+      ),
+    );
     expectNoInheritedStroke(svg);
     expect(svg).toContain('stroke="none"');
   });
@@ -75,7 +84,12 @@ describe('inherited-stroke regression (#9)', () => {
   it('heatmap cells cannot inherit the root stroke', () => {
     // Cell fills come from a color scale, so an inherited currentColor outline
     // would be visually unrelated to the cell.
-    const svg = toSVG(heatmap([[1, 2, 3], [4, 5, 6]]));
+    const svg = toSVG(
+      heatmap([
+        [1, 2, 3],
+        [4, 5, 6],
+      ]),
+    );
     expectNoInheritedStroke(svg);
   });
 

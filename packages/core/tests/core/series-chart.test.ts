@@ -88,10 +88,16 @@ describe('sceneShell', () => {
 describe('renderSeriesChart', () => {
   it('returns an empty scene without invoking the callback when data is empty', () => {
     let called = false;
-    const scene = renderSeriesChart('line', [], {}, () => {
-      called = true;
-      return [];
-    });
+    const scene = renderSeriesChart(
+      'line',
+      [],
+      {},
+      () => {
+        called = true;
+        return [];
+      },
+      () => 1,
+    );
     expect(called).toBe(false);
     expect(scene).toEqual({
       width: 100,
@@ -104,11 +110,17 @@ describe('renderSeriesChart', () => {
   });
 
   it('lays out points and hands them to the callback along with the resolved color', () => {
-    const scene = renderSeriesChart('line', [0, 10, 5], { color: 'blue' }, (points, layout, color) => {
-      expect(color).toBe('blue');
-      expect(layout.left).toBe(1);
-      return [{ type: 'circle', cx: points[0]!.x, cy: points[0]!.y, r: 1, fill: color }];
-    });
+    const scene = renderSeriesChart(
+      'line',
+      [0, 10, 5],
+      { color: 'blue' },
+      (points, layout, color) => {
+        expect(color).toBe('blue');
+        expect(layout.left).toBe(1);
+        return [{ type: 'circle', cx: points[0]!.x, cy: points[0]!.y, r: 1, fill: color }];
+      },
+      () => 1,
+    );
     expect(scene.points).toEqual([
       { id: 0, label: '0', value: 0, index: 0, x: 1, y: 19 },
       { id: 1, label: '10', value: 10, index: 1, x: 50, y: 1 },

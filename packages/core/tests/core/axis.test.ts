@@ -89,7 +89,10 @@ describe('axisMarks', () => {
   });
 
   it('formats automatic tick labels from the tick step', () => {
-    const { axis } = axisMarks({ show: true, ticks: true, labels: true }, { ...layout, domain: [0, 1] });
+    const { axis } = axisMarks(
+      { show: true, ticks: true, labels: true },
+      { ...layout, domain: [0, 1] },
+    );
     const texts = axis.filter((m) => m.type === 'text').map((m) => (m as { text: string }).text);
     expect(texts).toEqual(['0.0', '0.2', '0.4', '0.6', '0.8', '1.0']);
   });
@@ -142,11 +145,10 @@ describe('chart integration', () => {
 
   it('bar renders a category x-axis at the value baseline', () => {
     const scene = bar([3, 1, 2], { xAxis: { show: true } });
-    const axisLine = scene.marks.find(
-      (m) => m.type === 'line' && m.y1 === m.y2 && m.x1 !== m.x2,
-    );
-    // horizontal bar baseline: valueScale(0) with domain [0,3] over y [19,1]
-    expect(axisLine).toMatchObject({ y1: 19, y2: 19 });
+    const axisLine = scene.marks.find((m) => m.type === 'line' && m.y1 === m.y2 && m.x1 !== m.x2);
+    // horizontal bar baseline: valueScale(0) with domain [0,3] over y [19.5,0]
+    // (bottom padding 0.5 = half the axis-line thickness)
+    expect(axisLine).toMatchObject({ y1: 19.5, y2: 19.5 });
   });
 
   it('scatter renders both axes', () => {
@@ -157,8 +159,12 @@ describe('chart integration', () => {
       ],
       { xAxis: { show: true }, yAxis: { show: true } },
     );
-    const horizontals = scene.marks.filter((m) => m.type === 'line' && m.y1 === m.y2 && m.x1 !== m.x2);
-    const verticals = scene.marks.filter((m) => m.type === 'line' && m.x1 === m.x2 && m.y1 !== m.y2);
+    const horizontals = scene.marks.filter(
+      (m) => m.type === 'line' && m.y1 === m.y2 && m.x1 !== m.x2,
+    );
+    const verticals = scene.marks.filter(
+      (m) => m.type === 'line' && m.x1 === m.x2 && m.y1 !== m.y2,
+    );
     expect(horizontals.length).toBe(1);
     expect(verticals.length).toBe(1);
   });

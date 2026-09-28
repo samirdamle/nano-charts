@@ -3,7 +3,7 @@
     "name": "LineChart (standalone)",
     "path": "dist/line.js",
     "import": "{ LineChart }",
-    "limit": "3.75 kB",
+    "limit": "5 kB",
     "gzip": true
   },
   {

@@ -7,7 +7,15 @@ const scene: Scene = {
   height: 20,
   viewBox: '0 0 100 20',
   marks: [
-    { type: 'polyline', points: [[1, 19], [50, 1], [99, 10]], fill: 'none' },
+    {
+      type: 'polyline',
+      points: [
+        [1, 19],
+        [50, 1],
+        [99, 10],
+      ],
+      fill: 'none',
+    },
     { type: 'circle', cx: 99, cy: 10, r: 1 },
   ],
   points: [],
@@ -84,7 +92,10 @@ describe('toSVG', () => {
       marks: [
         {
           type: 'polyline',
-          points: [[0, 0], [10, 10]],
+          points: [
+            [0, 0],
+            [10, 10],
+          ],
           strokeDasharray: '4 2',
           strokeLinecap: 'round',
         },
@@ -144,7 +155,9 @@ describe('toSVG', () => {
   it('serializes stroke-opacity on a path', () => {
     const svg = toSVG({
       ...scene,
-      marks: [{ type: 'path', d: 'M0,0 A1,1 0 0 1 1,1', fill: 'none', stroke: 'red', strokeOpacity: 0.4 }],
+      marks: [
+        { type: 'path', d: 'M0,0 A1,1 0 0 1 1,1', fill: 'none', stroke: 'red', strokeOpacity: 0.4 },
+      ],
     });
     expect(svg).toContain('stroke-opacity="0.4"');
   });
@@ -152,7 +165,15 @@ describe('toSVG', () => {
   it('serializes stroke-linecap on a path', () => {
     const svg = toSVG({
       ...scene,
-      marks: [{ type: 'path', d: 'M0,0 A1,1 0 0 1 1,1', fill: 'none', stroke: 'red', strokeLinecap: 'round' }],
+      marks: [
+        {
+          type: 'path',
+          d: 'M0,0 A1,1 0 0 1 1,1',
+          fill: 'none',
+          stroke: 'red',
+          strokeLinecap: 'round',
+        },
+      ],
     });
     expect(svg).toContain('stroke-linecap="round"');
   });
