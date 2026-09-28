@@ -8,7 +8,11 @@ describe('line', () => {
     const poly = scene.marks.find((m) => m.type === 'polyline');
     expect(poly).toEqual({
       type: 'polyline',
-      points: [[1, 19], [50, 1], [99, 10]],
+      points: [
+        [0.5, 19.5],
+        [50, 0.5],
+        [99.5, 10],
+      ],
       fill: 'none',
       stroke: 'currentColor',
       strokeWidth: 1,
@@ -18,9 +22,9 @@ describe('line', () => {
   it('exposes data-bound points for interactivity', () => {
     const scene = line([0, 10, 5]);
     expect(scene.points).toEqual([
-      { id: 0, label: '0', value: 0, index: 0, x: 1, y: 19 },
-      { id: 1, label: '10', value: 10, index: 1, x: 50, y: 1 },
-      { id: 2, label: '5', value: 5, index: 2, x: 99, y: 10 },
+      { id: 0, label: '0', value: 0, index: 0, x: 0.5, y: 19.5 },
+      { id: 1, label: '10', value: 10, index: 1, x: 50, y: 0.5 },
+      { id: 2, label: '5', value: 5, index: 2, x: 99.5, y: 10 },
     ]);
   });
 
@@ -99,7 +103,7 @@ describe('line', () => {
       stroke: 'currentColor',
       strokeWidth: 1,
     });
-    expect(path?.d).toBe('M1,19 C9.17,16 33.67,2.5 50,1 C66.33,-0.5 90.83,8.5 99,10');
+    expect(path?.d).toBe('M0.5,19.5 C8.75,16.33 33.5,2.08 50,0.5 C66.5,-1.08 91.25,8.42 99.5,10');
   });
 
   it('spline keeps strokeDasharray, strokeLinecap and dots working', () => {
@@ -123,6 +127,6 @@ describe('line', () => {
   it('spline renders two points as a straight cubic', () => {
     const scene = line([0, 10], { mode: 'spline' });
     const path = scene.marks.find((m) => m.type === 'path');
-    expect(path?.d).toBe('M1,19 C17.33,16 82.67,4 99,1');
+    expect(path?.d).toBe('M0.5,19.5 C17,16.33 83,3.67 99.5,0.5');
   });
 });

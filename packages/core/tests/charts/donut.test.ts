@@ -23,7 +23,10 @@ describe('donut (gauge)', () => {
 
 describe('donut (segments)', () => {
   it('draws one stroked, unfilled arc per segment', () => {
-    const scene = donut([{ id: 'a', label: 'A', value: 3 }, { id: 'b', label: 'B', value: 1 }]);
+    const scene = donut([
+      { id: 'a', label: 'A', value: 3 },
+      { id: 'b', label: 'B', value: 1 },
+    ]);
     const paths = scene.marks.filter((m) => m.type === 'path');
     expect(paths).toHaveLength(2);
     for (const p of paths) expect(p).toMatchObject({ fill: 'none' });
@@ -106,7 +109,9 @@ describe('donut (segment color)', () => {
   });
 
   it('lets an explicit per-segment color win over options.colors[i]', () => {
-    const scene = donut([{ value: 1, color: 'red' }, { value: 1 }], { colors: ['ignored', 'green'] });
+    const scene = donut([{ value: 1, color: 'red' }, { value: 1 }], {
+      colors: ['ignored', 'green'],
+    });
     const paths = scene.marks.filter((m) => m.type === 'path');
     expect(paths.map((p) => p.stroke)).toEqual(['red', 'green']);
   });
@@ -285,7 +290,7 @@ describe('donut (segment gap)', () => {
 
   it('insets each segment symmetrically, including the wrap seam', () => {
     const [first, second] = segPaths(donut([1, 1], { gap: 2 }));
-    const halfGapDeg = ((2 / 2) / 8.25) * (180 / Math.PI);
+    const halfGapDeg = (2 / 2 / 8.25) * (180 / Math.PI);
     expect(first).toBe(arcPath(10, 10, 8.25, -90 + halfGapDeg, 90 - halfGapDeg));
     expect(second).toBe(arcPath(10, 10, 8.25, 90 + halfGapDeg, 270 - halfGapDeg));
   });

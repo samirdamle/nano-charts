@@ -19,39 +19,55 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
   const strokeDasharray = toDasharray(options.strokeDasharray);
   const spline = options.mode === 'spline';
 
-  return renderSeriesChart('line', data, options, (points, _layout, color) => {
-    if (points.length < 2) {
-      return [singlePointDot(points[0]!, Math.max(dotRadius, strokeWidth + 0.5), color, { index: 0 })];
-    }
-
-    const pts = points.map((p) => [p.x, p.y] as [number, number]);
-    const lineMark: Mark = spline
-      ? {
-          type: 'path',
-          d: splinePath(pts),
-          fill: 'none',
-          stroke: color,
-          strokeWidth,
-          ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
-          ...(options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {}),
-        }
-      : {
-          type: 'polyline',
-          points: pts,
-          fill: 'none',
-          stroke: color,
-          strokeWidth,
-          ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
-          ...(options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {}),
-        };
-    const marks: Mark[] = [lineMark];
-    if (options.dot && options.dot !== 'none') {
-      const dottedIndices = options.dot === 'last' ? [points.length - 1] : points.map((_, i) => i);
-      for (const i of dottedIndices) {
-        const p = points[i]!;
-        marks.push({ type: 'circle', cx: p.x, cy: p.y, r: dotRadius, fill: color, index: i });
+  return renderSeriesChart(
+    'line',
+    data,
+    options,
+    (points, _layout, color) => {
+      if (points.length < 2) {
+        return [
+          singlePointDot(points[0]!, Math.max(dotRadius, strokeWidth + 0.5), color, { index: 0 }),
+        ];
       }
-    }
-    return marks;
-  });
+
+      const pts = points.map((p) => [p.x, p.y] as [number, number]);
+      const lineMark: Mark = spline
+        ? {
+            type: 'path',
+            d: splinePath(pts),
+            fill: 'none',
+            stroke: color,
+            strokeWidth,
+            ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
+            ...(options.strokeLinecap !== undefined
+              ? { strokeLinecap: options.strokeLinecap }
+              : {}),
+          }
+        : {
+            type: 'polyline',
+            points: pts,
+            fill: 'none',
+            stroke: color,
+            strokeWidth,
+            ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
+            ...(options.strokeLinecap !== undefined
+              ? { strokeLinecap: options.strokeLinecap }
+              : {}),
+          };
+      const marks: Mark[] = [lineMark];
+      if (options.dot && options.dot !== 'none') {
+        const dottedIndices =
+          options.dot === 'last' ? [points.length - 1] : points.map((_, i) => i);
+        for (const i of dottedIndices) {
+          const p = points[i]!;
+          marks.push({ type: 'circle', cx: p.x, cy: p.y, r: dotRadius, fill: color, index: i });
+        }
+      }
+      return marks;
+    },
+    (n) =>
+      n < 2
+        ? Math.max(dotRadius, strokeWidth + 0.5)
+        : Math.max(strokeWidth / 2, options.dot && options.dot !== 'none' ? dotRadius : 0),
+  );
 }

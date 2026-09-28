@@ -9,14 +9,14 @@ describe('lines', () => {
     expect(polylines).toHaveLength(2);
     expect(polylines[0]).toMatchObject({
       points: [
-        [1, 19],
-        [99, 1],
+        [0.5, 19.5],
+        [99.5, 0.5],
       ],
     });
     expect(polylines[1]).toMatchObject({
       points: [
-        [1, 10],
-        [99, 10],
+        [0.5, 10],
+        [99.5, 10],
       ],
     });
   });
@@ -74,7 +74,10 @@ describe('lines', () => {
   it('skips an empty series without disturbing later series indices', () => {
     const scene = lines([{ data: [] }, { data: [1, 2], dot: 'all' }]);
     const circles = scene.marks.filter((m) => m.type === 'circle');
-    expect(circles.map((c) => [c.index, c.seriesIndex])).toEqual([[0, 1], [1, 1]]);
+    expect(circles.map((c) => [c.index, c.seriesIndex])).toEqual([
+      [0, 1],
+      [1, 1],
+    ]);
     expect(scene.points).toHaveLength(2);
   });
 

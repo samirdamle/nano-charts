@@ -2,9 +2,14 @@ import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { categoricalColor } from '../core/palette';
-import { seriesLayout } from '../core/plot';
+import {
+  autoPlotPadding,
+  seriesLayout,
+  type ResolvedPadding,
+  type SeriesLayout,
+} from '../core/plot';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
-import { axisMarks, type AxisOptions } from '../core/axis';
+import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -26,7 +31,7 @@ export interface LinesOptions extends BaseOptions {
 }
 
 export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions = {}): Scene {
-  const { width, height, color: defaultColor, padding } = resolveChartShell(options);
+  const { width, height, color: defaultColor } = resolveChartShell(options);
   // Precedence: explicit per-series color > uniform options.color (only if the
   // caller passed it) > categorical palette. Same rule donut() uses.
   const hasUniformColor = options.color !== undefined;
@@ -44,13 +49,61 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const allValues = perSeries.flatMap((s) => s.datums.map((d) => d.value));
   if (allValues.length === 0) return base;
 
-  const layout = seriesLayout(count, extent(allValues), { width, height, padding });
+  const valueDomain = extent(allValues);
+  const indexDomain: [number, number] = [0, count - 1];
+  // Max half-size of a mark that can sit on the plot edge, across series.
+  const extentPx = Math.max(
+    0,
+    ...perSeries.map(({ input, datums }) => {
+      const sw = input.strokeWidth ?? 1;
+      const dr = input.dotRadius ?? 1;
+      return datums.length < 2
+        ? Math.max(dr, sw + 0.5)
+        : Math.max(sw / 2, input.dot && input.dot !== 'none' ? dr : 0);
+    }),
+  );
+  const layoutFor = (padding: ResolvedPadding) =>
+    seriesLayout(count, valueDomain, { width, height, padding });
+  const axisLayoutFor = (l: SeriesLayout, orientation: 'x' | 'y'): AxisLayout =>
+    orientation === 'x'
+      ? {
+          orientation,
+          domain: indexDomain,
+          scale: l.x,
+          crossDomain: valueDomain,
+          crossScale: l.y,
+          span: [l.left, l.right],
+          crossSpan: [l.top, l.bottom],
+          integerTicks: true,
+        }
+      : {
+          orientation,
+          domain: valueDomain,
+          scale: l.y,
+          crossDomain: indexDomain,
+          crossScale: l.x,
+          span: [l.top, l.bottom],
+          crossSpan: [l.left, l.right],
+        };
+
+  // Automatic padding, iterated to a fixed point on the real layout
+  // (autoPlotPadding re-measures until the padding stops growing).
+  const padding = autoPlotPadding(options.padding, extentPx, width, height, (p) => {
+    const l = layoutFor(p);
+    return {
+      x: axisSpace(options.xAxis, axisLayoutFor(l, 'x')),
+      y: axisSpace(options.yAxis, axisLayoutFor(l, 'y')),
+    };
+  });
+  const layout = layoutFor(padding);
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
   perSeries.forEach(({ input, datums }, seriesIndex) => {
-    const color = input.color ?? (hasUniformColor ? defaultColor : categoricalColor(seriesIndex, perSeries.length));
+    const color =
+      input.color ??
+      (hasUniformColor ? defaultColor : categoricalColor(seriesIndex, perSeries.length));
     const strokeWidth = input.strokeWidth ?? 1;
     const dotRadius = input.dotRadius ?? 1;
     const strokeDasharray = toDasharray(input.strokeDasharray);
@@ -104,27 +157,8 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
     points.push(...seriesPoints);
   });
 
-  const valueDomain = extent(allValues);
-  const indexDomain: [number, number] = [0, count - 1];
-  const xA = axisMarks(options.xAxis, {
-    orientation: 'x',
-    domain: indexDomain,
-    scale: layout.x,
-    crossDomain: valueDomain,
-    crossScale: layout.y,
-    span: [layout.left, layout.right],
-    crossSpan: [layout.top, layout.bottom],
-    integerTicks: true,
-  });
-  const yA = axisMarks(options.yAxis, {
-    orientation: 'y',
-    domain: valueDomain,
-    scale: layout.y,
-    crossDomain: indexDomain,
-    crossScale: layout.x,
-    span: [layout.top, layout.bottom],
-    crossSpan: [layout.left, layout.right],
-  });
+  const xA = axisMarks(options.xAxis, axisLayoutFor(layout, 'x'));
+  const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
 
   return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

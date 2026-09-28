@@ -7,9 +7,15 @@ import {
   type SeriesInput,
 } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
-import { seriesLayout, slotLayout } from '../core/plot';
+import {
+  autoPlotPadding,
+  seriesLayout,
+  slotLayout,
+  type ResolvedPadding,
+  type SeriesLayout,
+} from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
-import { axisMarks, type AxisOptions } from '../core/axis';
+import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
 
 export interface BarTrackOptions {
   /** The "100%" the track represents. When larger than the data max it
@@ -30,9 +36,7 @@ export interface BarTrackOptions {
 export type BarMode = 'stacked' | 'grouped' | 'waterfall';
 
 export interface BarOptions<T = number>
-  extends BaseOptions,
-    Partial<SeriesAccessors<T>>,
-    Partial<SeriesColorAccessor<T>> {
+  extends BaseOptions, Partial<SeriesAccessors<T>>, Partial<SeriesColorAccessor<T>> {
   gap?: number;
   radius?: number;
   horizontal?: boolean;
@@ -68,13 +72,11 @@ export interface BarOptions<T = number>
 }
 
 type BarSegment<T> =
-  | number
-  | { id?: string | number; label?: string; value: number; color?: string }
-  | T;
+  number | { id?: string | number; label?: string; value: number; color?: string } | T;
 export type BarInput<T = number> = Array<BarSegment<T> | BarSegment<T>[]>;
 
 export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}): Scene {
-  const { width, height, color, padding } = resolveChartShell(options);
+  const { width, height, color } = resolveChartShell(options);
   const gap = options.gap ?? 0.2;
   const horizontal = options.horizontal ?? false;
   const mode = options.mode ?? 'stacked';
@@ -173,28 +175,73 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   const track = options.track === true ? {} : options.track || undefined;
   // An explicit track max larger than the data extends the domain so the
   // track genuinely represents 100% instead of being squashed to the data max.
-  const domain: [number, number] = [
-    Math.min(0, minT),
-    Math.max(0, maxT, track?.max ?? -Infinity),
-  ];
-  const layout = seriesLayout(columns.length, domain, { width, height, padding });
-
-  // Value axis runs along x when horizontal, y otherwise; the category
-  // ("slot") axis runs along the other one. slotLayout is axis-agnostic —
-  // it just divides a numeric span into gapped slots — so the horizontal
-  // case reuses it unchanged, just fed the vertical bounds instead.
-  const valueScale = horizontal ? linearScale(domain, [layout.left, layout.right]) : layout.y;
-  const slot = horizontal
-    ? slotLayout(columns.length, layout.top, layout.bottom, gap)
-    : slotLayout(columns.length, layout.left, layout.right, gap);
-  const barW = round(slot.barWidth);
+  const domain: [number, number] = [Math.min(0, minT), Math.max(0, maxT, track?.max ?? -Infinity)];
+  const layoutFor = (padding: ResolvedPadding) =>
+    seriesLayout(columns.length, domain, { width, height, padding });
 
   // Grouped mode subdivides each column slot into one sub-slot per segment.
   // Sizing by the widest column keeps bar widths uniform when columns are
   // ragged; shorter columns center their bars within the group.
   const groupCount = grouped ? Math.max(1, ...columns.map((segs) => segs.length)) : 0;
-  const subSlot = grouped ? slotLayout(groupCount, 0, barW, gap) : undefined;
-  const subW = subSlot ? round(subSlot.barWidth) : barW;
+
+  // Everything derived from the plot layout, so the probe and final layouts share it.
+  const prepare = (l: SeriesLayout) => {
+    // Value axis runs along x when horizontal, y otherwise; the category
+    // ("slot") axis runs along the other one. slotLayout is axis-agnostic —
+    // it just divides a numeric span into gapped slots — so the horizontal
+    // case reuses it unchanged, just fed the vertical bounds instead.
+    const valueScale = horizontal ? linearScale(domain, [l.left, l.right]) : l.y;
+    const slot = horizontal
+      ? slotLayout(columns.length, l.top, l.bottom, gap)
+      : slotLayout(columns.length, l.left, l.right, gap);
+    const barW = round(slot.barWidth);
+    const subSlot = grouped ? slotLayout(groupCount, 0, barW, gap) : undefined;
+    const subW = subSlot ? round(subSlot.barWidth) : barW;
+    // The category axis runs along the slots (bar centers); the value axis
+    // along the value scale. Which is "x" flips with `horizontal`.
+    const catScale = (i: number): number => slot.x(i) + barW / 2;
+    const catDomain: [number, number] = [0, columns.length - 1];
+    const axisFor = (orientation: 'x' | 'y'): AxisLayout => {
+      const v = horizontal
+        ? {
+            x: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
+            y: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
+          }
+        : {
+            x: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
+            y: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
+          };
+      const a = orientation === 'x' ? v.x : v.y;
+      return {
+        orientation,
+        ...a,
+        span: orientation === 'x' ? [l.left, l.right] : [l.top, l.bottom],
+        crossSpan: orientation === 'x' ? [l.top, l.bottom] : [l.left, l.right],
+        integerTicks: orientation === 'x' ? !horizontal : horizontal,
+      };
+    };
+    return { layout: l, valueScale, slot, barW, subSlot, subW, axisFor };
+  };
+
+  // Automatic padding, iterated to a fixed point on the real layout:
+  // bar axes sit on bar centers, which shift as padding shrinks the plot.
+  const padding = autoPlotPadding(
+    options.padding,
+    // Waterfall connectors are 1px lines that can sit exactly on the plot
+    // edge (a cumulative level at the domain max), so they claim half
+    // their stroke; bare bars need no clearance.
+    mode === 'waterfall' && options.connectors !== false && columns.length > 1 ? 0.5 : 0,
+    width,
+    height,
+    (p) => {
+      const l = prepare(layoutFor(p));
+      return {
+        x: axisSpace(options.xAxis, l.axisFor('x')),
+        y: axisSpace(options.yAxis, l.axisFor('y')),
+      };
+    },
+  );
+  const { valueScale, slot, barW, subSlot, subW, axisFor } = prepare(layoutFor(padding));
 
   // Precedence, matching donut: explicit per-segment color (field/accessor)
   // > uniform options.color, with the legacy opacity step-down as its only
@@ -328,33 +375,8 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     }
   }
 
-  // The category axis runs along the slots (bar centers); the value axis
-  // along the value scale. Which is "x" flips with `horizontal`.
-  const catScale = (i: number): number => slot.x(i) + barW / 2;
-  const catDomain: [number, number] = [0, columns.length - 1];
-  const valueLayout = horizontal
-    ? {
-        x: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
-        y: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
-      }
-    : {
-        x: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
-        y: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
-      };
-  const xA = axisMarks(options.xAxis, {
-    orientation: 'x',
-    ...valueLayout.x,
-    span: [layout.left, layout.right],
-    crossSpan: [layout.top, layout.bottom],
-    integerTicks: !horizontal,
-  });
-  const yA = axisMarks(options.yAxis, {
-    orientation: 'y',
-    ...valueLayout.y,
-    span: [layout.top, layout.bottom],
-    crossSpan: [layout.left, layout.right],
-    integerTicks: horizontal,
-  });
+  const xA = axisMarks(options.xAxis, axisFor('x'));
+  const yA = axisMarks(options.yAxis, axisFor('y'));
 
   return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

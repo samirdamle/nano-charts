@@ -1,7 +1,12 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, linearScale, round } from '../core/geometry';
-import { paddedBox, resolvePadding } from '../core/plot';
-import { axisMarks, type AxisOptions } from '../core/axis';
+import {
+  autoPlotPadding,
+  paddedBox,
+  type PaddedBox,
+  type ResolvedPadding,
+} from '../core/plot';
+import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
 
 export interface ScatterPoint {
   id?: string | number;
@@ -25,8 +30,7 @@ export interface ScatterAccessors<T> {
 export type ScatterInput<T = ScatterPoint> = [number, number][] | T[];
 
 export interface ScatterOptions<T = ScatterPoint>
-  extends BaseOptions,
-    Partial<ScatterAccessors<T>> {
+  extends BaseOptions, Partial<ScatterAccessors<T>> {
   radius?: number;
   /** X axis. Disabled by default. */
   xAxis?: AxisOptions;
@@ -83,7 +87,6 @@ export function scatter<T = ScatterPoint>(
   const height = options.height ?? 20;
   const color = options.color ?? 'currentColor';
   const radius = options.radius ?? 1;
-  const padding = resolvePadding(options.padding);
   const pts = toXY(data, options);
 
   const a11y = {
@@ -92,12 +95,58 @@ export function scatter<T = ScatterPoint>(
       options.desc ??
       (pts.length === 0 ? 'scatter chart, no data' : `scatter chart, ${pts.length} points`),
   };
-  const base: Scene = { width, height, viewBox: `0 0 ${width} ${height}`, marks: [], points: [], a11y };
+  const base: Scene = {
+    width,
+    height,
+    viewBox: `0 0 ${width} ${height}`,
+    marks: [],
+    points: [],
+    a11y,
+  };
   if (pts.length === 0) return base;
 
-  const box = paddedBox({ width, height, padding });
   const xDomain = extent(pts.map((p) => p.x));
   const yDomain = extent(pts.map((p) => p.y));
+  const boxFor = (padding: ResolvedPadding): PaddedBox => paddedBox({ width, height, padding });
+  const scalesFor = (b: PaddedBox) => ({
+    x: linearScale(xDomain, [b.left, b.right]),
+    y: linearScale(yDomain, [b.bottom, b.top]),
+  });
+  const axisLayoutFor = (
+    b: PaddedBox,
+    s: { x: (v: number) => number; y: (v: number) => number },
+    orientation: 'x' | 'y',
+  ): AxisLayout =>
+    orientation === 'x'
+      ? {
+          orientation,
+          domain: xDomain,
+          scale: s.x,
+          crossDomain: yDomain,
+          crossScale: s.y,
+          span: [b.left, b.right],
+          crossSpan: [b.top, b.bottom],
+        }
+      : {
+          orientation,
+          domain: yDomain,
+          scale: s.y,
+          crossDomain: xDomain,
+          crossScale: s.x,
+          span: [b.top, b.bottom],
+          crossSpan: [b.left, b.right],
+        };
+
+  // Automatic padding, iterated to a fixed point on the real layout.
+  const padding = autoPlotPadding(options.padding, radius, width, height, (p) => {
+    const b = boxFor(p);
+    const s = scalesFor(b);
+    return {
+      x: axisSpace(options.xAxis, axisLayoutFor(b, s, 'x')),
+      y: axisSpace(options.yAxis, axisLayoutFor(b, s, 'y')),
+    };
+  });
+  const box = boxFor(padding);
   const xScale = linearScale(xDomain, [box.left, box.right]);
   const yScale = linearScale(yDomain, [box.bottom, box.top]);
 
@@ -110,24 +159,8 @@ export function scatter<T = ScatterPoint>(
     points.push({ id: p.id, label: p.label, value: p.y, index: p.index, x: cx, y: cy });
   }
 
-  const xA = axisMarks(options.xAxis, {
-    orientation: 'x',
-    domain: xDomain,
-    scale: xScale,
-    crossDomain: yDomain,
-    crossScale: yScale,
-    span: [box.left, box.right],
-    crossSpan: [box.top, box.bottom],
-  });
-  const yA = axisMarks(options.yAxis, {
-    orientation: 'y',
-    domain: yDomain,
-    scale: yScale,
-    crossDomain: xDomain,
-    crossScale: xScale,
-    span: [box.top, box.bottom],
-    crossSpan: [box.left, box.right],
-  });
+  const xA = axisMarks(options.xAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'x'));
+  const yA = axisMarks(options.yAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'y'));
 
   return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }
