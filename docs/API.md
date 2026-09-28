@@ -55,7 +55,7 @@ A single datum with no values renders an empty scene (never throws).
 | `width`   | `number`                                     | `100`                        | SVG width in user units                               |
 | `height`  | `number`                                     | `20`                         | SVG height in user units                              |
 | `color`   | `string`                                     | `'currentColor'`             | Uniform color; inherited from text color when omitted |
-| `padding` | `number \| { top?, right?, bottom?, left? }` | `1` all sides (heatmap: `0`) | Inner padding in user units                           |
+| `padding` | `number \| { top?, right?, bottom?, left? }` | automatic                    | Inner padding in user units; defaults to just enough so marks and axis labels never clip |
 | `title`   | `string`                                     | per-chart default            | `<title>` for screen readers                          |
 | `desc`    | `string`                                     | per-chart default            | `<desc>` for screen readers                           |
 
@@ -104,7 +104,10 @@ Notes:
 - `position` places an axis mid-plot, e.g. `xAxis: { show: true, position: 20 }`
   draws the X axis at y = 20. Ticks always point outward from the plot area.
 - Gridlines draw behind the chart data; the axis line, ticks, and labels draw
-  in front of it. Leave extra `padding` on the label sides so labels fit.
+  in front of it. Padding is automatic: each chart measures how far its axes
+  overflow the plot and reserves exactly that much space, so labels never
+  clip without hand-tuned `padding`. Pass an explicit `padding` (number or
+  per-side object) to override any side; omitted sides stay automatic.
 - React components (`LineChart`, `BarChart`, …) accept the same `xAxis` /
   `yAxis` props.
 
@@ -466,36 +469,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-09-27):**
+**Enforced budgets (measured 2026-09-28):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 3 kB    | **2.67 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.57 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.02 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 11 kB   | **10.38 kB** |
-| `@samirdamle/nano-charts-react` — `LineChart` standalone | 3.75 kB | **3.59 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **10.2 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **11.65 kB** |
+| `@samirdamle/nano-charts-react` — `LineChart` standalone | 5 kB    | **4.41 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **11.46 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 3.54 kB |
-| `area`     | 3.32 kB |
-| `lines`    | 3.44 kB |
-| `bar`      | 4.29 kB |
-| `win-loss` | 2.01 kB |
+| `line`     | 4.40 kB |
+| `area`     | 4.17 kB |
+| `lines`    | 4.31 kB |
+| `bar`      | 5.24 kB |
+| `win-loss` | 2.00 kB |
 | `bullet`   | 1.67 kB |
-| `donut`    | 3.02 kB |
+| `donut`    | 3.03 kB |
 | `gauge`    | 2.25 kB |
-| `scatter`  | 2.91 kB |
-| `heatmap`  | 3.11 kB |
+| `scatter`  | 3.76 kB |
+| `heatmap`  | 3.93 kB |
 | `radar`    | 2.54 kB |
-| `pictogram`| 2.53 kB |
+| `pictogram`| 2.54 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2–4.5 kB; the whole core library (all twelve charts plus `toSVG`) is 11 kB gzipped,
+2–5.5 kB; the whole core library (all twelve charts plus `toSVG`) is 12 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

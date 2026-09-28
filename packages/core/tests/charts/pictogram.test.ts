@@ -4,10 +4,8 @@ import { toSVG } from '../../src/render/to-svg';
 import { pastelColor } from '../../src/core/palette';
 import type { Mark } from '../../src/types';
 
-const uses = (scene: ReturnType<typeof pictogram>) =>
-  scene.marks.filter((m) => m.type === 'use');
-const defs = (scene: ReturnType<typeof pictogram>) =>
-  scene.marks.filter((m) => m.type === 'defs');
+const uses = (scene: ReturnType<typeof pictogram>) => scene.marks.filter((m) => m.type === 'use');
+const defs = (scene: ReturnType<typeof pictogram>) => scene.marks.filter((m) => m.type === 'defs');
 const partialDefs = (scene: ReturnType<typeof pictogram>) =>
   defs(scene).filter((m) => m.clip !== undefined);
 
@@ -81,7 +79,12 @@ describe('pictogram', () => {
     expect(partialUses[1]).not.toHaveProperty('clipPath');
     expect(partialUses[0]!.index).toBe(partialUses[1]!.index);
     const partialPoint = scene.points[3]!;
-    expect(partialPoint).toMatchObject({ partial: true, value: 0.5, blockNumber: 4, blocksTotal: 4 });
+    expect(partialPoint).toMatchObject({
+      partial: true,
+      value: 0.5,
+      blockNumber: 4,
+      blocksTotal: 4,
+    });
     expect(scene.points.filter((p) => p.partial)).toHaveLength(1);
   });
 
@@ -89,14 +92,25 @@ describe('pictogram', () => {
     // Regression test: clip-path directly on <use> renders nothing in
     // browsers, so partial overlays must reference a pre-clipped defs entry.
     const svg = toSVG(
-      pictogram([4.5], { block: { kind: 'emoji', emoji: '⭐' }, blockSize: 16, horizontal: true, idPrefix: 'pictogram' }),
+      pictogram([4.5], {
+        block: { kind: 'emoji', emoji: '⭐' },
+        blockSize: 16,
+        horizontal: true,
+        idPrefix: 'pictogram',
+      }),
     );
     expect(svg).not.toMatch(/<use[^>]*clip-path/);
     expect(svg).toContain('<use href="#pictogram-partial-0"');
   });
 
   it('fills partial blocks left-to-right when horizontal', () => {
-    const scene = pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, horizontal: true, idPrefix: 'pictogram' });
+    const scene = pictogram([2.5], {
+      blockSize: 8,
+      gap: 0.25,
+      padding: 0,
+      horizontal: true,
+      idPrefix: 'pictogram',
+    });
     // Partial block is the rightmost; the clip covers the left half in the
     // block's local coordinates.
     expect(partialDefs(scene)[0]).toMatchObject({
@@ -212,7 +226,13 @@ describe('pictogram', () => {
   });
 
   it('emits one point per block with block metadata', () => {
-    const scene = pictogram([{ label: 'A', value: 2 }, { label: 'B', value: 1 }], { padding: 0 });
+    const scene = pictogram(
+      [
+        { label: 'A', value: 2 },
+        { label: 'B', value: 1 },
+      ],
+      { padding: 0 },
+    );
     expect(scene.points.map((p) => [p.col, p.blockNumber, p.blocksTotal])).toEqual([
       [0, 1, 2],
       [0, 2, 2],
@@ -240,7 +260,9 @@ describe('pictogram', () => {
   });
 
   it('renders defs/use and the pre-clipped partial variant in the SVG string', () => {
-    const svg = toSVG(pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, idPrefix: 'pictogram' }));
+    const svg = toSVG(
+      pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, idPrefix: 'pictogram' }),
+    );
     expect(svg).toContain('<defs><rect id="pictogram-block" width="8" height="8"/></defs>');
     expect(svg).toContain('<use href="#pictogram-block" x="0" y="10"');
     expect(svg).toContain('data-index="0"');
@@ -306,13 +328,24 @@ describe('pictogram mark types', () => {
       { type: 'use', href: '#p-block', x: 0, y: 0, fill: 'red', index: 0 },
       { type: 'use', href: '#p-partial-0', x: 0, y: 0, fill: 'red', index: 0 },
     ];
-    const svg = toSVG({ width: 8, height: 8, viewBox: '0 0 8 8', marks, points: [], a11y: { title: 't', desc: 'd' } });
+    const svg = toSVG({
+      width: 8,
+      height: 8,
+      viewBox: '0 0 8 8',
+      marks,
+      points: [],
+      a11y: { title: 't', desc: 'd' },
+    });
     expect(svg).toContain('<defs><rect id="p-block" width="8" height="8"/></defs>');
     expect(svg).toContain(
       '<defs><clipPath id="p-partial-0-clip"><rect x="0" y="4" width="8" height="4"/></clipPath>' +
         '<g id="p-partial-0" clip-path="url(#p-partial-0-clip)"><rect width="8" height="8"/></g></defs>',
     );
-    expect(svg).toContain('<use href="#p-block" x="0" y="0" fill="red" stroke="none" data-index="0"/>');
-    expect(svg).toContain('<use href="#p-partial-0" x="0" y="0" fill="red" stroke="none" data-index="0"/>');
+    expect(svg).toContain(
+      '<use href="#p-block" x="0" y="0" fill="red" stroke="none" data-index="0"/>',
+    );
+    expect(svg).toContain(
+      '<use href="#p-partial-0" x="0" y="0" fill="red" stroke="none" data-index="0"/>',
+    );
   });
 });

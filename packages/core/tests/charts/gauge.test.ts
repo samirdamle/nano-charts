@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { gauge } from '../../src/charts/gauge';
 import { polar, round } from '../../src/core/geometry';
 
-const paths = (scene: ReturnType<typeof gauge>) =>
-  scene.marks.filter((m) => m.type === 'path');
+const paths = (scene: ReturnType<typeof gauge>) => scene.marks.filter((m) => m.type === 'path');
 const startOf = (d: string) => d.split(' ')[0]!.slice(1); // strip leading "M"
 const endOf = (d: string) => d.split(' ').pop()!;
 const pt = (deg: number) => {
@@ -124,7 +123,13 @@ describe('gauge (needle mode)', () => {
   it('clamps zone bands into [min, max] and skips empty ones', () => {
     const scene = gauge(
       { value: 10, max: 100 },
-      { mode: 'needle', zones: [{ to: -5, color: 'green' }, { to: 200, color: 'red' }] },
+      {
+        mode: 'needle',
+        zones: [
+          { to: -5, color: 'green' },
+          { to: 200, color: 'red' },
+        ],
+      },
     );
     const zoneArcs = paths(scene).filter((p) => p.stroke !== 'none');
     // negative zone skipped; overshooting zone clamped to the full dial
@@ -139,7 +144,12 @@ describe('gauge (zones in arc mode)', () => {
   it('renders zone bands as the background with the value arc sweeping over them', () => {
     const scene = gauge(
       { value: 70, max: 100 },
-      { zones: [{ to: 60, color: 'green' }, { to: 100, color: 'red' }] },
+      {
+        zones: [
+          { to: 60, color: 'green' },
+          { to: 100, color: 'red' },
+        ],
+      },
     );
     const all = paths(scene);
     expect(all).toHaveLength(3); // 2 zones + value arc
@@ -151,7 +161,13 @@ describe('gauge (zones in arc mode)', () => {
   it('gives zone bands the same line caps as the value arc', () => {
     const scene = gauge(
       { value: 70, max: 100 },
-      { zones: [{ to: 60, color: 'green' }, { to: 100, color: 'red' }], strokeLinecap: 'round' },
+      {
+        zones: [
+          { to: 60, color: 'green' },
+          { to: 100, color: 'red' },
+        ],
+        strokeLinecap: 'round',
+      },
     );
     const zoneArcs = paths(scene).slice(0, 2);
     expect(zoneArcs.every((p) => p.strokeLinecap === 'round')).toBe(true);
@@ -160,7 +176,12 @@ describe('gauge (zones in arc mode)', () => {
   it('leaves zone bands butt-capped when no line cap is set', () => {
     const scene = gauge(
       { value: 70, max: 100 },
-      { zones: [{ to: 60, color: 'green' }, { to: 100, color: 'red' }] },
+      {
+        zones: [
+          { to: 60, color: 'green' },
+          { to: 100, color: 'red' },
+        ],
+      },
     );
     const zoneArcs = paths(scene).slice(0, 2);
     expect(zoneArcs.every((p) => p.strokeLinecap === undefined)).toBe(true);
@@ -184,7 +205,13 @@ describe('gauge (centerLabel)', () => {
   it('renders a literal string centered in arc mode', () => {
     const scene = gauge({ value: 72, max: 100 }, { centerLabel: '72%' });
     const label = scene.marks.find((m) => m.type === 'text')!;
-    expect(label).toMatchObject({ x: 10, fontSize: 3, fontWeight: 600, text: '72%', textAnchor: 'middle' });
+    expect(label).toMatchObject({
+      x: 10,
+      fontSize: 3,
+      fontWeight: 600,
+      text: '72%',
+      textAnchor: 'middle',
+    });
     expect(label.y).toBe(11.05); // cy + fontSize(3) * 0.35 baseline nudge
   });
 

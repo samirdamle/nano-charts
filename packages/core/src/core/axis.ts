@@ -1,5 +1,6 @@
 import type { Mark } from '../types';
 import { round } from './geometry';
+import type { ResolvedPadding } from './plot';
 
 /** Gridline stroke style. */
 export type AxisGridlineStyle = 'solid' | 'dashed' | 'dotted';
@@ -107,6 +108,63 @@ function dashFor(style: AxisGridlineStyle | undefined): {
   return {};
 }
 
+/** Tick values plus the label formatter, resolved identically for rendering and measuring. */
+export interface ResolvedAxisTicks {
+  values: number[];
+  format: (value: number) => string;
+}
+
+function snapTicks(values: number[], domain: [number, number], integerTicks?: boolean): number[] {
+  let vs = values;
+  if (integerTicks) {
+    const seen = new Set<number>();
+    const ints: number[] = [];
+    for (const v of vs) {
+      const r = Math.round(v);
+      if (!seen.has(r)) {
+        seen.add(r);
+        ints.push(r);
+      }
+    }
+    vs = ints;
+  }
+  const lo = Math.min(domain[0], domain[1]);
+  const hi = Math.max(domain[0], domain[1]);
+  return vs.filter((v) => v >= lo - 1e-9 && v <= hi + 1e-9);
+}
+
+/**
+ * Resolves the tick values and label formatter for an axis. Shared by
+ * `axisMarks` (rendering) and `axisSpace` (measuring) so the two can never drift.
+ */
+export function resolveAxisTicks(
+  options: AxisOptions,
+  domain: [number, number],
+  integerTicks?: boolean,
+): ResolvedAxisTicks {
+  const tickCount = options.tickCount ?? 5;
+  let step = 0;
+  let values: number[] = [];
+  if (options.ticks === true) {
+    const n = niceTicks(domain, tickCount);
+    step = n.step;
+    values = n.ticks;
+  } else if (Array.isArray(options.ticks)) {
+    values = options.ticks.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  }
+  values = snapTicks(values, domain, integerTicks);
+  const format: (v: number) => string =
+    typeof options.labels === 'function'
+      ? options.labels
+      : step > 0
+        ? (() => {
+            const d = decimalsFor(step);
+            return (v: number) => v.toFixed(d);
+          })()
+        : (v: number) => String(round(v, 6));
+  return { values, format };
+}
+
 /**
  * Builds the marks for one axis: gridlines (drawn behind data) plus the
  * axis line, ticks, and labels (drawn in front). Returns empty arrays unless
@@ -121,41 +179,13 @@ export function axisMarks(
   const { orientation, domain, scale, crossDomain, crossScale, span, crossSpan } = layout;
   const horizontal = orientation === 'x';
 
-  const tickCount = options.tickCount ?? 5;
-  let step = 0;
-  let tickValues: number[] = [];
-  if (options.ticks === true) {
-    const n = niceTicks(domain, tickCount);
-    step = n.step;
-    tickValues = n.ticks;
-  } else if (Array.isArray(options.ticks)) {
-    tickValues = options.ticks.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
-  }
-  const snap = (values: number[]): number[] => {
-    let vs = values;
-    if (layout.integerTicks) {
-      const seen = new Set<number>();
-      const ints: number[] = [];
-      for (const v of vs) {
-        const r = Math.round(v);
-        if (!seen.has(r)) {
-          seen.add(r);
-          ints.push(r);
-        }
-      }
-      vs = ints;
-    }
-    const lo = Math.min(domain[0], domain[1]);
-    const hi = Math.max(domain[0], domain[1]);
-    return vs.filter((v) => v >= lo - 1e-9 && v <= hi + 1e-9);
-  };
-  tickValues = snap(tickValues);
+  const { values: tickValues, format } = resolveAxisTicks(options, domain, layout.integerTicks);
   // Gridlines fall back to automatic ticks so `gridlines: { show: true }`
   // works without opting into tick marks.
   const gridValues = options.gridlines?.show
     ? tickValues.length > 0
       ? tickValues
-      : snap(niceTicks(domain, tickCount).ticks)
+      : resolveAxisTicks({ ...options, ticks: true }, domain, layout.integerTicks).values
     : [];
 
   const thickness = options.thickness ?? 1;
@@ -168,7 +198,9 @@ export function axisMarks(
   const clo = Math.min(crossDomain[0], crossDomain[1]);
   const chi = Math.max(crossDomain[0], crossDomain[1]);
   const posValue = options.position ?? 0;
-  const pos = round(crossScale(Math.min(chi, Math.max(clo, Number.isFinite(posValue) ? posValue : 0))));
+  const pos = round(
+    crossScale(Math.min(chi, Math.max(clo, Number.isFinite(posValue) ? posValue : 0))),
+  );
 
   const grid: Mark[] = [];
   const axis: Mark[] = [];
@@ -183,8 +215,28 @@ export function axisMarks(
       const p = round(scale(v));
       grid.push(
         horizontal
-          ? { type: 'line', x1: p, y1: round(q0), x2: p, y2: round(q1), stroke: gc, strokeWidth: gt, strokeDasharray, strokeLinecap }
-          : { type: 'line', x1: round(q0), y1: p, x2: round(q1), y2: p, stroke: gc, strokeWidth: gt, strokeDasharray, strokeLinecap },
+          ? {
+              type: 'line',
+              x1: p,
+              y1: round(q0),
+              x2: p,
+              y2: round(q1),
+              stroke: gc,
+              strokeWidth: gt,
+              strokeDasharray,
+              strokeLinecap,
+            }
+          : {
+              type: 'line',
+              x1: round(q0),
+              y1: p,
+              x2: round(q1),
+              y2: p,
+              stroke: gc,
+              strokeWidth: gt,
+              strokeDasharray,
+              strokeLinecap,
+            },
       );
     }
   }
@@ -193,8 +245,24 @@ export function axisMarks(
     const [s0, s1] = span;
     axis.push(
       horizontal
-        ? { type: 'line', x1: round(s0), y1: pos, x2: round(s1), y2: pos, stroke: color, strokeWidth: thickness }
-        : { type: 'line', x1: pos, y1: round(s0), x2: pos, y2: round(s1), stroke: color, strokeWidth: thickness },
+        ? {
+            type: 'line',
+            x1: round(s0),
+            y1: pos,
+            x2: round(s1),
+            y2: pos,
+            stroke: color,
+            strokeWidth: thickness,
+          }
+        : {
+            type: 'line',
+            x1: pos,
+            y1: round(s0),
+            x2: pos,
+            y2: round(s1),
+            stroke: color,
+            strokeWidth: thickness,
+          },
     );
   }
 
@@ -202,15 +270,6 @@ export function axisMarks(
   const mid = (crossSpan[0] + crossSpan[1]) / 2;
   const dir = pos >= mid ? 1 : -1;
   const showLabels = options.labels !== undefined && options.labels !== false;
-  const format: (v: number) => string =
-    typeof options.labels === 'function'
-      ? options.labels
-      : step > 0
-        ? (() => {
-            const d = decimalsFor(step);
-            return (v: number) => v.toFixed(d);
-          })()
-        : (v: number) => String(round(v, 6));
   const fontSize = options.fontSize ?? 10;
   const labelColor = options.labelColor ?? color;
   for (const v of tickValues) {
@@ -218,8 +277,24 @@ export function axisMarks(
     const t1 = round(pos + dir * tickSize);
     axis.push(
       horizontal
-        ? { type: 'line', x1: p, y1: pos, x2: p, y2: t1, stroke: tickColor, strokeWidth: tickThickness }
-        : { type: 'line', x1: pos, y1: p, x2: t1, y2: p, stroke: tickColor, strokeWidth: tickThickness },
+        ? {
+            type: 'line',
+            x1: p,
+            y1: pos,
+            x2: p,
+            y2: t1,
+            stroke: tickColor,
+            strokeWidth: tickThickness,
+          }
+        : {
+            type: 'line',
+            x1: pos,
+            y1: p,
+            x2: t1,
+            y2: p,
+            stroke: tickColor,
+            strokeWidth: tickThickness,
+          },
     );
     if (showLabels) {
       const text = format(v);
@@ -248,4 +323,66 @@ export function axisMarks(
   }
 
   return { grid, axis };
+}
+
+/** Average glyph width as a fraction of font size, for label measurement without a DOM. */
+const GLYPH_WIDTH_RATIO = 0.6;
+
+function estimateTextWidth(text: string, fontSize: number): number {
+  return text.length * fontSize * GLYPH_WIDTH_RATIO;
+}
+
+/**
+ * Measures how many pixels an axis needs beyond each plot edge so nothing it
+ * draws is clipped. Measures the marks `axisMarks` itself emits — axis line
+ * and tick thickness, gridline edges, and label boxes — so the measurement
+ * can never drift from the rendering. Returns zeros unless `options.show`.
+ *
+ * Charts call this on a probe layout (mark-extent padding only) *before*
+ * the final layout, then fold the result into the real padding.
+ */
+export function axisSpace(options: AxisOptions | undefined, layout: AxisLayout): ResolvedPadding {
+  const zero: ResolvedPadding = { top: 0, right: 0, bottom: 0, left: 0 };
+  if (!options?.show) return zero;
+  const horizontal = layout.orientation === 'x';
+  const [s0, s1] = layout.span;
+  const [c0, c1] = layout.crossSpan;
+  const plotLeft = horizontal ? Math.min(s0, s1) : Math.min(c0, c1);
+  const plotRight = horizontal ? Math.max(s0, s1) : Math.max(c0, c1);
+  const plotTop = horizontal ? Math.min(c0, c1) : Math.min(s0, s1);
+  const plotBottom = horizontal ? Math.max(c0, c1) : Math.max(s0, s1);
+
+  const space: ResolvedPadding = { ...zero };
+  const eat = (x0: number, y0: number, x1: number, y1: number): void => {
+    space.left = Math.max(space.left, plotLeft - Math.min(x0, x1));
+    space.right = Math.max(space.right, Math.max(x0, x1) - plotRight);
+    space.top = Math.max(space.top, plotTop - Math.min(y0, y1));
+    space.bottom = Math.max(space.bottom, Math.max(y0, y1) - plotBottom);
+  };
+
+  const { grid, axis } = axisMarks(options, layout);
+  const marks: Mark[] = [...grid, ...axis];
+  for (const m of marks) {
+    if (m.type === 'line') {
+      // Stroke spreads half its width perpendicular to the line; along the
+      // line it only extends past the endpoints with round/square caps
+      // (butt is the default: the axis line ends exactly at the plot edge).
+      const w = (m.strokeWidth ?? 1) / 2;
+      const cap = m.strokeLinecap === 'round' || m.strokeLinecap === 'square' ? w : 0;
+      if (m.y1 === m.y2) {
+        eat(Math.min(m.x1, m.x2) - cap, m.y1 - w, Math.max(m.x1, m.x2) + cap, m.y1 + w);
+      } else if (m.x1 === m.x2) {
+        eat(m.x1 - w, Math.min(m.y1, m.y2) - cap, m.x1 + w, Math.max(m.y1, m.y2) + cap);
+      } else {
+        eat(m.x1 - w, m.y1 - w, m.x2 + w, m.y2 + w);
+      }
+    } else if (m.type === 'text') {
+      const fs = m.fontSize ?? 10;
+      const w = estimateTextWidth(m.text, fs);
+      const anchor = m.textAnchor ?? 'start';
+      const x0 = anchor === 'middle' ? m.x - w / 2 : anchor === 'end' ? m.x - w : m.x;
+      eat(x0, m.y - fs * 0.8, x0 + w, m.y + fs * 0.2);
+    }
+  }
+  return space;
 }

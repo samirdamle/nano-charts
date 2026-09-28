@@ -3,7 +3,7 @@
     "name": "line (standalone)",
     "path": "dist/line.js",
     "import": "{ line }",
-    "limit": "3 kB",
+    "limit": "4 kB",
     "gzip": true
   },
   {
@@ -16,7 +16,7 @@
   {
     "name": "full barrel",
     "path": "dist/index.js",
-    "limit": "11 kB",
+    "limit": "12.5 kB",
     "gzip": true
   }
 ]

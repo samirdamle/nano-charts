@@ -13,29 +13,35 @@ export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> =
   const strokeWidth = options.strokeWidth ?? 1;
   const fillOpacity = options.fillOpacity ?? 0.2;
 
-  return renderSeriesChart('area', data, options, (points, layout, color) => {
-    if (points.length < 2) {
-      return [singlePointDot(points[0]!, Math.max(1, strokeWidth + 0.5), color)];
-    }
+  return renderSeriesChart(
+    'area',
+    data,
+    options,
+    (points, layout, color) => {
+      if (points.length < 2) {
+        return [singlePointDot(points[0]!, Math.max(1, strokeWidth + 0.5), color)];
+      }
 
-    const bottom = round(layout.bottom);
-    const first = points[0]!;
-    const last = points[points.length - 1]!;
-    const d =
-      `M${first.x},${bottom} ` +
-      points.map((p) => `L${p.x},${p.y}`).join(' ') +
-      ` L${last.x},${bottom} Z`;
-    const fill = options.fillColor ?? color;
-    const marks: Mark[] = [
-      { type: 'path', d, fill, fillOpacity, stroke: 'none' },
-      {
-        type: 'polyline',
-        points: points.map((p) => [p.x, p.y] as [number, number]),
-        fill: 'none',
-        stroke: color,
-        strokeWidth,
-      },
-    ];
-    return marks;
-  });
+      const bottom = round(layout.bottom);
+      const first = points[0]!;
+      const last = points[points.length - 1]!;
+      const d =
+        `M${first.x},${bottom} ` +
+        points.map((p) => `L${p.x},${p.y}`).join(' ') +
+        ` L${last.x},${bottom} Z`;
+      const fill = options.fillColor ?? color;
+      const marks: Mark[] = [
+        { type: 'path', d, fill, fillOpacity, stroke: 'none' },
+        {
+          type: 'polyline',
+          points: points.map((p) => [p.x, p.y] as [number, number]),
+          fill: 'none',
+          stroke: color,
+          strokeWidth,
+        },
+      ];
+      return marks;
+    },
+    (n) => (n < 2 ? Math.max(1, strokeWidth + 0.5) : strokeWidth / 2),
+  );
 }

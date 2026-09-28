@@ -6,10 +6,10 @@ describe('bar (simple)', () => {
     const scene = bar([4, 9, 2, 7]);
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects).toHaveLength(4);
-    // slot = 98/4 = 24.5, gap 0.2 -> barW = 19.6, x0 = 1 + (24.5-19.6)/2 = 3.45
-    expect(rects[0]).toMatchObject({ x: 3.45, width: 19.6 });
-    // domain [0,9] -> y(9)=1 (top), y(4)=11, baseline y(0)=19
-    expect(rects[1]).toMatchObject({ y: 1, height: 18 }); // tallest (value 9)
+    // slot = 100/4 = 25, gap 0.2 -> barW = 20, x0 = (25-20)/2 = 2.5
+    expect(rects[0]).toMatchObject({ x: 2.5, width: 20 });
+    // domain [0,9] -> y(9)=0 (top), y(4)=11.11, baseline y(0)=20
+    expect(rects[1]).toMatchObject({ y: 0, height: 20 }); // tallest (value 9)
   });
 
   it('exposes one point per column', () => {
@@ -19,7 +19,10 @@ describe('bar (simple)', () => {
 
 describe('bar (stacked)', () => {
   it('stacks segment rects within each column', () => {
-    const scene = bar([[3, 2], [5, 4]]);
+    const scene = bar([
+      [3, 2],
+      [5, 4],
+    ]);
     const rects = scene.marks.filter((m) => m.type === 'rect');
     // 2 columns x 2 segments = 4 rects
     expect(rects).toHaveLength(4);
@@ -27,7 +30,10 @@ describe('bar (stacked)', () => {
   });
 
   it('exposes one point per segment with row/col', () => {
-    const scene = bar([[3, 2], [5, 4]]);
+    const scene = bar([
+      [3, 2],
+      [5, 4],
+    ]);
     expect(scene.points).toHaveLength(4);
     expect(scene.points[0]).toMatchObject({ col: 0, row: 0, value: 3 });
   });
@@ -41,7 +47,7 @@ describe('bar (negative values)', () => {
   });
 
   it('draws a negative bar below the zero baseline', () => {
-    // domain [-4, 9] over height 20 (pad 1) -> y(0) is the baseline
+    // domain [-4, 9] over height 20 (pad 0) -> y(0) is the baseline
     const scene = bar([-4]);
     const rect = scene.marks.find((m) => m.type === 'rect')!;
     // negative bar top sits at the baseline; height is positive
@@ -126,11 +132,11 @@ describe('bar (track)', () => {
     // tracks align exactly behind their column's bar
     expect(t0).toMatchObject({ x: b0!.x, width: b0!.width });
     expect(t1).toMatchObject({ x: b1!.x, width: b1!.width });
-    // full domain [0,9]: y(9)=1 (top), y(0)=19 (baseline) -> track spans both
-    expect(t0).toMatchObject({ y: 1, height: 18 });
-    expect(t1).toMatchObject({ y: 1, height: 18 });
+    // full domain [0,9]: y(9)=0 (top), y(0)=20 (baseline) -> track spans both
+    expect(t0).toMatchObject({ y: 0, height: 20 });
+    expect(t1).toMatchObject({ y: 0, height: 20 });
     // the tallest bar fills its track exactly
-    expect(b1).toMatchObject({ y: 1, height: 18 });
+    expect(b1).toMatchObject({ y: 0, height: 20 });
     // default track: base color at low opacity; no points for tracks
     expect(t0!.fill).toBe('currentColor');
     expect(t0!.fillOpacity).toBe(0.15);
@@ -149,18 +155,18 @@ describe('bar (track)', () => {
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects).toHaveLength(2);
     const [track, valueBar] = rects;
-    // domain [0,100] over 18px of plot height: track spans all of it,
+    // domain [0,100] over 20px of plot height: track spans all of it,
     // the 50-bar spans half
-    expect(track).toMatchObject({ y: 1, height: 18 });
-    expect(valueBar).toMatchObject({ y: 10, height: 9 });
+    expect(track).toMatchObject({ y: 0, height: 20 });
+    expect(valueBar).toMatchObject({ y: 10, height: 10 });
   });
 
   it('does not extend the domain when track.max is below the data max', () => {
     const scene = bar([50], { track: { max: 10 } });
     const rects = scene.marks.filter((m) => m.type === 'rect');
     // domain stays [0,50]: track spans it, bar overflows the track
-    expect(rects[0]).toMatchObject({ y: 1, height: 18 });
-    expect(rects[1]).toMatchObject({ y: 1, height: 18 });
+    expect(rects[0]).toMatchObject({ y: 0, height: 20 });
+    expect(rects[1]).toMatchObject({ y: 0, height: 20 });
   });
 
   it('honors explicit track color, opacity, and radius', () => {
@@ -219,7 +225,13 @@ describe('bar (horizontal)', () => {
   });
 
   it('stacks segments within each horizontal row', () => {
-    const scene = bar([[3, 2], [5, 1]], { horizontal: true });
+    const scene = bar(
+      [
+        [3, 2],
+        [5, 1],
+      ],
+      { horizontal: true },
+    );
     expect(scene.points).toHaveLength(4);
     expect(scene.points[0]).toMatchObject({ col: 0, row: 0, value: 3 });
     expect(scene.points[1]).toMatchObject({ col: 0, row: 1, value: 2 });
@@ -238,24 +250,30 @@ describe('bar (horizontal)', () => {
 
 describe('bar (grouped)', () => {
   it('places segments side by side within each column', () => {
-    const scene = bar([[3, 6], [9, 2]], { mode: 'grouped' });
+    const scene = bar(
+      [
+        [3, 6],
+        [9, 2],
+      ],
+      { mode: 'grouped' },
+    );
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects).toHaveLength(4);
-    // 2 columns: slot 49, barW 39.2; group of 2: sub-slot 19.6, subW 15.68
-    // col 0 slot starts at 5.9 -> bars at 7.86 and 27.46
-    expect(rects[0]).toMatchObject({ x: 7.86, width: 15.68 });
-    expect(rects[1]).toMatchObject({ x: 27.46, width: 15.68 });
-    // col 1 slot starts at 54.9 -> bars at 56.86 and 76.46
-    expect(rects[2]).toMatchObject({ x: 56.86, width: 15.68 });
-    expect(rects[3]).toMatchObject({ x: 76.46, width: 15.68 });
+    // 2 columns: slot 50, barW 40; group of 2: sub-slot 20, subW 16
+    // col 0 slot starts at 5 -> bars at 7 and 27
+    expect(rects[0]).toMatchObject({ x: 7, width: 16 });
+    expect(rects[1]).toMatchObject({ x: 27, width: 16 });
+    // col 1 slot starts at 55 -> bars at 57 and 77
+    expect(rects[2]).toMatchObject({ x: 57, width: 16 });
+    expect(rects[3]).toMatchObject({ x: 77, width: 16 });
   });
 
   it('scales the domain to segment values, not column totals', () => {
     // totals would be 16 (stacked domain [0,16]); grouped domain is [0,8]
     const scene = bar([[8, 8]], { mode: 'grouped' });
     const rects = scene.marks.filter((m) => m.type === 'rect');
-    // each value-8 bar spans the full plot height (18)
-    for (const r of rects) expect(r.height).toBe(18);
+    // each value-8 bar spans the full plot height (20)
+    for (const r of rects) expect(r.height).toBe(20);
   });
 
   it('draws every bar from the zero baseline, including negatives', () => {
@@ -263,9 +281,9 @@ describe('bar (grouped)', () => {
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects).toHaveLength(2);
     for (const r of rects) expect(r.height).toBeGreaterThan(0);
-    // domain [-4,6] -> baseline y(0) = 11.8; negative bar hangs below it
-    expect(rects[0]).toMatchObject({ y: 11.8, height: 7.2 });
-    expect(rects[1]).toMatchObject({ y: 1, height: 10.8 });
+    // domain [-4,6] -> baseline y(0) = 12; negative bar hangs below it
+    expect(rects[0]).toMatchObject({ y: 12, height: 8 });
+    expect(rects[1]).toMatchObject({ y: 0, height: 12 });
   });
 
   it('lays out grouped bars along the category axis when horizontal', () => {
@@ -285,14 +303,20 @@ describe('bar (grouped)', () => {
     expect(rects).toHaveLength(3);
     const widths = new Set(rects.map((r) => r.width));
     expect(widths.size).toBe(1);
-    // column 2's lone bar sits centered where its pair would be (56.86..76.46)
+    // column 2's lone bar sits centered where its pair would be (62..82)
     const lone = rects[2]!.x as number;
-    expect(lone).toBeGreaterThan(56.86);
-    expect(lone).toBeLessThan(76.46);
+    expect(lone).toBeGreaterThan(62);
+    expect(lone).toBeLessThan(82);
   });
 
   it('colors each series consistently across columns', () => {
-    const scene = bar([[1, 2], [3, 4]], { mode: 'grouped' });
+    const scene = bar(
+      [
+        [1, 2],
+        [3, 4],
+      ],
+      { mode: 'grouped' },
+    );
     const rects = scene.marks.filter((m) => m.type === 'rect');
     // same series index -> same palette color; different series -> different
     expect(rects[0]!.fill).toBe(rects[2]!.fill);
@@ -315,13 +339,16 @@ describe('bar (grouped)', () => {
     const rects = scene.marks.filter((m) => m.type === 'rect');
     // 2 tracks + 2 bars
     expect(rects).toHaveLength(4);
-    // tracks span the full value domain height (18)
-    expect(rects[0]).toMatchObject({ height: 18 });
-    expect(rects[1]).toMatchObject({ height: 18 });
+    // tracks span the full value domain height (20)
+    expect(rects[0]).toMatchObject({ height: 20 });
+    expect(rects[1]).toMatchObject({ height: 20 });
   });
 
   it('defaults to stacked and matches an explicit stacked mode', () => {
-    const data = [[3, 2], [5, 4]];
+    const data = [
+      [3, 2],
+      [5, 4],
+    ];
     const implicit = bar(data);
     const explicit = bar(data, { mode: 'stacked' });
     expect(explicit.marks).toEqual(implicit.marks);
@@ -329,7 +356,13 @@ describe('bar (grouped)', () => {
   });
 
   it('exposes one point per segment with row/col', () => {
-    const scene = bar([[3, 6], [9, 2]], { mode: 'grouped' });
+    const scene = bar(
+      [
+        [3, 6],
+        [9, 2],
+      ],
+      { mode: 'grouped' },
+    );
     expect(scene.points).toHaveLength(4);
     expect(scene.points[0]).toMatchObject({ col: 0, row: 0, value: 3 });
     expect(scene.points[3]).toMatchObject({ col: 1, row: 1, value: 2 });
@@ -341,10 +374,11 @@ describe('bar (waterfall)', () => {
     const scene = bar([3, 2, -1], { mode: 'waterfall' });
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects).toHaveLength(3);
-    // domain [0,5] (cumulative levels) -> unit = 18/5 = 3.6; y(5)=1, y(0)=19
-    expect(rects[0]).toMatchObject({ y: 8.2, height: 10.8 }); // 0 -> 3
-    expect(rects[1]).toMatchObject({ y: 1, height: 7.2 }); // 3 -> 5
-    expect(rects[2]).toMatchObject({ y: 1, height: 3.6 }); // 5 -> 4
+    // domain [0,5] (cumulative levels) -> unit = 19/5 = 3.8; y(5)=0.5, y(0)=19.5
+    // (0.5 pad = half the connector stroke)
+    expect(rects[0]).toMatchObject({ y: 8.1, height: 11.4 }); // 0 -> 3
+    expect(rects[1]).toMatchObject({ y: 0.5, height: 7.6 }); // 3 -> 5
+    expect(rects[2]).toMatchObject({ y: 0.5, height: 3.8 }); // 5 -> 4
     // chained: each bar starts where the previous one ended
     expect(rects[1]!.y + rects[1]!.height).toBeCloseTo(rects[0]!.y, 5);
     expect(rects[2]!.y).toBeCloseTo(rects[1]!.y, 5);
@@ -357,7 +391,7 @@ describe('bar (waterfall)', () => {
     // tops the plot, which a delta-scaled domain could not do
     const scene = bar([3, 2, -1], { mode: 'waterfall' });
     const rects = scene.marks.filter((m) => m.type === 'rect');
-    expect(rects[1]).toMatchObject({ y: 1 });
+    expect(rects[1]).toMatchObject({ y: 0.5 });
   });
 
   it('colors steps by delta sign with upColor/downColor', () => {
@@ -390,8 +424,8 @@ describe('bar (waterfall)', () => {
     const scene = bar([3, 2, -1], { mode: 'waterfall', total: true });
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects).toHaveLength(4);
-    // grand total 4 -> 0 -> 4: y(4)=4.6, height 14.4
-    expect(rects[3]).toMatchObject({ y: 4.6, height: 14.4 });
+    // grand total 4 -> 0 -> 4: y(4)=4.3, height 15.2
+    expect(rects[3]).toMatchObject({ y: 4.3, height: 15.2 });
     expect(scene.points[3]).toMatchObject({ value: 4, label: 'Total', id: 'total' });
   });
 

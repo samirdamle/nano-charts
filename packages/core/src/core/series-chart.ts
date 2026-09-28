@@ -1,9 +1,15 @@
 import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
 import { extent, round } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
-import { resolvePadding, seriesLayout, type ResolvedPadding, type SeriesLayout } from './plot';
+import {
+  autoPlotPadding,
+  resolvePadding,
+  seriesLayout,
+  type ResolvedPadding,
+  type SeriesLayout,
+} from './plot';
 import { seriesSummary } from './a11y';
-import { axisMarks, type AxisOptions } from './axis';
+import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from './axis';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -68,8 +74,10 @@ export function renderSeriesChart<T>(
   data: SeriesInput<T>,
   options: SeriesChartOptions<T>,
   buildMarks: (points: ScenePoint[], layout: SeriesLayout, color: string) => Mark[],
+  /** Max half-size of a mark that can sit on the plot edge (may depend on point count). */
+  markExtent: (pointCount: number) => number,
 ): Scene {
-  const { width, height, color, padding } = resolveChartShell(options);
+  const { width, height, color } = resolveChartShell(options);
   const accessors = options.value
     ? { value: options.value, label: options.label, id: options.id }
     : undefined;
@@ -79,11 +87,43 @@ export function renderSeriesChart<T>(
   const base = sceneShell({ width, height }, a11y);
   if (datums.length === 0) return base;
 
-  const layout = seriesLayout(datums.length, extent(datums.map((d) => d.value)), {
-    width,
-    height,
-    padding,
+  const extentPx = markExtent(datums.length);
+  const valueDomain = extent(datums.map((d) => d.value));
+  const indexDomain: [number, number] = [0, datums.length - 1];
+  const layoutFor = (padding: ResolvedPadding) =>
+    seriesLayout(datums.length, valueDomain, { width, height, padding });
+  const axisLayoutFor = (l: SeriesLayout, orientation: 'x' | 'y'): AxisLayout =>
+    orientation === 'x'
+      ? {
+          orientation,
+          domain: indexDomain,
+          scale: l.x,
+          crossDomain: valueDomain,
+          crossScale: l.y,
+          span: [l.left, l.right],
+          crossSpan: [l.top, l.bottom],
+          integerTicks: true,
+        }
+      : {
+          orientation,
+          domain: valueDomain,
+          scale: l.y,
+          crossDomain: indexDomain,
+          crossScale: l.x,
+          span: [l.top, l.bottom],
+          crossSpan: [l.left, l.right],
+        };
+
+  // Automatic padding, iterated to a fixed point on the real layout
+  // (autoPlotPadding re-measures until the padding stops growing).
+  const padding = autoPlotPadding(options.padding, extentPx, width, height, (p) => {
+    const l = layoutFor(p);
+    return {
+      x: axisSpace(options.xAxis, axisLayoutFor(l, 'x')),
+      y: axisSpace(options.yAxis, axisLayoutFor(l, 'y')),
+    };
   });
+  const layout = layoutFor(padding);
   const points: ScenePoint[] = datums.map((d) => ({
     id: d.id,
     label: d.label,
@@ -94,27 +134,8 @@ export function renderSeriesChart<T>(
   }));
 
   const marks = buildMarks(points, layout, color);
-  const valueDomain = extent(datums.map((d) => d.value));
-  const indexDomain: [number, number] = [0, datums.length - 1];
-  const xA = axisMarks(options.xAxis, {
-    orientation: 'x',
-    domain: indexDomain,
-    scale: layout.x,
-    crossDomain: valueDomain,
-    crossScale: layout.y,
-    span: [layout.left, layout.right],
-    crossSpan: [layout.top, layout.bottom],
-    integerTicks: true,
-  });
-  const yA = axisMarks(options.yAxis, {
-    orientation: 'y',
-    domain: valueDomain,
-    scale: layout.y,
-    crossDomain: indexDomain,
-    crossScale: layout.x,
-    span: [layout.top, layout.bottom],
-    crossSpan: [layout.left, layout.right],
-  });
+  const xA = axisMarks(options.xAxis, axisLayoutFor(layout, 'x'));
+  const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
 
   return {
     ...base,

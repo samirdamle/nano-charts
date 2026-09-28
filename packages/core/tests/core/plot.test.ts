@@ -15,7 +15,9 @@ describe('resolvePadding', () => {
 
 describe('paddedBox', () => {
   it('insets a box by its padding on every side', () => {
-    expect(paddedBox({ width: 100, height: 20, padding: { top: 1, right: 1, bottom: 1, left: 1 } })).toEqual({
+    expect(
+      paddedBox({ width: 100, height: 20, padding: { top: 1, right: 1, bottom: 1, left: 1 } }),
+    ).toEqual({
       left: 1,
       right: 99,
       top: 1,

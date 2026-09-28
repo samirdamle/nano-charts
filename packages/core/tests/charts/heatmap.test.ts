@@ -3,7 +3,13 @@ import { heatmap } from '../../src/charts/heatmap';
 
 describe('heatmap', () => {
   it('renders one rect per cell in a grid', () => {
-    const scene = heatmap([[1, 4, 2], [3, 0, 5]], { cellSize: 6, gap: 0 });
+    const scene = heatmap(
+      [
+        [1, 4, 2],
+        [3, 0, 5],
+      ],
+      { cellSize: 6, gap: 0 },
+    );
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects).toHaveLength(6);
     // 3 cols x 6 = 18 wide, 2 rows x 6 = 12 tall
@@ -25,7 +31,10 @@ describe('heatmap', () => {
   });
 
   it('supports a value accessor for object cells', () => {
-    const scene = heatmap([[{ n: 1 }, { n: 9 }]], { value: (c: { n: number }) => c.n, cellSize: 6 });
+    const scene = heatmap([[{ n: 1 }, { n: 9 }]], {
+      value: (c: { n: number }) => c.n,
+      cellSize: 6,
+    });
     expect(scene.points.map((p) => p.value)).toEqual([1, 9]);
   });
 
