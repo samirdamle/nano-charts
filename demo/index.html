@@ -563,6 +563,18 @@
             yAxis: { show: true, line: false, ticks: [0, 3, 6, 9], color: 'var(--text)', tickSize: 2 },
           }),
         },
+        {
+          title: 'Highlight zones',
+          tall: true,
+          scene: line([4, 18, 9, 26, 14, 30, 21], {
+            color: 'var(--c3)',
+            height: 60,
+            highlights: [
+              { x: [1, 3], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+              { y: [20, 30], color: 'color-mix(in srgb, var(--c4) 25%, transparent)' },
+            ],
+          }),
+        },
       ]);
 
       group('Area', [
@@ -638,6 +650,16 @@
             ),
           },
           {
+            title: 'Highlight zones',
+            scene: bar(barValuesDense, {
+              gap: 0.6,
+              highlights: [
+                { x: [4, 8], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+                { y: [7, 10], color: 'color-mix(in srgb, var(--c4) 25%, transparent)' },
+              ],
+            }),
+          },
+          {
             title: 'Horizontal multiple',
             scene: bar(barValues, { horizontal: true, height: 40 }),
             tall: true,
@@ -675,6 +697,17 @@
               ],
               { horizontal: true },
             ),
+          },
+          {
+            title: 'Highlight band',
+            scene: bar([3, 5, 2, 4, 6], {
+              horizontal: true,
+              height: 40,
+              highlights: [
+                // y-only: full-width band behind the 2nd–4th bars
+                { y: [1, 3], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+              ],
+            }),
           },
           {
             title: 'Negative values',
@@ -864,6 +897,17 @@
           title: 'Multiple series',
           tall: true,
           scene: scatter(scatterClusters, { height: 60 }),
+        },
+        {
+          title: 'Highlight cluster',
+          tall: true,
+          scene: scatter(scatterClusters, {
+            height: 60,
+            highlights: [
+              // x + y: rectangle around the blue cluster at (2, 8)
+              { x: [-0.5, 4.5], y: [5, 10.5], color: 'color-mix(in srgb, var(--c1) 20%, transparent)' },
+            ],
+          }),
         },
         {
           title: 'Ticks & labels',
