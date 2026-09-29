@@ -10,7 +10,7 @@ import {
 } from './plot';
 import { seriesSummary } from './a11y';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from './axis';
-import { highlightMarks, type HighlightOption } from './highlight';
+import { highlightMarks, type HighlightZones } from './highlight';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -61,10 +61,10 @@ export interface SeriesChartOptions<T> extends BaseOptions, Partial<SeriesAccess
   xAxis?: AxisOptions;
   /** Y axis (value-based). Disabled by default. */
   yAxis?: AxisOptions;
-  /** Highlighted background region(s), in data coordinates (x is
+  /** Array of highlighted background regions, in data coordinates (x is
    * index-based, y is value-based). Clipped to the plot; purely
    * decorative — never affects padding. */
-  highlight?: HighlightOption;
+  highlights?: HighlightZones;
 }
 
 /**
@@ -142,7 +142,7 @@ export function renderSeriesChart<T>(
   const xA = axisMarks(options.xAxis, axisLayoutFor(layout, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
   // Highlight zones sit behind everything, clipped to the plot.
-  const hl = highlightMarks(options.highlight, { x: layout.x, y: layout.y }, layout);
+  const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
 
   return {
     ...base,

@@ -17,31 +17,31 @@ describe('highlightMarks', () => {
     expect(highlightMarks(undefined, scales, box)).toEqual([]);
   });
 
-  it('accepts a single zone object', () => {
-    expect(highlightMarks({ x: [2, 5], color: 'red' }, scales, box)).toHaveLength(1);
+  it('accepts an array of zones', () => {
+    expect(highlightMarks([{ x: [2, 5], color: 'red' }], scales, box)).toHaveLength(1);
   });
 
   it('spans the full plot height when only x is given', () => {
-    expect(highlightMarks({ x: [2, 5], color: 'red' }, scales, box)).toEqual([
+    expect(highlightMarks([{ x: [2, 5], color: 'red' }], scales, box)).toEqual([
       { type: 'rect', x: 26, y: 5, width: 24, height: 40, fill: 'red' },
     ]);
   });
 
   it('spans the full plot width when only y is given', () => {
-    expect(highlightMarks({ y: [2, 5], color: 'blue' }, scales, box)).toEqual([
+    expect(highlightMarks([{ y: [2, 5], color: 'blue' }], scales, box)).toEqual([
       { type: 'rect', x: 10, y: 25, width: 80, height: 12, fill: 'blue' },
     ]);
   });
 
   it('draws an arbitrary rectangle when both are given', () => {
     expect(
-      highlightMarks({ x: [1, 3], y: [2, 6], color: 'green' }, scales, box),
+      highlightMarks([{ x: [1, 3], y: [2, 6], color: 'green' }], scales, box),
     ).toEqual([{ type: 'rect', x: 18, y: 21, width: 16, height: 16, fill: 'green' }]);
   });
 
   it('normalizes reversed ranges', () => {
-    expect(highlightMarks({ x: [5, 2], y: [6, 2], color: 'red' }, scales, box)).toEqual(
-      highlightMarks({ x: [2, 5], y: [2, 6], color: 'red' }, scales, box),
+    expect(highlightMarks([{ x: [5, 2], y: [6, 2], color: 'red' }], scales, box)).toEqual(
+      highlightMarks([{ x: [2, 5], y: [2, 6], color: 'red' }], scales, box),
     );
   });
 
@@ -60,18 +60,18 @@ describe('highlightMarks', () => {
   });
 
   it('clips zones that partly overlap the plot', () => {
-    expect(highlightMarks({ x: [-5, 3], color: 'red' }, scales, box)).toEqual([
+    expect(highlightMarks([{ x: [-5, 3], color: 'red' }], scales, box)).toEqual([
       { type: 'rect', x: 10, y: 5, width: 24, height: 40, fill: 'red' },
     ]);
   });
 
   it('skips zones entirely outside the plot', () => {
-    expect(highlightMarks({ x: [20, 30], color: 'red' }, scales, box)).toEqual([]);
-    expect(highlightMarks({ y: [20, 30], color: 'red' }, scales, box)).toEqual([]);
+    expect(highlightMarks([{ x: [20, 30], color: 'red' }], scales, box)).toEqual([]);
+    expect(highlightMarks([{ y: [20, 30], color: 'red' }], scales, box)).toEqual([]);
   });
 
   it('skips zero-area zones', () => {
-    expect(highlightMarks({ x: [3, 3], color: 'red' }, scales, box)).toEqual([]);
+    expect(highlightMarks([{ x: [3, 3], color: 'red' }], scales, box)).toEqual([]);
   });
 });
 
@@ -81,7 +81,7 @@ describe('highlight in charts', () => {
       width: 120,
       height: 40,
       padding: 4,
-      highlight: { x: [1, 2], color: 'rgba(240,221,130,0.35)' },
+      highlights: [{ x: [1, 2], color: 'rgba(240,221,130,0.35)' }],
     });
     const [hl] = rects(scene.marks);
     // Plot is [4,116]x[4,36]; indices 0..3 map across it.
@@ -93,7 +93,7 @@ describe('highlight in charts', () => {
       height: 32,
       fill: 'rgba(240,221,130,0.35)',
     });
-    // The highlight is the very first mark, ahead of gridlines and data.
+    // The highlight zone is the very first mark, ahead of gridlines and data.
     expect(scene.marks[0]).toBe(hl);
     // Decorative: no points emitted.
     expect(scene.points).toHaveLength(4);
@@ -104,7 +104,7 @@ describe('highlight in charts', () => {
       width: 120,
       height: 40,
       padding: 4,
-      highlight: [
+      highlights: [
         { x: [0, 1], color: 'red' },
         { y: [12, 20], color: 'blue' },
       ],
@@ -125,7 +125,7 @@ describe('highlight in charts', () => {
       height: 40,
       padding: 4,
       horizontal: true,
-      highlight: { x: [5, 10], color: 'red' },
+      highlights: [{ x: [5, 10], color: 'red' }],
     });
     const [hl] = rects(scene.marks);
     // Value domain [0,15] over [4,116]: x(5)=41.33, x(10)=78.67.
@@ -142,7 +142,7 @@ describe('highlight in charts', () => {
         width: 100,
         height: 40,
         padding: 5,
-        highlight: { x: [2, 8], y: [4, 16], color: 'blue' },
+        highlights: [{ x: [2, 8], y: [4, 16], color: 'blue' }],
       },
     );
     const [hl] = rects(scene.marks);
@@ -157,7 +157,7 @@ describe('highlight in charts', () => {
         [1, 2, 3],
         [4, 5, 6],
       ],
-      { cellSize: 10, gap: 0, padding: 2, highlight: { x: [0, 1], color: 'red' } },
+      { cellSize: 10, gap: 0, padding: 2, highlights: [{ x: [0, 1], color: 'red' }] },
     );
     const [hl] = rects(scene.marks);
     // Column centers at x=7 and x=17; full plot height [2,22].
@@ -171,7 +171,7 @@ describe('highlight in charts', () => {
     const zoned = line(data, {
       width: 120,
       height: 40,
-      highlight: { x: [-100, 100], y: [-100, 100], color: 'red' },
+      highlights: [{ x: [-100, 100], y: [-100, 100], color: 'red' }],
     });
     const dataMarks = (s: typeof plain) =>
       s.marks.filter((m) => !(m.type === 'rect' && (m as { fill?: string }).fill === 'red'));

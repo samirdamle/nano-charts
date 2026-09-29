@@ -114,13 +114,13 @@ Notes:
 ## Highlight zones
 
 `line`, `area`, `lines`, `bar`, `scatter`, and `heatmap` accept an optional
-`highlight` option: one zone or an array of zones drawn as background regions
+`highlights` option: an array of zones drawn as background regions
 behind the chart data, clipped to the plot. Zones are purely decorative —
 they never affect automatic padding and emit no hover points.
 
 ```ts
 line([4, 18, 9, 26, 14, 30, 21], {
-  highlight: [
+  highlights: [
     // x-only: full-height band over indices 2–4
     { x: [2, 4], color: 'rgba(240, 221, 130, 0.25)' },
     // y-only: full-width band over values 20–30
@@ -145,7 +145,7 @@ Notes:
   scale.
 - Reversed ranges (`[5, 2]`) are normalized; zones partly outside the plot
   are clipped to it, and zones entirely outside it are skipped.
-- React components (`LineChart`, `BarChart`, …) accept the same `highlight`
+- React components (`LineChart`, `BarChart`, …) accept the same `highlights`
   prop.
 
 ## Charts
@@ -510,10 +510,10 @@ size-limit); all figures below are minified + gzip.
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.78 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **11.83 kB** |
-| `@samirdamle/nano-charts-react` — `LineChart` standalone | 5 kB    | **4.62 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **11.84 kB** |
+| `@samirdamle/nano-charts-react` — `LineChart` standalone | 5 kB    | **4.61 kB** |
 | `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **11.73 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
@@ -522,14 +522,14 @@ size-limit); all figures below are minified + gzip.
 | ---------- | ------- |
 | `line`     | 4.73 kB |
 | `area`     | 4.51 kB |
-| `lines`    | 4.65 kB |
-| `bar`      | 5.61 kB |
+| `lines`    | 4.64 kB |
+| `bar`      | 5.59 kB |
 | `win-loss` | 2.06 kB |
 | `bullet`   | 1.71 kB |
 | `donut`    | 3.10 kB |
 | `gauge`    | 2.31 kB |
-| `scatter`  | 4.07 kB |
-| `heatmap`  | 4.26 kB |
+| `scatter`  | 4.06 kB |
+| `heatmap`  | 4.25 kB |
 | `radar`    | 2.60 kB |
 | `pictogram`| 2.60 kB |
 

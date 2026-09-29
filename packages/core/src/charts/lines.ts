@@ -10,7 +10,7 @@ import {
 } from '../core/plot';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
-import { highlightMarks, type HighlightOption } from '../core/highlight';
+import { highlightMarks, type HighlightZones } from '../core/highlight';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -29,10 +29,10 @@ export interface LinesOptions extends BaseOptions {
   xAxis?: AxisOptions;
   /** Y axis (value-based). Disabled by default. */
   yAxis?: AxisOptions;
-  /** Highlighted background region(s), in data coordinates (x is
+  /** Array of highlighted background regions, in data coordinates (x is
    * index-based, y is value-based). Clipped to the plot; purely
    * decorative — never affects padding. */
-  highlight?: HighlightOption;
+  highlights?: HighlightZones;
 }
 
 export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions = {}): Scene {
@@ -164,7 +164,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
 
   const xA = axisMarks(options.xAxis, axisLayoutFor(layout, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
-  const hl = highlightMarks(options.highlight, { x: layout.x, y: layout.y }, layout);
+  const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
 
   return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

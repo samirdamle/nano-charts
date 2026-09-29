@@ -18,8 +18,8 @@ export interface HighlightZone {
   color: string;
 }
 
-/** One zone or several. */
-export type HighlightOption = HighlightZone | HighlightZone[];
+/** An array of highlight zones. */
+export type HighlightZones = HighlightZone[];
 
 /**
  * Turns highlight zones into background rect marks. Ranges are mapped
@@ -28,14 +28,13 @@ export type HighlightOption = HighlightZone | HighlightZone[];
  * draw outside the plot.
  */
 export function highlightMarks(
-  zones: HighlightOption | undefined,
+  zones: HighlightZones | undefined,
   scales: { x: (v: number) => number; y: (v: number) => number },
   box: { left: number; top: number; right: number; bottom: number },
 ): Mark[] {
   if (zones === undefined) return [];
-  const list = Array.isArray(zones) ? zones : [zones];
   const marks: Mark[] = [];
-  for (const z of list) {
+  for (const z of zones) {
     let x0 = box.left;
     let x1 = box.right;
     if (z.x !== undefined) {

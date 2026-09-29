@@ -16,7 +16,7 @@ import {
 } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
-import { highlightMarks, type HighlightOption } from '../core/highlight';
+import { highlightMarks, type HighlightZones } from '../core/highlight';
 
 export interface BarTrackOptions {
   /** The "100%" the track represents. When larger than the data max it
@@ -70,11 +70,11 @@ export interface BarOptions<T = number>
   /** Y axis. For vertical bars this is the value axis; for horizontal
    * bars it's the category axis. Disabled by default. */
   yAxis?: AxisOptions;
-  /** Highlighted background region(s), in data coordinates: x and y
+  /** Array of highlighted background regions, in data coordinates: x and y
    * follow the chart's x/y scales (category indices on the category
    * axis, values on the value axis). Clipped to the plot; purely
    * decorative — never affects padding. */
-  highlight?: HighlightOption;
+  highlights?: HighlightZones;
 }
 
 type BarSegment<T> =
@@ -255,7 +255,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   // value axis, bar centers on the category axis. Drawn behind everything,
   // clipped to the plot.
   const hl = highlightMarks(
-    options.highlight,
+    options.highlights,
     horizontal ? { x: valueScale, y: catScale } : { x: catScale, y: valueScale },
     layout,
   );
