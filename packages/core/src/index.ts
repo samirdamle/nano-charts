@@ -26,3 +26,4 @@ export type { ColorScale } from './core/color-scale';
 export type { SeriesInput } from './core/normalize';
 export type { AxisOptions, AxisGridlineOptions, AxisGridlineStyle, AxisLayout } from './core/axis';
 export { niceTicks } from './core/axis';
+export type { HighlightZone, HighlightZones } from './core/highlight';

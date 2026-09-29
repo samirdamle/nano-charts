@@ -258,6 +258,192 @@
         white-space: nowrap;
       }
 
+      /* ---- usage panel ---- */
+      .code-btn {
+        flex: none;
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: none;
+        color: var(--faint);
+        cursor: pointer;
+      }
+      .code-btn:hover {
+        color: var(--accent);
+        border-color: var(--line);
+      }
+      .code-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+      .usage-panel {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        width: min(440px, 94vw);
+        z-index: 60;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+        visibility: hidden;
+        transition: transform 0.22s ease, visibility 0.22s;
+      }
+      .usage-panel.dock-right {
+        right: 0;
+        border-left: 1px solid var(--line);
+        transform: translateX(103%);
+      }
+      .usage-panel.dock-left {
+        left: 0;
+        border-right: 1px solid var(--line);
+        transform: translateX(-103%);
+      }
+      .usage-panel.open {
+        transform: translateX(0);
+        visibility: visible;
+      }
+      .usage-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .usage-title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      .usage-close {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: none;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .usage-close:hover {
+        color: var(--accent);
+        border-color: var(--line);
+      }
+      .usage-tabs {
+        display: flex;
+        gap: 4px;
+        padding: 12px 16px 0;
+      }
+      .usage-tab {
+        padding: 7px 14px;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        background: none;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .usage-tab:hover {
+        color: var(--text);
+      }
+      .usage-tab.active {
+        color: var(--accent);
+        border-color: var(--line);
+        background: color-mix(in srgb, var(--accent) 6%, transparent);
+      }
+      .usage-body {
+        flex: 1;
+        overflow: auto;
+        padding: 0 16px 16px;
+        border-top: 1px solid var(--line);
+        margin-top: -1px;
+        padding-top: 12px;
+      }
+      .usage-code {
+        position: relative;
+        margin: 0;
+        padding: 14px;
+        padding-top: 40px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.7;
+        white-space: pre;
+        overflow-x: auto;
+      }
+      .usage-copy {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 4px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .usage-copy:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .tok-k {
+        color: var(--accent);
+      }
+      .tok-s {
+        color: var(--c3);
+      }
+      .tok-n {
+        color: var(--c2);
+      }
+      .tok-c {
+        color: var(--faint);
+        font-style: italic;
+      }
+      .tok-t {
+        color: var(--c1);
+      }
+      .tok-a {
+        color: var(--c5);
+      }
+      .tok-p {
+        color: var(--muted);
+      }
+      @media (max-width: 720px) {
+        .usage-panel.dock-right,
+        .usage-panel.dock-left {
+          left: 0;
+          right: 0;
+          top: auto;
+          width: auto;
+          max-height: 82vh;
+          border-left: none;
+          border-right: none;
+          border-top: 1px solid var(--line);
+          transform: translateY(103%);
+        }
+        .usage-panel.open {
+          transform: translateY(0);
+        }
+      }
+
       /* the library renders uncolored series in currentColor,
          so the chart box sets the page-friendly default */
       .chart {
@@ -322,6 +508,16 @@
         .cell {
           padding: 16px 18px;
         }
+        .usage-panel {
+          left: 0;
+          right: 0;
+          top: auto;
+          bottom: 0;
+          width: auto;
+          max-height: 80vh;
+          transform: translateY(100%);
+        }
+        .usage-panel.open { transform: none; }
       }
     </style>
   </head>
@@ -428,7 +624,19 @@
         const grid = document.createElement('div');
         grid.className = columns ? `grid grid-cols-${columns}` : 'grid';
 
-        for (const { title: cardTitle, scene, fixed, tall, interactive, blockScale: entryScale, describe } of entries) {
+        for (const {
+          title: cardTitle,
+          make,
+          scene: legacyScene,
+          fixed,
+          tall,
+          interactive,
+          blockScale: entryScale,
+          describe,
+        } of entries) {
+          // make() is the preferred code-source; legacyScene keeps old
+          // scene:-style entries rendering if any are merged in.
+          const scene = make ? make() : legacyScene;
           const cell = document.createElement('div');
           cell.className = 'cell';
 
@@ -443,6 +651,17 @@
             badge.className = 'badge';
             badge.textContent = 'Fixed';
             cellHead.append(badge);
+          }
+          if (make) {
+            const codeBtn = document.createElement('button');
+            codeBtn.className = 'code-btn';
+            codeBtn.type = 'button';
+            codeBtn.title = 'View usage code';
+            codeBtn.setAttribute('aria-label', `View usage code for ${cardTitle}`);
+            codeBtn.innerHTML =
+              '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></svg>';
+            codeBtn.addEventListener('click', () => openUsage({ title: cardTitle, make }, cell));
+            cellHead.append(codeBtn);
           }
 
           const chart = document.createElement('div');
@@ -516,18 +735,405 @@
         root.append(section);
       }
 
+      // ---------- usage panel ----------
+      // Every example entry defines make: () => (chart(...)). The panel shows
+      // make.toString() minus the wrapper — the literal code that rendered
+      // the chart — so samples can never drift from the demo.
+      const REACT_COMPONENTS = {
+        line: 'LineChart',
+        area: 'AreaChart',
+        bar: 'BarChart',
+        donut: 'DonutChart',
+        gauge: 'GaugeChart',
+        scatter: 'ScatterChart',
+        radar: 'RadarChart',
+        heatmap: 'HeatmapChart',
+        pictogram: 'PictogramChart',
+        bullet: 'BulletChart',
+        winLoss: 'WinLossChart',
+      };
+      // Dark-theme hex for the chalk palette, so samples are copy-paste ready.
+      const CHALK_HEX = {
+        c1: '#66a6ff',
+        c2: '#f49d25',
+        c3: '#52e081',
+        c4: '#f76e6e',
+        c5: '#c1b4fd',
+        accent: '#f2e18c',
+        'chalk-yellow': '#f2e18c',
+        text: '#f5f4ef',
+        muted: '#cfcdc9',
+        faint: '#6b6961',
+        bg: '#16161d',
+        line: 'hsla(45, 25%, 95%, 0.1)',
+      };
+      const JS_KEYWORDS = new Set([
+        'import', 'from', 'const', 'let', 'var', 'function', 'return', 'new',
+        'typeof', 'if', 'else', 'for', 'of', 'in', 'true', 'false', 'null',
+        'undefined',
+      ]);
+
+      const usageState = { panel: null, samples: null, tab: 'js', trigger: null };
+
+      function dedent(src) {
+        const lines = src.split('\n');
+        if (lines.length < 2) return src;
+        const indents = lines
+          .slice(1)
+          .filter((l) => l.trim().length > 0)
+          .map((l) => (l.match(/^ */) || [''])[0].length);
+        const min = indents.length ? Math.min(...indents) : 0;
+        return lines.map((l, i) => (i === 0 ? l : l.slice(min))).join('\n');
+      }
+
+      function codeOf(make) {
+        let src = make.toString().replace(/^\s*\(\)\s*=>\s*/, '').trim();
+        if (src.startsWith('(') && src.endsWith(')')) src = src.slice(1, -1);
+        return dedent(src);
+      }
+
+      // Split a call's argument list on top-level commas.
+      function splitTopLevel(src) {
+        const parts = [];
+        let depth = 0, start = 0, k = 0;
+        let inStr = null, lineC = false, blockC = false;
+        const tplStack = [];
+        while (k < src.length) {
+          const c = src[k], nxt = src[k + 1] ?? '';
+          if (lineC) { if (c === '\n') lineC = false; k++; continue; }
+          if (blockC) {
+            if (c === '*' && nxt === '/') { blockC = false; k += 2; } else k++;
+            continue;
+          }
+          if (inStr) {
+            if (inStr === '`' && c === '$' && nxt === '{') {
+              depth++; tplStack.push(depth); inStr = null; k += 2; continue;
+            }
+            if (c === '\\') { k += 2; continue; }
+            if (c === inStr) inStr = null;
+            k++; continue;
+          }
+          if (c === '/' && nxt === '/') { lineC = true; k += 2; continue; }
+          if (c === '/' && nxt === '*') { blockC = true; k += 2; continue; }
+          if (c === "'" || c === '"' || c === '`') { inStr = c; k++; continue; }
+          if (c === '(' || c === '[' || c === '{') { depth++; k++; continue; }
+          if (c === ')' || c === ']' || c === '}') {
+            depth--;
+            if (c === '}' && tplStack.length && depth + 1 === tplStack[tplStack.length - 1]) {
+              tplStack.pop(); inStr = '`';
+            }
+            k++; continue;
+          }
+          if (c === ',' && depth === 0) { parts.push(src.slice(start, k)); start = k + 1; }
+          k++;
+        }
+        parts.push(src.slice(start));
+        return parts.map((p) => p.trim()).filter((p) => p.length > 0);
+      }
+
+      function parseCall(code) {
+        const m = /^\s*([A-Za-z_$][\w$]*)\s*\(([\s\S]*)\)\s*$/.exec(code);
+        if (!m) return null;
+        const args = splitTopLevel(m[2]);
+        if (!args.length) return null;
+        return { name: m[1], data: args[0], options: args[1] || '' };
+      }
+
+      // Bare-identifier data (e.g. scatterClusters) resolves against this
+      // module's scope. Small values are inlined; large demo datasets stay a
+      // named reference with a "replace with your own" note.
+      function dataForSample(dataSrc) {
+        const id = dataSrc.trim();
+        if (/^[A-Za-z_$][\w$]*$/.test(id)) {
+          let value;
+          try { value = eval(id); } catch { value = undefined; }
+          if (value !== undefined) {
+            const json = JSON.stringify(value);
+            if (json && json.length <= 300) return { src: json, demo: false };
+          }
+          return { src: id, demo: true };
+        }
+        return { src: dataSrc, demo: false };
+      }
+
+      function withPalette(src) {
+        let changed = false;
+        const out = src.replace(/var\(--([\w-]+)\)/g, (m, name) => {
+          if (CHALK_HEX[name]) { changed = true; return CHALK_HEX[name]; }
+          return m;
+        });
+        return { src: out, changed };
+      }
+
+      function addPaletteNote(src, changed) {
+        if (!changed) return src;
+        return src.replace('\n\n', '\n// chalk palette — swap in your colors\n');
+      }
+
+      function buildLinesReact(d) {
+        let src = "import { LineChart } from '@samirdamle/nano-charts-react';\n\n";
+        src += '// lines() has no dedicated React component yet —\n';
+        src += '// render one LineChart per series:\n';
+        if (d.demo) src += `// ${d.src.trim()} is demo data — replace with your own\n`;
+        src += `const series = ${d.src};\n\n`;
+        src += '{series.map(({ name, data, ...rest }) => (\n';
+        src += '  <LineChart key={name} data={data} {...rest} />\n';
+        src += '))}';
+        return src;
+      }
+
+      function buildSamples(parsed) {
+        const fallback = { js: '// sample unavailable', react: '// sample unavailable' };
+        if (!parsed) return { js: { text: fallback.js }, react: { text: fallback.react } };
+        const { name, data, options } = parsed;
+        const d = dataForSample(data);
+
+        let js = `import { ${name}, toSVG } from '@samirdamle/nano-charts';\n\n`;
+        if (d.demo) js += `// ${d.src.trim()} is demo data — replace with your own\n`;
+        js += options
+          ? `const scene = ${name}(${d.src}, ${options});\n`
+          : `const scene = ${name}(${d.src});\n`;
+        js += 'const svg = toSVG(scene); // drop into any HTML';
+
+        let react;
+        if (name === 'lines') {
+          react = buildLinesReact(d);
+        } else {
+          const comp = REACT_COMPONENTS[name] || 'Chart';
+          react = `import { ${comp} } from '@samirdamle/nano-charts-react';\n\n`;
+          if (d.demo) react += `// ${d.src.trim()} is demo data — replace with your own\n`;
+          react += `const data = ${d.src};\n`;
+          if (options) react += `const options = ${options};\n`;
+          react += `\n<${comp} data={data}${options ? ' {...options}' : ''} />`;
+        }
+
+        const jsPal = withPalette(js);
+        const reactPal = withPalette(react);
+        return {
+          js: { text: addPaletteNote(jsPal.src, jsPal.changed) },
+          react: { text: addPaletteNote(reactPal.src, reactPal.changed) },
+        };
+      }
+
+      // ---------- syntax highlighting ----------
+      function escHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function matchBrace(src, k) {
+        let depth = 0, i = k, inS = null;
+        while (i < src.length) {
+          const c = src[i];
+          if (inS) {
+            if (c === '\\') { i += 2; continue; }
+            if (c === inS) inS = null;
+            i++; continue;
+          }
+          if (c === "'" || c === '"' || c === '`') { inS = c; i++; continue; }
+          if (c === '{') depth++;
+          else if (c === '}') { depth--; if (depth === 0) return i; }
+          i++;
+        }
+        return src.length - 1;
+      }
+
+      function readString(src, k) {
+        const q = src[k];
+        let html = '', i = k + 1, chunk = q;
+        const flush = () => {
+          if (chunk) { html += `<span class="tok-s">${escHtml(chunk)}</span>`; chunk = ''; }
+        };
+        while (i < src.length) {
+          const c = src[i];
+          if (q === '`' && c === '$' && src[i + 1] === '{') {
+            flush();
+            let d = 1, j = i + 2, inS = null;
+            while (j < src.length && d > 0) {
+              const cc = src[j];
+              if (inS) {
+                if (cc === '\\') j += 2;
+                else { if (cc === inS) inS = null; j++; }
+                continue;
+              }
+              if (cc === "'" || cc === '"' || cc === '`') { inS = cc; j++; continue; }
+              if (cc === '{') d++; else if (cc === '}') d--;
+              j++;
+            }
+            const inner = src.slice(i + 2, j - 1);
+            html += `<span class="tok-p">${escHtml('${')}</span>` + highlightCode(inner) + `<span class="tok-p">}</span>`;
+            i = j;
+            continue;
+          }
+          if (c === '\\') { chunk += src.slice(i, i + 2); i += 2; continue; }
+          chunk += c; i++;
+          if (c === q) break;
+        }
+        flush();
+        return { html, next: i };
+      }
+
+      function highlightCode(src) {
+        let out = '', k = 0, jsxInTag = false;
+        while (k < src.length) {
+          const c = src[k], nxt = src[k + 1] ?? '';
+          if (/\s/.test(c)) { out += escHtml(c); k++; continue; }
+          if (c === '/' && nxt === '/') {
+            const m = /^[^\n]*/.exec(src.slice(k));
+            out += `<span class="tok-c">${escHtml(m[0])}</span>`; k += m[0].length; continue;
+          }
+          if (c === '/' && nxt === '*') {
+            const e = src.indexOf('*/', k + 2);
+            const end = e === -1 ? src.length : e + 2;
+            out += `<span class="tok-c">${escHtml(src.slice(k, end))}</span>`; k = end; continue;
+          }
+          if (c === "'" || c === '"' || c === '`') {
+            const r = readString(src, k); out += r.html; k = r.next; continue;
+          }
+          const num = /^\d[\d_]*(?:\.\d+)?/.exec(src.slice(k));
+          if (num && !/[A-Za-z_$]/.test(src[k - 1] ?? '')) {
+            out += `<span class="tok-n">${escHtml(num[0])}</span>`; k += num[0].length; continue;
+          }
+          if (c === '<' && /[A-Za-z/]/.test(nxt)) {
+            const m = /^<\/?[A-Za-z][\w.]*/.exec(src.slice(k));
+            out += `<span class="tok-t">${escHtml(m[0])}</span>`; k += m[0].length;
+            if (!m[0].startsWith('</')) jsxInTag = true;
+            continue;
+          }
+          if (jsxInTag && (c === '>' || (c === '/' && nxt === '>'))) {
+            const tok = c === '>' ? '>' : '/>';
+            out += `<span class="tok-t">${escHtml(tok)}</span>`; k += tok.length;
+            jsxInTag = false; continue;
+          }
+          if (jsxInTag && c === '{') {
+            const j = matchBrace(src, k);
+            out += '<span class="tok-p">{</span>' + highlightCode(src.slice(k + 1, j)) + '<span class="tok-p">}</span>';
+            k = j + 1; continue;
+          }
+          const idm = /^[A-Za-z_$][\w$]*/.exec(src.slice(k));
+          if (idm) {
+            const word = idm[0];
+            if (jsxInTag && /^\s*=/.test(src.slice(k + word.length))) {
+              out += `<span class="tok-a">${escHtml(word)}</span>`;
+            } else if (JS_KEYWORDS.has(word)) {
+              out += `<span class="tok-k">${escHtml(word)}</span>`;
+            } else {
+              out += escHtml(word);
+            }
+            k += word.length; continue;
+          }
+          out += `<span class="tok-p">${escHtml(c)}</span>`; k++;
+        }
+        return out;
+      }
+
+      // ---------- panel wiring ----------
+      function ensureUsagePanel() {
+        if (usageState.panel) return usageState.panel;
+        const panel = document.createElement('aside');
+        panel.className = 'usage-panel';
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'false');
+        panel.setAttribute('aria-hidden', 'true');
+        panel.setAttribute('aria-label', 'Chart usage');
+        panel.innerHTML =
+          '<div class="usage-head">' +
+          '<h3 class="usage-title"></h3>' +
+          '<button class="usage-close" type="button" aria-label="Close usage panel">×</button>' +
+          '</div>' +
+          '<div class="usage-tabs" role="tablist">' +
+          '<button class="usage-tab active" type="button" data-tab="js" role="tab">JavaScript</button>' +
+          '<button class="usage-tab" type="button" data-tab="react" role="tab">React</button>' +
+          '</div>' +
+          '<div class="usage-body">' +
+          '<pre class="usage-code"><button class="usage-copy" type="button">Copy</button><code></code></pre>' +
+          '</div>';
+        document.body.append(panel);
+        panel.querySelector('.usage-close').addEventListener('click', closeUsage);
+        panel.querySelector('.usage-copy').addEventListener('click', (e) => copySample(e.currentTarget));
+        panel.querySelectorAll('.usage-tab').forEach((tab) => {
+          tab.addEventListener('click', () => setUsageTab(tab.dataset.tab));
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && usageState.panel.classList.contains('open')) closeUsage();
+        });
+        usageState.panel = panel;
+        return panel;
+      }
+
+      function openUsage(entry, anchorCell) {
+        const panel = ensureUsagePanel();
+        const parsed = parseCall(codeOf(entry.make));
+        usageState.samples = buildSamples(parsed);
+        usageState.tab = 'js';
+        panel.querySelector('.usage-title').textContent = `Usage — ${entry.title}`;
+        syncUsageTabs();
+        renderUsageTab();
+        const r = anchorCell.getBoundingClientRect();
+        const dockLeft = r.left + r.width / 2 > window.innerWidth / 2;
+        panel.classList.toggle('dock-left', dockLeft);
+        panel.classList.toggle('dock-right', !dockLeft);
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        usageState.trigger = document.activeElement;
+        panel.querySelector('.usage-close').focus();
+      }
+
+      function closeUsage() {
+        const panel = usageState.panel;
+        if (!panel) return;
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        if (usageState.trigger) usageState.trigger.focus();
+      }
+
+      function setUsageTab(tab) {
+        usageState.tab = tab;
+        syncUsageTabs();
+        renderUsageTab();
+      }
+
+      function syncUsageTabs() {
+        usageState.panel.querySelectorAll('.usage-tab').forEach((t) => {
+          const active = t.dataset.tab === usageState.tab;
+          t.classList.toggle('active', active);
+          t.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+      }
+
+      function renderUsageTab() {
+        const { samples, tab } = usageState;
+        usageState.panel.querySelector('.usage-code code').innerHTML = highlightCode(samples[tab].text);
+        usageState.panel.querySelector('.usage-copy').textContent = 'Copy';
+      }
+
+      async function copySample(btn) {
+        const text = usageState.samples[usageState.tab].text;
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.append(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch { /* clipboard unavailable */ }
+          ta.remove();
+        }
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
+      }
+
       group('Line', [
-        { title: 'Basic', scene: line([3, 7, 2, 9, 5, 6]) },
-        { title: 'With dots', scene: line([3, 7, 2, 9, 5, 6], { dot: 'all' }) },
-        { title: 'Spline', scene: line([4, 1, 7, 2, 8, 3, 9, 5], { mode: 'spline' }) },
+        { title: 'Basic', make: () => (line([3, 7, 2, 9, 5, 6])) },
+        { title: 'With dots', make: () => (line([3, 7, 2, 9, 5, 6], { dot: 'all' })) },
+        { title: 'Spline', make: () => (line([4, 1, 7, 2, 8, 3, 9, 5], { mode: 'spline' })) },
         {
           title: 'Hover & click',
-          scene: line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 }),
+          make: () => (line([3, 7, 2, 9, 5, 6], { dot: 'all', dotRadius: 2.5 })),
           interactive: true,
         },
         {
           title: 'Multiple series',
-          scene: lines([
+          make: () => (lines([
             { data: [7, 9, 6, 10, 8, 9], name: 'Revenue', color: 'var(--c1)' },
             {
               data: [4, 5, 4, 6, 5, 6],
@@ -536,12 +1142,12 @@
               strokeDasharray: [3, 2],
             },
             { data: [1, 2, 1, 3, 2, 3], name: 'Forecast', color: 'var(--c3)', strokeWidth: 2.5 },
-          ]),
+          ])),
         },
         {
           title: 'Axes & gridlines',
           tall: true,
-          scene: line([0, 18, 9, 26, 14, 30, 21], {
+          make: () => (line([0, 18, 9, 26, 14, 30, 21], {
             color: 'var(--c3)',
             height: 60,
             yAxis: {
@@ -551,29 +1157,41 @@
               gridlines: { show: true, style: 'dashed', color: 'var(--line)' },
             },
             xAxis: { show: true, color: 'var(--text)' },
-          }),
+          })),
         },
         {
           title: 'Ticks only',
           tall: true,
-          scene: line([0, 7, 2, 9, 5, 6], {
+          make: () => (line([0, 7, 2, 9, 5, 6], {
             color: 'var(--c3)',
             height: 60,
             xAxis: { show: true, line: false, ticks: true, color: 'var(--text)', tickSize: 2 },
             yAxis: { show: true, line: false, ticks: [0, 3, 6, 9], color: 'var(--text)', tickSize: 2 },
+          })),
+        },
+        {
+          title: 'Highlight zones',
+          tall: true,
+          scene: line([4, 18, 9, 26, 14, 30, 21], {
+            color: 'var(--c3)',
+            height: 60,
+            highlights: [
+              { x: [1, 3], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+              { y: [20, 30], color: 'color-mix(in srgb, var(--c4) 25%, transparent)' },
+            ],
           }),
         },
       ]);
 
       group('Area', [
-        { title: 'Basic', scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42]) },
+        { title: 'Basic', make: () => (area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42])) },
         {
           title: 'Custom fill color',
-          scene: area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42], {
+          make: () => (area([13, 30, 48, 27, 33, 41, 59, 28, 34, 42], {
             color: 'var(--c1)',
             fillColor: 'var(--c3)',
             fillOpacity: 0.35,
-          }),
+          })),
         },
       ]);
 
@@ -626,45 +1244,55 @@
       group(
         'Bar',
         [
-          { title: 'Basic', scene: bar(barValuesDense, { gap: 0.6 }) },
-          { title: 'Rounded caps', scene: bar(barValuesDense, { radius: 1, gap: 0.6 }) },
+          { title: 'Basic', make: () => (bar(barValuesDense, { gap: 0.6 })) },
+          { title: 'Rounded caps', make: () => (bar(barValuesDense, { radius: 1, gap: 0.6 })) },
           {
             title: 'Grouped',
-            scene: bar(
+            make: () => (bar(
               groupedBars.map((pair) =>
                 pair.map((value, row) => ({ value, color: groupColors[row] })),
               ),
               { mode: 'grouped' },
-            ),
+            )),
+          },
+          {
+            title: 'Highlight zones',
+            scene: bar(barValuesDense, {
+              gap: 0.6,
+              highlights: [
+                { x: [4, 8], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+                { y: [7, 10], color: 'color-mix(in srgb, var(--c4) 25%, transparent)' },
+              ],
+            }),
           },
           {
             title: 'Horizontal multiple',
-            scene: bar(barValues, { horizontal: true, height: 40 }),
+            make: () => (bar(barValues, { horizontal: true, height: 40 })),
             tall: true,
           },
           {
             title: 'Horizontal multiple stacked',
-            scene: bar(
+            make: () => (bar(
               stackedBarPairs.map((pair) =>
                 pair.map((value, row) => ({ value, color: stackColors[row] })),
               ),
               { horizontal: true, height: 40 },
-            ),
+            )),
             tall: true,
           },
           {
             title: 'Grouped horizontal',
-            scene: bar(
+            make: () => (bar(
               groupedBars.map((pair) =>
                 pair.map((value, row) => ({ value, color: groupColors[row] })),
               ),
               { mode: 'grouped', horizontal: true, height: 40 },
-            ),
+            )),
             tall: true,
           },
           {
             title: 'Horizontal single',
-            scene: bar(
+            make: () => (bar(
               [
                 [
                   { value: 3, color: 'var(--c1)' },
@@ -674,28 +1302,39 @@
                 ],
               ],
               { horizontal: true },
-            ),
+            )),
+          },
+          {
+            title: 'Highlight band',
+            scene: bar([3, 5, 2, 4, 6], {
+              horizontal: true,
+              height: 40,
+              highlights: [
+                // y-only: full-width band behind the 2nd–4th bars
+                { y: [1, 3], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+              ],
+            }),
           },
           {
             title: 'Negative values',
-            scene: bar(
+            make: () => (bar(
               negValues.map((value) => ({ value, color: value >= 0 ? 'var(--c3)' : 'var(--c4)' })),
-            ),
+            )),
           },
           {
             title: 'Waterfall',
-            scene: bar([120, -45, 70, -30, 15, -80], {
+            make: () => (bar([120, -45, 70, -30, 15, -80], {
               mode: 'waterfall',
               upColor: 'var(--c3)',
               downColor: 'var(--c4)',
               total: true,
               connectorColor: 'var(--text)',
-            }),
+            })),
           },
           {
             title: 'X ticks & labels',
             tall: true,
-            scene: bar([4, 9, 2, 7, 5, 8, 3, 6], {
+            make: () => (bar([4, 9, 2, 7, 5, 8, 3, 6], {
               color: 'var(--c1)',
               height: 40,
               xAxis: {
@@ -707,12 +1346,12 @@
                 fontSize: 3.5,
                 tickSize: 2,
               },
-            }),
+            })),
           },
           {
             title: 'Y gridlines',
             tall: true,
-            scene: bar([4, 9, 2, 7, 5, 8, 3, 6], {
+            make: () => (bar([4, 9, 2, 7, 5, 8, 3, 6], {
               color: 'var(--c1)',
               height: 40,
               yAxis: {
@@ -721,57 +1360,57 @@
                 tickCount: 3,
                 gridlines: { show: true, color: 'var(--line)' },
               },
-            }),
+            })),
           },
         ],
         3,
       );
 
       group('Donut', [
-        { title: 'Gauge', scene: donut({ value: 75, max: 100 }) },
-        { title: 'Full circle', scene: donut({ value: 100, max: 100 }) },
+        { title: 'Gauge', make: () => (donut({ value: 75, max: 100 })) },
+        { title: 'Full circle', make: () => (donut({ value: 100, max: 100 })) },
         {
           title: 'Segments (categorical palette)',
-          scene: donut([4, 3, 2, 1, 1].map((value, i) => ({ value, color: palette[i] }))),
+          make: () => (donut([4, 3, 2, 1, 1].map((value, i) => ({ value, color: palette[i] })))),
         },
         {
           title: 'Segments (explicit colors)',
-          scene: donut([
+          make: () => (donut([
             { value: 4, label: 'Chrome', color: 'var(--c1)' },
             { value: 3, label: 'Safari', color: 'var(--c4)' },
             { value: 2, label: 'Firefox', color: 'var(--accent)' },
-          ]),
+          ])),
         },
         {
           title: 'Wide gaps',
-          scene: donut(
+          make: () => (donut(
             [
               { value: 4, label: 'Chrome', color: 'var(--c1)' },
               { value: 3, label: 'Safari', color: 'var(--c4)' },
               { value: 2, label: 'Firefox', color: 'var(--c5)' },
             ],
             { gap: 1 },
-          ),
+          )),
         },
-        { title: 'Round caps', scene: donut({ value: 75, max: 100 }, { strokeLinecap: 'round' }) },
+        { title: 'Round caps', make: () => (donut({ value: 75, max: 100 }, { strokeLinecap: 'round' })) },
         {
           title: 'Center label',
-          scene: donut({ value: 72, max: 100 }, { centerLabel: '72%' }),
+          make: () => (donut({ value: 72, max: 100 }, { centerLabel: '72%' })),
         },
         {
           title: 'Partial dial',
-          scene: donut({ value: 60, max: 100 }, { startAngle: 135, endAngle: 405 }),
+          make: () => (donut({ value: 60, max: 100 }, { startAngle: 135, endAngle: 405 })),
         },
       ]);
 
       group('Gauge', [
         {
           title: 'Arc',
-          scene: gauge({ value: 72, max: 100 }, { centerLabel: '72%' }),
+          make: () => (gauge({ value: 72, max: 100 }, { centerLabel: '72%' })),
         },
         {
           title: 'Needle + zones (semicircle)',
-          scene: gauge(
+          make: () => (gauge(
             { value: 72, max: 100 },
             {
               mode: 'needle',
@@ -784,11 +1423,11 @@
               ],
               centerLabel: '72',
             },
-          ),
+          )),
         },
         {
           title: 'Arc + zones',
-          scene: gauge(
+          make: () => (gauge(
             { value: 72, max: 100 },
             {
               zones: [
@@ -798,11 +1437,11 @@
               ],
               strokeLinecap: 'round',
             },
-          ),
+          )),
         },
         {
           title: 'Line needle',
-          scene: gauge({ value: 35, max: 100 }, { mode: 'needle', needle: 'line' }),
+          make: () => (gauge({ value: 35, max: 100 }, { mode: 'needle', needle: 'line' })),
         },
       ]);
 
@@ -858,17 +1497,28 @@
         {
           title: 'Dense point cloud with outliers',
           tall: true,
-          scene: scatter([...scatterTrend, ...scatterOutliers], { height: 60 }),
+          make: () => (scatter([...scatterTrend, ...scatterOutliers], { height: 60 })),
         },
         {
           title: 'Multiple series',
           tall: true,
-          scene: scatter(scatterClusters, { height: 60 }),
+          make: () => (scatter(scatterClusters, { height: 60 })),
+        },
+        {
+          title: 'Highlight cluster',
+          tall: true,
+          scene: scatter(scatterClusters, {
+            height: 60,
+            highlights: [
+              // x + y: rectangle around the blue cluster at (2, 8)
+              { x: [-0.5, 4.5], y: [5, 10.5], color: 'color-mix(in srgb, var(--c1) 20%, transparent)' },
+            ],
+          }),
         },
         {
           title: 'Ticks & labels',
           tall: true,
-          scene: scatter(scaledClusters, {
+          make: () => (scatter(scaledClusters, {
             height: 60,
             xAxis: {
               show: true,
@@ -888,12 +1538,12 @@
               fontSize: 3.5,
               tickSize: 2,
             },
-          }),
+          })),
         },
         {
           title: 'Quadrant gridlines',
           tall: true,
-          scene: scatter(scaledClusters, {
+          make: () => (scatter(scaledClusters, {
             height: 60,
             xAxis: {
               show: true,
@@ -909,7 +1559,7 @@
               tickSize: 0,
               gridlines: { show: true, color: 'var(--text)' },
             },
-          }),
+          })),
         },
       ]);
 
@@ -935,25 +1585,25 @@
       group('Win / Loss', [
         {
           title: 'Basic',
-          scene: winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
+          make: () => (winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
             winColor: 'var(--c3)',
             lossColor: 'var(--c4)',
-          }),
+          })),
         },
       ]);
 
       group('Bullet', [
-        { title: 'Basic', scene: bullet({ value: 80, target: 90, ranges: [50, 75, 100] }) },
+        { title: 'Basic', make: () => (bullet({ value: 80, target: 90, ranges: [50, 75, 100] })) },
       ]);
 
       group('Radar', [
         {
           title: 'Single series (shorthand)',
-          scene: radar([4, 9, 2, 7, 5], { color: '#f3a8c7', gridOpacity: 0.35 }),
+          make: () => (radar([4, 9, 2, 7, 5], { color: '#f3a8c7', gridOpacity: 0.35 })),
         },
         {
           title: 'Multi-series overlay — hover the dots',
-          scene: radar(
+          make: () => (radar(
             [
               { data: [4, 9, 2, 7, 5], name: 'Web', color: '#f3a8c7', dot: 'all', dotRadius: 2.5 },
               {
@@ -965,23 +1615,23 @@
               },
             ],
             { width: 120, height: 120, gridOpacity: 0.35 },
-          ),
+          )),
           interactive: true,
         },
         {
           title: 'Custom max, no grid',
-          scene: radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false, color: '#f3a8c7' }),
+          make: () => (radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false, color: '#f3a8c7' })),
         },
       ]);
 
       group('Heatmap', [
         {
           title: 'Correlation matrix',
-          scene: heatmap(corrMatrix, { cellSize: 20, gap: 2 }),
+          make: () => (heatmap(corrMatrix, { cellSize: 20, gap: 2 })),
         },
         {
           title: 'Ragged rows',
-          scene: heatmap(
+          make: () => (heatmap(
             [
               [1, 4, 2, 7, 3, 9, 5, 8, 2, 6],
               [3, 0, 5, 1, 8, 2, 4],
@@ -990,18 +1640,18 @@
               [5, 3, 9, 7, 2, 8, 6, 1, 4, 3],
             ],
             { cellSize: 20, gap: 2 },
-          ),
+          )),
         },
         {
           title: 'Calendar month',
-          scene: heatmap(septMatrix, {
+          make: () => (heatmap(septMatrix, {
             title: 'September 2026 activity',
             cellSize: 8,
             gap: 2,
             radius: 2,
             colorScale: (v) =>
               v === 0 ? 'hsla(0, 0%, 55%, 0.2)' : `hsla(140, 70%, 60%, ${v * 0.25})`,
-          }),
+          })),
           blockScale: 1.6,
           interactive: true,
           // Sept 1 2026 is a Tuesday, so column 0 = Monday (padding cells
@@ -1016,23 +1666,23 @@
       ]);
 
       group('Pictogram', [
-        { title: 'Basic columns', scene: pictogram([3, 7, 5, 2]) },
+        { title: 'Basic columns', make: () => (pictogram([3, 7, 5, 2])) },
         {
           title: 'Rounded blocks',
-          scene: pictogram([4, 6, 3], { block: { kind: 'rect', radius: 2 } }),
+          make: () => (pictogram([4, 6, 3], { block: { kind: 'rect', radius: 2 } })),
         },
         {
           title: 'Emoji with partial fill',
-          scene: pictogram([4.5], {
+          make: () => (pictogram([4.5], {
             block: { kind: 'emoji', emoji: '⭐' },
             horizontal: true,
-          }),
+          })),
         },
-        { title: 'Dots', scene: pictogram([4, 6, 3], { block: { kind: 'circle' } }) },
-        { title: 'Horizontal rows', scene: pictogram([5, 3, 7], { horizontal: true }) },
+        { title: 'Dots', make: () => (pictogram([4, 6, 3], { block: { kind: 'circle' } })) },
+        { title: 'Horizontal rows', make: () => (pictogram([5, 3, 7], { horizontal: true })) },
         {
           title: 'Hover the blocks',
-          scene: pictogram([3, 2.5, 4]),
+          make: () => (pictogram([3, 2.5, 4])),
           interactive: true,
         },
       ], { blockScale: 1.6 });
