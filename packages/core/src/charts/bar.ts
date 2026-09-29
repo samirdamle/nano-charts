@@ -16,6 +16,7 @@ import {
 } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { highlightMarks, type HighlightOption } from '../core/highlight';
 
 export interface BarTrackOptions {
   /** The "100%" the track represents. When larger than the data max it
@@ -69,6 +70,11 @@ export interface BarOptions<T = number>
   /** Y axis. For vertical bars this is the value axis; for horizontal
    * bars it's the category axis. Disabled by default. */
   yAxis?: AxisOptions;
+  /** Highlighted background region(s), in data coordinates: x and y
+   * follow the chart's x/y scales (category indices on the category
+   * axis, values on the value axis). Clipped to the plot; purely
+   * decorative — never affects padding. */
+  highlight?: HighlightOption;
 }
 
 type BarSegment<T> =
@@ -220,7 +226,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         integerTicks: orientation === 'x' ? !horizontal : horizontal,
       };
     };
-    return { layout: l, valueScale, slot, barW, subSlot, subW, axisFor };
+    return { layout: l, valueScale, slot, barW, subSlot, subW, catScale, axisFor };
   };
 
   // Automatic padding, iterated to a fixed point on the real layout:
@@ -241,7 +247,18 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
       };
     },
   );
-  const { valueScale, slot, barW, subSlot, subW, axisFor } = prepare(layoutFor(padding));
+  const { layout, valueScale, slot, barW, subSlot, subW, catScale, axisFor } = prepare(
+    layoutFor(padding),
+  );
+
+  // Highlight zones address the chart's x/y scales: the value scale on the
+  // value axis, bar centers on the category axis. Drawn behind everything,
+  // clipped to the plot.
+  const hl = highlightMarks(
+    options.highlight,
+    horizontal ? { x: valueScale, y: catScale } : { x: catScale, y: valueScale },
+    layout,
+  );
 
   // Precedence, matching donut: explicit per-segment color (field/accessor)
   // > uniform options.color, with the legacy opacity step-down as its only
@@ -378,5 +395,5 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   const xA = axisMarks(options.xAxis, axisFor('x'));
   const yA = axisMarks(options.yAxis, axisFor('y'));
 
-  return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

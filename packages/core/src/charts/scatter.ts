@@ -7,6 +7,7 @@ import {
   type ResolvedPadding,
 } from '../core/plot';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { highlightMarks, type HighlightOption } from '../core/highlight';
 
 export interface ScatterPoint {
   id?: string | number;
@@ -36,6 +37,9 @@ export interface ScatterOptions<T = ScatterPoint>
   xAxis?: AxisOptions;
   /** Y axis. Disabled by default. */
   yAxis?: AxisOptions;
+  /** Highlighted background region(s), in data coordinates. Clipped to
+   * the plot; purely decorative — never affects padding. */
+  highlight?: HighlightOption;
 }
 
 interface XY {
@@ -161,6 +165,7 @@ export function scatter<T = ScatterPoint>(
 
   const xA = axisMarks(options.xAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'y'));
+  const hl = highlightMarks(options.highlight, { x: xScale, y: yScale }, box);
 
-  return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

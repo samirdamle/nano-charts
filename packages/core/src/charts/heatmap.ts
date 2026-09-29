@@ -8,6 +8,7 @@ import {
   type ResolvedPadding,
 } from '../core/plot';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { highlightMarks, type HighlightOption } from '../core/highlight';
 
 export interface HeatmapOptions<T = number> extends BaseOptions {
   value?: (cell: T, row: number, col: number) => number;
@@ -19,6 +20,10 @@ export interface HeatmapOptions<T = number> extends BaseOptions {
   xAxis?: AxisOptions;
   /** Y axis (row indices). Disabled by default. */
   yAxis?: AxisOptions;
+  /** Highlighted background region(s), in cell coordinates (x = column
+   * index, y = row index). Clipped to the plot; purely decorative —
+   * never affects padding. */
+  highlight?: HighlightOption;
 }
 
 export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = {}): Scene {
@@ -142,6 +147,15 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   // Both axes are categorical: ticks sit at cell centers.
   const xA = axisMarks(options.xAxis, axisLayoutFor(box, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(box, 'y'));
+  // Highlight zones address cell centers, like the axis ticks.
+  const hl = highlightMarks(
+    options.highlight,
+    {
+      x: (c: number) => box.left + c * cell + cell / 2,
+      y: (r: number) => box.top + r * cell + cell / 2,
+    },
+    box,
+  );
 
-  return { ...base, marks: [...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
 }

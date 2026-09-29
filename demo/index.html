@@ -563,6 +563,18 @@
             yAxis: { show: true, line: false, ticks: [0, 3, 6, 9], color: 'var(--text)', tickSize: 2 },
           }),
         },
+        {
+          title: 'Highlight zones',
+          tall: true,
+          scene: line([4, 18, 9, 26, 14, 30, 21], {
+            color: 'var(--c3)',
+            height: 60,
+            highlight: [
+              { x: [1, 3], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+              { y: [20, 30], color: 'color-mix(in srgb, var(--c4) 25%, transparent)' },
+            ],
+          }),
+        },
       ]);
 
       group('Area', [
@@ -636,6 +648,16 @@
               ),
               { mode: 'grouped' },
             ),
+          },
+          {
+            title: 'Highlight zones',
+            scene: bar(barValuesDense, {
+              gap: 0.6,
+              highlight: [
+                { x: [4, 8], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
+                { y: [7, 10], color: 'color-mix(in srgb, var(--c4) 25%, transparent)' },
+              ],
+            }),
           },
           {
             title: 'Horizontal multiple',
