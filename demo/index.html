@@ -899,6 +899,17 @@
           scene: scatter(scatterClusters, { height: 60 }),
         },
         {
+          title: 'Highlight cluster',
+          tall: true,
+          scene: scatter(scatterClusters, {
+            height: 60,
+            highlights: [
+              // x + y: rectangle around the blue cluster at (2, 8)
+              { x: [-0.5, 4.5], y: [5, 10.5], color: 'color-mix(in srgb, var(--c1) 20%, transparent)' },
+            ],
+          }),
+        },
+        {
           title: 'Ticks & labels',
           tall: true,
           scene: scatter(scaledClusters, {
