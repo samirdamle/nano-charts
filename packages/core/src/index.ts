@@ -19,6 +19,8 @@ export {
   type PictogramOptions,
   type PictogramInput,
   type PictogramBlock,
+  type PictogramConnectorOptions,
+  type PictogramConnectorStyle,
 } from './charts/pictogram';
 export { toSVG } from './render/to-svg';
 export type { Scene, Mark, ScenePoint, BaseOptions, Datum, CenterLabelContext } from './types';

@@ -9,12 +9,26 @@ import {
 } from '../core/normalize';
 import { pastelColor, resolveSegmentColor } from '../core/palette';
 import { resolvePadding } from '../core/plot';
+import { dashFor } from '../core/axis';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
 export type PictogramBlock =
   | { kind: 'rect'; radius?: number }
   | { kind: 'circle' }
   | { kind: 'emoji'; emoji: string };
+
+/** Line style for a pictogram connector. */
+export type PictogramConnectorStyle = 'solid' | 'dashed' | 'dotted';
+
+/** Options for the optional line joining a series' rendered blocks. */
+export interface PictogramConnectorOptions {
+  /** Line color. Defaults to the series' resolved block color. */
+  color?: string;
+  /** Line thickness in px. Defaults to 2. */
+  thickness?: number;
+  /** Line style. Defaults to `'solid'`. */
+  style?: PictogramConnectorStyle;
+}
 
 export interface PictogramOptions<T = number>
   extends BaseOptions,
@@ -35,6 +49,10 @@ export interface PictogramOptions<T = number>
    * value per chart so several pictograms can be inlined in one document;
    * pass an explicit value to take control of the ids. */
   idPrefix?: string;
+  /** Draw a line joining each series' rendered blocks, from the center of
+   * the first block to the center of the last, rendered behind the blocks.
+   * Series with fewer than two blocks get no connector. Off by default. */
+  connector?: PictogramConnectorOptions;
 }
 
 type PictogramDatum<T> =
@@ -170,6 +188,43 @@ export function pictogram<T = number>(
     });
     const { full, fraction } = splits[j]!;
     const total = slots[j]!;
+    const conn = options.connector;
+    if (conn && total >= 2) {
+      // One line per series, from the center of the first rendered block to
+      // the center of the last, pushed before the series' block marks so it
+      // renders behind them.
+      const thickness =
+        conn.thickness !== undefined && Number.isFinite(conn.thickness) && conn.thickness > 0
+          ? conn.thickness
+          : 2;
+      const { strokeDasharray } = dashFor(conn.style);
+      const stroke = conn.color ?? color;
+      marks.push(
+        horizontal
+          ? {
+              type: 'line',
+              x1: round(padding.left + s / 2),
+              y1: round(padding.top + j * pitch + s / 2),
+              x2: round(padding.left + (total - 1) * pitch + s / 2),
+              y2: round(padding.top + j * pitch + s / 2),
+              stroke,
+              strokeWidth: thickness,
+              strokeDasharray,
+              strokeLinecap: 'round',
+            }
+          : {
+              type: 'line',
+              x1: round(padding.left + j * pitch + s / 2),
+              y1: round(padding.top + (maxSlots - 1) * pitch + s / 2),
+              x2: round(padding.left + j * pitch + s / 2),
+              y2: round(padding.top + (maxSlots - total) * pitch + s / 2),
+              stroke,
+              strokeWidth: thickness,
+              strokeDasharray,
+              strokeLinecap: 'round',
+            },
+      );
+    }
     for (let k = 0; k < total; k++) {
       const isPartial = k === full && fraction > 0;
       // Vertical: columns left→right, blocks stack bottom-up.
