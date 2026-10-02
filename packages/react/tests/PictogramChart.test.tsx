@@ -63,4 +63,18 @@ describe('PictogramChart', () => {
     );
     expect(container.querySelector('defs text')?.textContent).toBe('⭐');
   });
+
+  it('passes connector options through to the rendered line marks', () => {
+    const { container } = render(
+      <PictogramChart
+        data={[3, 2]}
+        connector={{ color: 'red', thickness: 1.5, style: 'dashed' }}
+      />,
+    );
+    const lines = container.querySelectorAll('svg > line');
+    expect(lines).toHaveLength(2);
+    expect(lines[0]?.getAttribute('stroke')).toBe('red');
+    expect(lines[0]?.getAttribute('stroke-width')).toBe('1.5');
+    expect(lines[0]?.getAttribute('stroke-dasharray')).toBe('5 4');
+  });
 });
