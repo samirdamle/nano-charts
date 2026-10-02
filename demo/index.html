@@ -543,7 +543,7 @@
               <a href="https://www.npmjs.com/package/@samirdamle/nano-charts">NPM</a> ·
               <a href="https://www.npmjs.com/package/@samirdamle/nano-charts-react">React on npm</a> ·
               by Samir Damle ·
-              v0.5.0
+              v0.6.0
             </p>
           </div>
           <aside class="hero-features">
@@ -1680,6 +1680,18 @@
         },
         { title: 'Dots', make: () => (pictogram([4, 6, 3], { block: { kind: 'circle' } })) },
         { title: 'Horizontal rows', make: () => (pictogram([5, 3, 7], { horizontal: true })) },
+        {
+          title: 'Connector lines',
+          make: () => (pictogram([3, 7, 5, 2], { connector: {} })),
+        },
+        {
+          title: 'Dashed connectors',
+          make: () => (pictogram([5, 3, 7], {
+            horizontal: true,
+            block: { kind: 'circle' },
+            connector: { style: 'dashed', color: 'var(--text)' },
+          })),
+        },
         {
           title: 'Hover the blocks',
           make: () => (pictogram([3, 2.5, 4])),

@@ -314,6 +314,104 @@ describe('pictogram', () => {
   });
 });
 
+describe('pictogram connector', () => {
+  const lines = (scene: ReturnType<typeof pictogram>) =>
+    scene.marks.filter((m) => m.type === 'line');
+
+  it('emits no connector marks by default', () => {
+    const scene = pictogram([3, 7], { padding: 0 });
+    expect(lines(scene)).toHaveLength(0);
+  });
+
+  it('draws one vertical connector per series, behind its blocks', () => {
+    // blockSize 8, gap 0.25 → pitch 10; maxSlots 7.
+    const scene = pictogram([3, 2], { padding: 0, connector: {} });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(2);
+    // Series 0: column center x = 4, from bottom block center (24) to top (4).
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 24, x2: 4, y2: 4 });
+    // Series 1: column center x = 14, from bottom block center (24) to top (14).
+    expect(conn[1]).toMatchObject({ x1: 14, y1: 24, x2: 14, y2: 14 });
+    // Each connector sits before its series' block marks (behind the blocks).
+    const idx = (m: Mark) => scene.marks.indexOf(m);
+    expect(idx(conn[0]!)).toBeLessThan(idx(uses(scene)[0]!));
+    expect(idx(conn[1]!)).toBeLessThan(idx(uses(scene)[3]!));
+  });
+
+  it('draws one horizontal connector per series', () => {
+    const scene = pictogram([3, 2], { padding: 0, horizontal: true, connector: {} });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(2);
+    // Row 0: row center y = 4, from left block center (4) to right (24).
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 4, x2: 24, y2: 4 });
+    // Row 1: row center y = 14, from left block center (4) to right (14).
+    expect(conn[1]).toMatchObject({ x1: 4, y1: 14, x2: 14, y2: 14 });
+  });
+
+  it('spans the full rendered extent, including partial blocks', () => {
+    // 2.5 → 2 full + 1 partial slot; connector covers all three slots.
+    const scene = pictogram([2.5], { padding: 0, connector: {} });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    // maxSlots 3: bottom block center y = 24, top (partial) block center y = 4.
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 24, x2: 4, y2: 4 });
+  });
+
+  it('skips series with fewer than two blocks', () => {
+    const scene = pictogram([3, 1, 0], { padding: 0, connector: {} });
+    expect(lines(scene)).toHaveLength(1);
+  });
+
+  it('defaults to solid 2px in the series block color', () => {
+    const scene = pictogram([{ value: 3, color: '#123456' }], {
+      padding: 0,
+      connector: {},
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    expect(conn[0]).toMatchObject({
+      stroke: '#123456',
+      strokeWidth: 2,
+      strokeDasharray: undefined,
+      strokeLinecap: 'round',
+    });
+  });
+
+  it('uses each series own color by default', () => {
+    const scene = pictogram([3, 4], { padding: 0, connector: {} });
+    const conn = lines(scene);
+    expect(conn[0]!.stroke).toBe(pastelColor(0));
+    expect(conn[1]!.stroke).toBe(pastelColor(1));
+  });
+
+  it('honors custom color, thickness, and dashed/dotted styles', () => {
+    const dashed = pictogram([3], {
+      padding: 0,
+      connector: { color: 'red', thickness: 1.5, style: 'dashed' },
+    });
+    expect(lines(dashed)[0]).toMatchObject({
+      stroke: 'red',
+      strokeWidth: 1.5,
+      strokeDasharray: '5 4',
+      strokeLinecap: 'round',
+    });
+    const dotted = pictogram([3], { padding: 0, connector: { style: 'dotted' } });
+    expect(lines(dotted)[0]).toMatchObject({
+      strokeDasharray: '0.1 4',
+      strokeLinecap: 'round',
+    });
+    const svg = toSVG(dotted);
+    expect(svg).toContain(
+      '<line x1="4" y1="24" x2="4" y2="4" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="round"/>',
+    );
+  });
+
+  it('ignores non-positive or non-finite thickness', () => {
+    const scene = pictogram([3], { padding: 0, connector: { thickness: 0 } });
+    expect(lines(scene)[0]).toMatchObject({ strokeWidth: 2 });
+  });
+});
+
 describe('pictogram mark types', () => {
   it('exposes the new variants on the Mark union', () => {
     const marks: Mark[] = [

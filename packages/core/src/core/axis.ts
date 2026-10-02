@@ -99,7 +99,7 @@ function decimalsFor(step: number): number {
   return d;
 }
 
-function dashFor(style: AxisGridlineStyle | undefined): {
+export function dashFor(style: AxisGridlineStyle | undefined): {
   strokeDasharray?: string;
   strokeLinecap?: 'round';
 } {
