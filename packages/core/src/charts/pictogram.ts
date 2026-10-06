@@ -20,14 +20,34 @@ export type PictogramBlock =
 /** Line style for a pictogram connector. */
 export type PictogramConnectorStyle = 'solid' | 'dashed' | 'dotted';
 
-/** Options for the optional line joining a series' rendered blocks. */
-export interface PictogramConnectorOptions {
-  /** Line color. Defaults to the series' resolved block color. */
+/** One connector segment: a line from the center of one block to the center
+ * of another, drawn behind the blocks. */
+export interface PictogramConnectorSegment {
+  /** Block indices at the segment's two ends, inclusive — the line runs from
+   * the center of `span[0]` to the center of `span[1]` (direction does not
+   * matter). Out-of-range indices are clamped to the rendered blocks; a
+   * zero-length span is skipped. */
+  span: [number, number];
+  /** Segment color. Defaults to the connector-level `color`. */
   color?: string;
-  /** Line thickness in px. Defaults to 2. */
+  /** Segment thickness in px. Defaults to the connector-level `thickness`. */
   thickness?: number;
-  /** Line style. Defaults to `'solid'`. */
+  /** Segment style. Defaults to the connector-level `style`. */
   style?: PictogramConnectorStyle;
+}
+
+/** Options for the optional lines joining a series' rendered blocks. */
+export interface PictogramConnectorOptions {
+  /** Default segment color. Defaults to the series' resolved block color. */
+  color?: string;
+  /** Default segment thickness in px. Defaults to 2. */
+  thickness?: number;
+  /** Default segment style. Defaults to `'solid'`. */
+  style?: PictogramConnectorStyle;
+  /** Explicit segments. When present, only these render, in order (so later
+   * entries draw over earlier ones). When absent, every adjacent block pair
+   * is joined with the top-level styling. */
+  segments?: PictogramConnectorSegment[];
 }
 
 export interface PictogramOptions<T = number>
@@ -49,9 +69,10 @@ export interface PictogramOptions<T = number>
    * value per chart so several pictograms can be inlined in one document;
    * pass an explicit value to take control of the ids. */
   idPrefix?: string;
-  /** Draw a line joining each series' rendered blocks, from the center of
-   * the first block to the center of the last, rendered behind the blocks.
-   * Series with fewer than two blocks get no connector. Off by default. */
+  /** Draw lines joining a series' rendered blocks, behind the blocks. By
+   * default every adjacent block pair is joined with uniform styling; pass
+   * `segments` for explicit spans with per-segment styling. Series with
+   * fewer than two blocks get no connector. Off by default. */
   connector?: PictogramConnectorOptions;
 }
 
@@ -190,40 +211,80 @@ export function pictogram<T = number>(
     const total = slots[j]!;
     const conn = options.connector;
     if (conn && total >= 2) {
-      // One line per series, from the center of the first rendered block to
-      // the center of the last, pushed before the series' block marks so it
-      // renders behind them.
-      const thickness =
-        conn.thickness !== undefined && Number.isFinite(conn.thickness) && conn.thickness > 0
-          ? conn.thickness
-          : 2;
-      const { strokeDasharray } = dashFor(conn.style);
-      const stroke = conn.color ?? color;
-      marks.push(
+      // Every gap between adjacent blocks gets its own line, center to
+      // center, pushed before the series' block marks so connectors render
+      // behind the blocks. Per-gap lines (rather than one spanning line)
+      // restart the dash pattern at every block, so dashed/dotted styles
+      // read as uniform connectors instead of broken fragments.
+      const posThickness = (v: number | undefined, fallback: number): number =>
+        v !== undefined && Number.isFinite(v) && v > 0 ? v : fallback;
+      const baseThickness = posThickness(conn.thickness, 2);
+      const baseColor = conn.color ?? color;
+      const baseStyle = conn.style;
+      interface GapDraw {
+        from: number;
+        to: number;
+        stroke: string;
+        strokeWidth: number;
+        style: PictogramConnectorStyle | undefined;
+      }
+      const draws: GapDraw[] = [];
+      if (Array.isArray(conn.segments)) {
+        for (const seg of conn.segments) {
+          const a = seg?.span?.[0];
+          const b = seg?.span?.[1];
+          if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+          // Clamp to the rendered blocks; direction does not matter.
+          const from = Math.max(0, Math.min(total - 1, Math.floor(Math.min(a, b))));
+          const to = Math.max(0, Math.min(total - 1, Math.floor(Math.max(a, b))));
+          if (from >= to) continue;
+          const stroke = seg.color ?? baseColor;
+          const strokeWidth = posThickness(seg.thickness, baseThickness);
+          const style = seg.style ?? baseStyle;
+          // Subdivide long spans per gap so dash patterns stay uniform.
+          for (let k = from; k < to; k++) draws.push({ from: k, to: k + 1, stroke, strokeWidth, style });
+        }
+      } else {
+        for (let k = 0; k < total - 1; k++) {
+          draws.push({ from: k, to: k + 1, stroke: baseColor, strokeWidth: baseThickness, style: baseStyle });
+        }
+      }
+      // Block-center coordinate along the series axis.
+      const center = (k: number): number =>
         horizontal
-          ? {
-              type: 'line',
-              x1: round(padding.left + s / 2),
-              y1: round(padding.top + j * pitch + s / 2),
-              x2: round(padding.left + (total - 1) * pitch + s / 2),
-              y2: round(padding.top + j * pitch + s / 2),
-              stroke,
-              strokeWidth: thickness,
-              strokeDasharray,
-              strokeLinecap: 'round',
-            }
-          : {
-              type: 'line',
-              x1: round(padding.left + j * pitch + s / 2),
-              y1: round(padding.top + (maxSlots - 1) * pitch + s / 2),
-              x2: round(padding.left + j * pitch + s / 2),
-              y2: round(padding.top + (maxSlots - total) * pitch + s / 2),
-              stroke,
-              strokeWidth: thickness,
-              strokeDasharray,
-              strokeLinecap: 'round',
-            },
-      );
+          ? round(padding.left + k * pitch + s / 2)
+          : round(padding.top + (maxSlots - 1 - k) * pitch + s / 2);
+      const fixed = horizontal
+        ? round(padding.top + j * pitch + s / 2)
+        : round(padding.left + j * pitch + s / 2);
+      for (const d of draws) {
+        const { strokeDasharray } = dashFor(d.style);
+        marks.push(
+          horizontal
+            ? {
+                type: 'line',
+                x1: center(d.from),
+                y1: fixed,
+                x2: center(d.to),
+                y2: fixed,
+                stroke: d.stroke,
+                strokeWidth: d.strokeWidth,
+                strokeDasharray,
+                strokeLinecap: 'round',
+              }
+            : {
+                type: 'line',
+                x1: fixed,
+                y1: center(d.from),
+                x2: fixed,
+                y2: center(d.to),
+                stroke: d.stroke,
+                strokeWidth: d.strokeWidth,
+                strokeDasharray,
+                strokeLinecap: 'round',
+              },
+        );
+      }
     }
     for (let k = 0; k < total; k++) {
       const isPartial = k === full && fraction > 0;

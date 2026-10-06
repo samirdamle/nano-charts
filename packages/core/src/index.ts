@@ -20,6 +20,7 @@ export {
   type PictogramInput,
   type PictogramBlock,
   type PictogramConnectorOptions,
+  type PictogramConnectorSegment,
   type PictogramConnectorStyle,
 } from './charts/pictogram';
 export { toSVG } from './render/to-svg';
