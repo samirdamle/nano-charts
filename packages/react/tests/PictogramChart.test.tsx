@@ -72,9 +72,23 @@ describe('PictogramChart', () => {
       />,
     );
     const lines = container.querySelectorAll('svg > line');
-    expect(lines).toHaveLength(2);
+    // [3, 2] → 2 gaps + 1 gap = 3 per-gap lines.
+    expect(lines).toHaveLength(3);
     expect(lines[0]?.getAttribute('stroke')).toBe('red');
     expect(lines[0]?.getAttribute('stroke-width')).toBe('1.5');
     expect(lines[0]?.getAttribute('stroke-dasharray')).toBe('5 4');
+  });
+
+  it('passes connector segments through with per-segment colors', () => {
+    const { container } = render(
+      <PictogramChart
+        data={[3]}
+        connector={{ segments: [{ span: [0, 1], color: 'red' }, { span: [1, 2], color: 'blue' }] }}
+      />,
+    );
+    const lines = container.querySelectorAll('svg > line');
+    expect(lines).toHaveLength(2);
+    expect(lines[0]?.getAttribute('stroke')).toBe('red');
+    expect(lines[1]?.getAttribute('stroke')).toBe('blue');
   });
 });

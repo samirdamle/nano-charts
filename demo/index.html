@@ -1693,6 +1693,20 @@
           })),
         },
         {
+          title: 'Connector segments',
+          make: () => (pictogram([6, 6, 6], {
+            block: { kind: 'circle' },
+            connector: {
+              thickness: 3,
+              segments: [
+                { span: [0, 2], color: 'var(--c4)' },
+                { span: [2, 4], color: 'var(--c3)' },
+                { span: [4, 5], color: 'var(--c2)', style: 'dashed' },
+              ],
+            },
+          })),
+        },
+        {
           title: 'Hover the blocks',
           make: () => (pictogram([3, 2.5, 4])),
           interactive: true,

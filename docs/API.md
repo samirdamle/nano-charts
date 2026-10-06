@@ -444,7 +444,7 @@ per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
 | `gap`                    | `number`                                          | `0.25`       | Space between blocks (and columns/rows) as a fraction of `blockSize`, like `bar()` |
 | `horizontal`             | `boolean`                                         | `false`      | Rows stack left→right instead of columns bottom-up                        |
 | `unit`                   | `number`                                          | `1`          | Data value per block; count = `value / unit`                             |
-| `connector`              | `PictogramConnectorOptions`                       | —            | Draw a line joining each series' rendered blocks, from the center of the first block to the center of the last, behind the blocks; skipped for series with fewer than two blocks |
+| `connector`              | `PictogramConnectorOptions`                       | —            | Draw lines joining each series' rendered blocks, behind the blocks: by default one line per gap between adjacent blocks, or explicit `segments` with per-segment spans and styling; skipped for series with fewer than two blocks |
 | `idPrefix`               | `string`                                          | auto (`pictogram-N`) | Prefix for `<defs>`/clip ids — unique per chart by default so several pictograms can share a document; pass an explicit value to control the ids |
 | `value` / `label` / `id` | accessors                                         | —            | For custom object arrays                                                  |
 | `colorAccessor`          | `(datum, index) => string \| undefined`           | —            | Per-column color accessor                                                |
@@ -455,11 +455,35 @@ zero blocks; a non-positive or non-finite `unit` falls back to `1`.
 the pastel block palette (`#8fe6c4`, `#7fd8e6`, `#f3a8c7`, `#c6a6e8`, `#f0dd82`,
 cycling), from the same precedence rule `bar()`/`donut()` use.
 
-`connector` takes `{ color?, thickness?, style? }`: `color` defaults to the
+`connector` takes `{ color?, thickness?, style?, segments? }`: `color` defaults to the
 series' resolved block color, `thickness` defaults to `2` (px; non-positive or
 non-finite values fall back to `2`), and `style` is `'solid' | 'dashed' |
 'dotted'` (defaults to `'solid'`, sharing the axis gridline dash vocabulary).
-Lines use round caps.
+Lines use round caps. Each gap between adjacent blocks gets its own line, center
+to center, so the dash pattern restarts at every block and `dashed`/`dotted`
+render as uniform connectors.
+
+Pass `segments` for explicit spans with per-segment styling:
+
+```ts
+pictogram([6, 6], {
+  connector: {
+    thickness: 3,
+    segments: [
+      { span: [0, 2], color: '#f76e6e' },
+      { span: [2, 5], color: '#52e081', style: 'dashed' },
+    ],
+  },
+});
+```
+
+Each segment's `span` holds the block indices at its two ends, inclusive —
+the line runs from the center of `span[0]` to the center of `span[1]`
+(direction does not matter). Out-of-range indices are clamped to the rendered
+blocks and zero-length spans are skipped. Long spans are subdivided per gap so
+dash patterns stay uniform. When `segments` is present, only those render, in
+order (later entries draw over earlier ones); omitted `color`/`thickness`/`style`
+fields fall back to the connector-level values.
 
 ## Rendering
 
@@ -519,9 +543,9 @@ size-limit); all figures below are minified + gzip.
 | -------------------------------------------------------- | ------- | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **11.95 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **12.18 kB** |
 | `@samirdamle/nano-charts-react` — `LineChart` standalone | 5 kB    | **4.61 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **11.85 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **12.07 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
@@ -538,7 +562,7 @@ size-limit); all figures below are minified + gzip.
 | `scatter`  | 4.06 kB |
 | `heatmap`  | 4.25 kB |
 | `radar`    | 2.60 kB |
-| `pictogram`| 2.80 kB |
+| `pictogram`| 3.06 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
