@@ -6,18 +6,18 @@ import {
   type ScatterInput,
   type ScatterPoint,
 } from '@samirdamle/nano-charts';
-import { ChartSvg } from '../render/ChartSvg';
+import { NanoChartSvg } from '../render/NanoChartSvg';
 import type { InteractionProps } from '../types';
 
-export interface ScatterChartProps<T = ScatterPoint> extends ScatterOptions<T>, InteractionProps {
+export interface ScatterNanoChartProps<T = ScatterPoint> extends ScatterOptions<T>, InteractionProps {
   data: ScatterInput<T>;
 }
 
-export function ScatterChart<T = ScatterPoint>(props: ScatterChartProps<T>) {
+export function ScatterNanoChart<T = ScatterPoint>(props: ScatterNanoChartProps<T>) {
   const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = scatter(data, options);
   return (
-    <ChartSvg
+    <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}

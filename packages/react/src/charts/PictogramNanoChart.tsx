@@ -1,19 +1,19 @@
 'use client';
 
 import { pictogram, type PictogramInput, type PictogramOptions } from '@samirdamle/nano-charts';
-import { ChartSvg } from '../render/ChartSvg';
+import { NanoChartSvg } from '../render/NanoChartSvg';
 import type { InteractionProps } from '../types';
 
-export interface PictogramChartProps<T = number> extends PictogramOptions<T>, InteractionProps {
+export interface PictogramNanoChartProps<T = number> extends PictogramOptions<T>, InteractionProps {
   /** One entry per column (vertical) or row (horizontal). */
   data: PictogramInput<T>;
 }
 
-export function PictogramChart<T = number>(props: PictogramChartProps<T>) {
+export function PictogramNanoChart<T = number>(props: PictogramNanoChartProps<T>) {
   const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = pictogram(data, options);
   return (
-    <ChartSvg
+    <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}

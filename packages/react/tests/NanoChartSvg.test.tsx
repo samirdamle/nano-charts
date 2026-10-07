@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { ChartSvg } from '../src/render/ChartSvg';
+import { NanoChartSvg } from '../src/render/NanoChartSvg';
 import type { Scene } from '@samirdamle/nano-charts';
 
 const scene: Scene = {
@@ -12,9 +12,9 @@ const scene: Scene = {
   a11y: { title: 'test chart', desc: 'a test chart' },
 };
 
-describe('ChartSvg', () => {
+describe('NanoChartSvg', () => {
   it('renders the svg wrapper with viewBox, role, aria-label, desc, and marks', () => {
-    const { container } = render(<ChartSvg scene={scene} />);
+    const { container } = render(<NanoChartSvg scene={scene} />);
     const svg = container.querySelector('svg');
     expect(svg?.getAttribute('viewBox')).toBe('0 0 100 20');
     expect(svg?.getAttribute('role')).toBe('img');
@@ -25,7 +25,7 @@ describe('ChartSvg', () => {
   });
 
   it('passes className and style to the root svg', () => {
-    const { container } = render(<ChartSvg scene={scene} className="my-chart" style={{ color: 'red' }} />);
+    const { container } = render(<NanoChartSvg scene={scene} className="my-chart" style={{ color: 'red' }} />);
     const svg = container.querySelector('svg');
     expect(svg?.getAttribute('class')).toBe('my-chart');
     expect(svg?.getAttribute('style')).toBe('color: red;');
@@ -33,7 +33,7 @@ describe('ChartSvg', () => {
 
   it('wires onPointHover/onPointClick through to hit targets, defaulting hitRadius to 4', () => {
     const onPointHover = vi.fn();
-    const { container } = render(<ChartSvg scene={scene} onPointHover={onPointHover} />);
+    const { container } = render(<NanoChartSvg scene={scene} onPointHover={onPointHover} />);
     const hitTarget = container.querySelector('circle[fill="transparent"]');
     expect(hitTarget?.getAttribute('r')).toBe('4');
     fireEvent.mouseEnter(hitTarget!);

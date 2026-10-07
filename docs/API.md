@@ -12,9 +12,9 @@ const svg = toSVG(scene); // Scene → '<svg …>…</svg>'
 ```
 
 ```tsx
-import { LineChart } from '@samirdamle/nano-charts-react';
+import { LineNanoChart } from '@samirdamle/nano-charts-react';
 
-<LineChart data={[4, 9, 2, 7, 5]} dot="last" onPointClick={(p) => console.log(p)} />;
+<LineNanoChart data={[4, 9, 2, 7, 5]} dot="last" onPointClick={(p) => console.log(p)} />;
 ```
 
 ## Mental model
@@ -108,7 +108,7 @@ Notes:
   overflow the plot and reserves exactly that much space, so labels never
   clip without hand-tuned `padding`. Pass an explicit `padding` (number or
   per-side object) to override any side; omitted sides stay automatic.
-- React components (`LineChart`, `BarChart`, …) accept the same `xAxis` /
+- React components (`LineNanoChart`, `BarNanoChart`, …) accept the same `xAxis` /
   `yAxis` props.
 
 ## Highlight zones
@@ -145,7 +145,7 @@ Notes:
   scale.
 - Reversed ranges (`[5, 2]`) are normalized; zones partly outside the plot
   are clipped to it, and zones entirely outside it are skipped.
-- React components (`LineChart`, `BarChart`, …) accept the same `highlights`
+- React components (`LineNanoChart`, `BarNanoChart`, …) accept the same `highlights`
   prop.
 
 ## Charts
@@ -508,8 +508,8 @@ its own point index.
 
 ### React components
 
-`LineChart`, `AreaChart`, `BarChart`, `WinLossChart`, `BulletChart`,
-`DonutChart`, `ScatterChart`, `HeatmapChart`, `RadarChart`, `PictogramChart` — each takes the same `data` (`series` for `RadarChart`) and
+`LineNanoChart`, `AreaNanoChart`, `BarNanoChart`, `WinLossNanoChart`, `BulletNanoChart`,
+`DonutNanoChart`, `ScatterNanoChart`, `HeatmapNanoChart`, `RadarNanoChart`, `PictogramNanoChart` — each takes the same `data` (`series` for `RadarNanoChart`) and
 options as its core function, plus interactivity props:
 
 | Prop                  | Type                                  | Description                                                           |
@@ -544,7 +544,7 @@ size-limit); all figures below are minified + gzip.
 | `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
 | `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **12.18 kB** |
-| `@samirdamle/nano-charts-react` — `LineChart` standalone | 5 kB    | **4.61 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.61 kB** |
 | `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **12.07 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**

@@ -1,18 +1,18 @@
 'use client';
 
 import { winLoss, type WinLossOptions, type SeriesInput } from '@samirdamle/nano-charts';
-import { ChartSvg } from '../render/ChartSvg';
+import { NanoChartSvg } from '../render/NanoChartSvg';
 import type { InteractionProps } from '../types';
 
-export interface WinLossChartProps<T = number> extends WinLossOptions<T>, InteractionProps {
+export interface WinLossNanoChartProps<T = number> extends WinLossOptions<T>, InteractionProps {
   data: SeriesInput<T>;
 }
 
-export function WinLossChart<T = number>(props: WinLossChartProps<T>) {
+export function WinLossNanoChart<T = number>(props: WinLossNanoChartProps<T>) {
   const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = winLoss(data, options);
   return (
-    <ChartSvg
+    <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}

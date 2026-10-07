@@ -49,7 +49,7 @@ requires reverse-mapping coordinates — the DOM node names its own point index.
 | `heatmap`   | Intensity grid — ragged rows, calendar month                      |
 | `pictogram` | Countable unit blocks (shapes or emoji)                           |
 
-Every chart has a matching React component (`LineChart`, `AreaChart`, …) — except
+Every chart has a matching React component (`LineNanoChart`, `AreaNanoChart`, …) — except
 `lines`, which is core-only.
 Full options for each are in the [API reference](docs/API.md#charts).
 
@@ -94,7 +94,7 @@ measured 2026-09-29:
 | Core — `line` standalone                     | 4 kB    | **3.77 kB** |
 | Core — `toSVG` standalone                    | 1.25 kB | **1.00 kB** |
 | Core — full barrel (all 12 charts + `toSVG`) | 12.5 kB | **12.18 kB** |
-| React — `LineChart` standalone               | 5 kB    | **4.61 kB** |
+| React — `LineNanoChart` standalone            | 5 kB    | **4.61 kB** |
 | React — full barrel                          | 13 kB   | **12.07 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.

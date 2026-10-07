@@ -1,18 +1,18 @@
 'use client';
 
 import { gauge, type GaugeOptions, type GaugeInput } from '@samirdamle/nano-charts';
-import { ChartSvg } from '../render/ChartSvg';
+import { NanoChartSvg } from '../render/NanoChartSvg';
 import type { InteractionProps } from '../types';
 
-export interface GaugeChartProps extends GaugeOptions, InteractionProps {
+export interface GaugeNanoChartProps extends GaugeOptions, InteractionProps {
   data: GaugeInput;
 }
 
-export function GaugeChart(props: GaugeChartProps) {
+export function GaugeNanoChart(props: GaugeNanoChartProps) {
   const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = gauge(data, options);
   return (
-    <ChartSvg
+    <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}

@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { BarChart } from '../src/charts/BarChart';
+import { BarNanoChart } from '../src/charts/BarNanoChart';
 import { bar } from '@samirdamle/nano-charts';
 
-describe('BarChart', () => {
+describe('BarNanoChart', () => {
   it('renders one rect per segment, matching the core bar() function', () => {
     const data = [
       [1, 2],
       [3, 4],
     ];
-    const { container } = render(<BarChart data={data} />);
+    const { container } = render(<BarNanoChart data={data} />);
     const scene = bar(data);
     expect(container.querySelectorAll('svg > rect')).toHaveLength(
       scene.marks.filter((m) => m.type === 'rect').length,
@@ -22,7 +22,7 @@ describe('BarChart', () => {
       [1, 2],
       [3, 4],
     ];
-    const { container } = render(<BarChart data={data} onPointHover={onPointHover} />);
+    const { container } = render(<BarNanoChart data={data} onPointHover={onPointHover} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     expect(hitTargets).toHaveLength(4);
     fireEvent.mouseEnter(hitTargets[0]!);
@@ -37,20 +37,20 @@ describe('BarChart', () => {
       [1, 2],
       [3, 4],
     ];
-    const { container } = render(<BarChart data={data} onPointClick={onPointClick} />);
+    const { container } = render(<BarNanoChart data={data} onPointClick={onPointClick} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     fireEvent.click(hitTargets[3]!);
     expect(onPointClick).toHaveBeenCalledWith(expect.objectContaining({ col: 1, row: 1, value: 4 }));
   });
 });
 
-describe('BarChart mode', () => {
+describe('BarNanoChart mode', () => {
   it("passes mode='grouped' through to the core bar() function", () => {
     const data = [
       [1, 2],
       [3, 4],
     ];
-    const { container } = render(<BarChart data={data} mode="grouped" />);
+    const { container } = render(<BarNanoChart data={data} mode="grouped" />);
     const scene = bar(data, { mode: 'grouped' });
     const rendered = container.querySelectorAll('svg > rect');
     const expected = scene.marks.filter((m) => m.type === 'rect');
@@ -62,7 +62,7 @@ describe('BarChart mode', () => {
   it("passes mode='waterfall' through to the core bar() function", () => {
     const data = [3, 2, -1];
     const { container } = render(
-      <BarChart data={data} mode="waterfall" upColor="green" downColor="red" total connectorColor="blue" />,
+      <BarNanoChart data={data} mode="waterfall" upColor="green" downColor="red" total connectorColor="blue" />,
     );
     const scene = bar(data, { mode: 'waterfall', upColor: 'green', downColor: 'red', total: true, connectorColor: 'blue' });
     const rendered = container.querySelectorAll('svg > rect');

@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { HeatmapChart } from '../src/charts/HeatmapChart';
+import { HeatmapNanoChart } from '../src/charts/HeatmapNanoChart';
 import { heatmap } from '@samirdamle/nano-charts';
 
-describe('HeatmapChart', () => {
+describe('HeatmapNanoChart', () => {
   it('renders one rect per cell, matching the core heatmap() function', () => {
     const data = [
       [1, 2],
       [3, 4],
     ];
-    const { container } = render(<HeatmapChart data={data} />);
+    const { container } = render(<HeatmapNanoChart data={data} />);
     const scene = heatmap(data);
     expect(container.querySelectorAll('svg > rect')).toHaveLength(scene.marks.length);
   });
@@ -20,7 +20,7 @@ describe('HeatmapChart', () => {
       [1, 2],
       [3, 4],
     ];
-    const { container } = render(<HeatmapChart data={data} onPointHover={onPointHover} />);
+    const { container } = render(<HeatmapNanoChart data={data} onPointHover={onPointHover} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     expect(hitTargets).toHaveLength(4);
     fireEvent.mouseEnter(hitTargets[0]!);
@@ -37,7 +37,7 @@ describe('HeatmapChart', () => {
       [1, 2],
       [3, 4],
     ];
-    const { container } = render(<HeatmapChart data={data} onPointClick={onPointClick} />);
+    const { container } = render(<HeatmapNanoChart data={data} onPointClick={onPointClick} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     fireEvent.click(hitTargets[3]!);
     expect(onPointClick).toHaveBeenCalledWith(

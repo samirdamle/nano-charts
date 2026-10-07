@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { PictogramChart } from '../src/charts/PictogramChart';
+import { PictogramNanoChart } from '../src/charts/PictogramNanoChart';
 import { pictogram } from '@samirdamle/nano-charts';
 
-describe('PictogramChart', () => {
+describe('PictogramNanoChart', () => {
   it('renders the same marks as the core pictogram() function, with correct a11y', () => {
-    const { container } = render(<PictogramChart data={[3, 2]} title="my chart" />);
+    const { container } = render(<PictogramNanoChart data={[3, 2]} title="my chart" />);
     const scene = pictogram([3, 2]);
     expect(container.querySelectorAll('svg > defs')).toHaveLength(
       scene.marks.filter((m) => m.type === 'defs').length,
@@ -19,13 +19,13 @@ describe('PictogramChart', () => {
   });
 
   it('renders one hit target per block', () => {
-    const { container } = render(<PictogramChart data={[2, 1]} onPointHover={() => {}} />);
+    const { container } = render(<PictogramNanoChart data={[2, 1]} onPointHover={() => {}} />);
     expect(container.querySelectorAll('circle[fill="transparent"]')).toHaveLength(3);
   });
 
   it('fires onPointHover with the point (including block metadata) on enter and null on leave', () => {
     const onPointHover = vi.fn();
-    const { container } = render(<PictogramChart data={[2, 1]} onPointHover={onPointHover} />);
+    const { container } = render(<PictogramNanoChart data={[2, 1]} onPointHover={onPointHover} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     fireEvent.mouseEnter(hitTargets[2]!);
     expect(onPointHover).toHaveBeenCalledWith(
@@ -37,7 +37,7 @@ describe('PictogramChart', () => {
 
   it('fires onPointClick with the point', () => {
     const onPointClick = vi.fn();
-    const { container } = render(<PictogramChart data={[2]} onPointClick={onPointClick} />);
+    const { container } = render(<PictogramNanoChart data={[2]} onPointClick={onPointClick} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     fireEvent.click(hitTargets[1]!);
     expect(onPointClick).toHaveBeenCalledWith(
@@ -46,7 +46,7 @@ describe('PictogramChart', () => {
   });
 
   it('renders partial blocks via a pre-clipped defs variant', () => {
-    const { container } = render(<PictogramChart data={[2.5]} idPrefix="pictogram" />);
+    const { container } = render(<PictogramNanoChart data={[2.5]} idPrefix="pictogram" />);
     // The clip lives on a <g> inside <defs>, never on <use> (clip-path on
     // <use> does not render in browsers).
     expect(container.querySelector('clipPath')).not.toBeNull();
@@ -59,14 +59,14 @@ describe('PictogramChart', () => {
 
   it('renders emoji blocks', () => {
     const { container } = render(
-      <PictogramChart data={[2]} block={{ kind: 'emoji', emoji: '⭐' }} />,
+      <PictogramNanoChart data={[2]} block={{ kind: 'emoji', emoji: '⭐' }} />,
     );
     expect(container.querySelector('defs text')?.textContent).toBe('⭐');
   });
 
   it('passes connector options through to the rendered line marks', () => {
     const { container } = render(
-      <PictogramChart
+      <PictogramNanoChart
         data={[3, 2]}
         connector={{ color: 'red', thickness: 1.5, style: 'dashed' }}
       />,
@@ -81,7 +81,7 @@ describe('PictogramChart', () => {
 
   it('passes connector segments through with per-segment colors', () => {
     const { container } = render(
-      <PictogramChart
+      <PictogramNanoChart
         data={[3]}
         connector={{ segments: [{ span: [0, 1], color: 'red' }, { span: [1, 2], color: 'blue' }] }}
       />,
