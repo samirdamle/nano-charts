@@ -1,18 +1,18 @@
 'use client';
 
 import { bullet, type BulletOptions, type BulletData } from '@samirdamle/nano-charts';
-import { ChartSvg } from '../render/ChartSvg';
+import { NanoChartSvg } from '../render/NanoChartSvg';
 import type { InteractionProps } from '../types';
 
-export interface BulletChartProps extends BulletOptions, InteractionProps {
+export interface BulletNanoChartProps extends BulletOptions, InteractionProps {
   data: BulletData;
 }
 
-export function BulletChart(props: BulletChartProps) {
+export function BulletNanoChart(props: BulletNanoChartProps) {
   const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = bullet(data, options);
   return (
-    <ChartSvg
+    <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}

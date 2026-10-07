@@ -740,17 +740,17 @@
       // make.toString() minus the wrapper — the literal code that rendered
       // the chart — so samples can never drift from the demo.
       const REACT_COMPONENTS = {
-        line: 'LineChart',
-        area: 'AreaChart',
-        bar: 'BarChart',
-        donut: 'DonutChart',
-        gauge: 'GaugeChart',
-        scatter: 'ScatterChart',
-        radar: 'RadarChart',
-        heatmap: 'HeatmapChart',
-        pictogram: 'PictogramChart',
-        bullet: 'BulletChart',
-        winLoss: 'WinLossChart',
+        line: 'LineNanoChart',
+        area: 'AreaNanoChart',
+        bar: 'BarNanoChart',
+        donut: 'DonutNanoChart',
+        gauge: 'GaugeNanoChart',
+        scatter: 'ScatterNanoChart',
+        radar: 'RadarNanoChart',
+        heatmap: 'HeatmapNanoChart',
+        pictogram: 'PictogramNanoChart',
+        bullet: 'BulletNanoChart',
+        winLoss: 'WinLossNanoChart',
       };
       // Dark-theme hex for the chalk palette, so samples are copy-paste ready.
       const CHALK_HEX = {
@@ -871,13 +871,13 @@
       }
 
       function buildLinesReact(d) {
-        let src = "import { LineChart } from '@samirdamle/nano-charts-react';\n\n";
+        let src = "import { LineNanoChart } from '@samirdamle/nano-charts-react';\n\n";
         src += '// lines() has no dedicated React component yet —\n';
-        src += '// render one LineChart per series:\n';
+        src += '// render one LineNanoChart per series:\n';
         if (d.demo) src += `// ${d.src.trim()} is demo data — replace with your own\n`;
         src += `const series = ${d.src};\n\n`;
         src += '{series.map(({ name, data, ...rest }) => (\n';
-        src += '  <LineChart key={name} data={data} {...rest} />\n';
+        src += '  <LineNanoChart key={name} data={data} {...rest} />\n';
         src += '))}';
         return src;
       }

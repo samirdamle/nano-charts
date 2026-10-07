@@ -1,18 +1,18 @@
 'use client';
 
 import { area, type AreaOptions, type SeriesInput } from '@samirdamle/nano-charts';
-import { ChartSvg } from '../render/ChartSvg';
+import { NanoChartSvg } from '../render/NanoChartSvg';
 import type { InteractionProps } from '../types';
 
-export interface AreaChartProps<T = number> extends AreaOptions<T>, InteractionProps {
+export interface AreaNanoChartProps<T = number> extends AreaOptions<T>, InteractionProps {
   data: SeriesInput<T>;
 }
 
-export function AreaChart<T = number>(props: AreaChartProps<T>) {
+export function AreaNanoChart<T = number>(props: AreaNanoChartProps<T>) {
   const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = area(data, options);
   return (
-    <ChartSvg
+    <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}

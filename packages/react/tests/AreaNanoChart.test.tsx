@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { AreaChart } from '../src/charts/AreaChart';
+import { AreaNanoChart } from '../src/charts/AreaNanoChart';
 import { area } from '@samirdamle/nano-charts';
 
-describe('AreaChart', () => {
+describe('AreaNanoChart', () => {
   it('renders the same marks as the core area() function', () => {
-    const { container } = render(<AreaChart data={[4, 9, 2, 7, 5]} />);
+    const { container } = render(<AreaNanoChart data={[4, 9, 2, 7, 5]} />);
     const scene = area([4, 9, 2, 7, 5]);
     expect(container.querySelectorAll('svg > path')).toHaveLength(
       scene.marks.filter((m) => m.type === 'path').length,
@@ -18,7 +18,7 @@ describe('AreaChart', () => {
 
   it('fires onPointHover with the point on enter and null on leave', () => {
     const onPointHover = vi.fn();
-    const { container } = render(<AreaChart data={[4, 9, 2]} onPointHover={onPointHover} />);
+    const { container } = render(<AreaNanoChart data={[4, 9, 2]} onPointHover={onPointHover} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     expect(hitTargets).toHaveLength(3);
     fireEvent.mouseEnter(hitTargets[2]!);
@@ -29,7 +29,7 @@ describe('AreaChart', () => {
 
   it('fires onPointClick with the point', () => {
     const onPointClick = vi.fn();
-    const { container } = render(<AreaChart data={[4, 9, 2]} onPointClick={onPointClick} />);
+    const { container } = render(<AreaNanoChart data={[4, 9, 2]} onPointClick={onPointClick} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     fireEvent.click(hitTargets[0]!);
     expect(onPointClick).toHaveBeenCalledWith(expect.objectContaining({ index: 0, value: 4 }));

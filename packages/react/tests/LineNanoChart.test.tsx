@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { LineChart } from '../src/charts/LineChart';
+import { LineNanoChart } from '../src/charts/LineNanoChart';
 import { line } from '@samirdamle/nano-charts';
 
-describe('LineChart', () => {
+describe('LineNanoChart', () => {
   it('renders the same marks as the core line() function, with correct a11y', () => {
-    const { container } = render(<LineChart data={[4, 9, 2, 7, 5]} dot="all" title="my chart" />);
+    const { container } = render(<LineNanoChart data={[4, 9, 2, 7, 5]} dot="all" title="my chart" />);
     const scene = line([4, 9, 2, 7, 5], { dot: 'all' });
     expect(container.querySelectorAll('svg > polyline')).toHaveLength(
       scene.marks.filter((m) => m.type === 'polyline').length,
@@ -18,7 +18,7 @@ describe('LineChart', () => {
   });
 
   it('passes mode="spline" through to a smooth path mark', () => {
-    const { container } = render(<LineChart data={[4, 9, 2, 7, 5]} mode="spline" />);
+    const { container } = render(<LineNanoChart data={[4, 9, 2, 7, 5]} mode="spline" />);
     const scene = line([4, 9, 2, 7, 5], { mode: 'spline' });
     const paths = container.querySelectorAll('svg > path');
     expect(paths).toHaveLength(scene.marks.filter((m) => m.type === 'path').length);
@@ -28,7 +28,7 @@ describe('LineChart', () => {
 
   it('fires onPointHover with the point on enter and null on leave', () => {
     const onPointHover = vi.fn();
-    const { container } = render(<LineChart data={[4, 9, 2]} onPointHover={onPointHover} />);
+    const { container } = render(<LineNanoChart data={[4, 9, 2]} onPointHover={onPointHover} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     expect(hitTargets).toHaveLength(3);
     fireEvent.mouseEnter(hitTargets[1]!);
@@ -39,7 +39,7 @@ describe('LineChart', () => {
 
   it('fires onPointClick with the point', () => {
     const onPointClick = vi.fn();
-    const { container } = render(<LineChart data={[4, 9, 2]} onPointClick={onPointClick} />);
+    const { container } = render(<LineNanoChart data={[4, 9, 2]} onPointClick={onPointClick} />);
     const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
     fireEvent.click(hitTargets[0]!);
     expect(onPointClick).toHaveBeenCalledWith(expect.objectContaining({ index: 0, value: 4 }));

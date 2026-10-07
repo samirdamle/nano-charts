@@ -14,11 +14,11 @@ npm i @samirdamle/nano-charts-react
 ## Usage
 
 ```tsx
-import { LineChart } from '@samirdamle/nano-charts-react';
+import { LineNanoChart } from '@samirdamle/nano-charts-react';
 
 function Sparkline() {
   return (
-    <LineChart data={[4, 9, 2, 7, 5]} dot="last" onPointHover={(point) => console.log(point)} />
+    <LineNanoChart data={[4, 9, 2, 7, 5]} dot="last" onPointHover={(point) => console.log(point)} />
   );
 }
 ```
@@ -40,10 +40,10 @@ other React 17+ setup.
 
 ## Components
 
-`LineChart`, `AreaChart`, `BarChart`, `DonutChart`, `GaugeChart`, `ScatterChart`,
-`WinLossChart`, `BulletChart`, `RadarChart`, `HeatmapChart`, `PictogramChart` —
+`LineNanoChart`, `AreaNanoChart`, `BarNanoChart`, `DonutNanoChart`, `GaugeNanoChart`, `ScatterNanoChart`,
+`WinLossNanoChart`, `BulletNanoChart`, `RadarNanoChart`, `HeatmapNanoChart`, `PictogramNanoChart` —
 also available as subpath imports for the smallest bundle, e.g.
-`import { BarChart } from '@samirdamle/nano-charts-react/bar'`.
+`import { BarNanoChart } from '@samirdamle/nano-charts-react/bar'`.
 
 **[Live demo](https://samirdamle.github.io/nano-charts/)** ·
 **Full API reference:** [docs/API.md](https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md) —

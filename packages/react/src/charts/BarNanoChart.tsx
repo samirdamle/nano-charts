@@ -1,18 +1,18 @@
 'use client';
 
 import { bar, type BarOptions, type BarInput } from '@samirdamle/nano-charts';
-import { ChartSvg } from '../render/ChartSvg';
+import { NanoChartSvg } from '../render/NanoChartSvg';
 import type { InteractionProps } from '../types';
 
-export interface BarChartProps<T = number> extends BarOptions<T>, InteractionProps {
+export interface BarNanoChartProps<T = number> extends BarOptions<T>, InteractionProps {
   data: BarInput<T>;
 }
 
-export function BarChart<T = number>(props: BarChartProps<T>) {
+export function BarNanoChart<T = number>(props: BarNanoChartProps<T>) {
   const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
   const scene = bar(data, options);
   return (
-    <ChartSvg
+    <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}

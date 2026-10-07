@@ -5,18 +5,18 @@ import { Marks } from './Marks';
 import { PointHitTargets } from './PointHitTargets';
 import type { InteractionProps } from '../types';
 
-export interface ChartSvgProps extends InteractionProps {
+export interface NanoChartSvgProps extends InteractionProps {
   scene: Scene;
 }
 
-export function ChartSvg({
+export function NanoChartSvg({
   scene,
   onPointHover,
   onPointClick,
   className,
   style,
   hitRadius = 4,
-}: ChartSvgProps) {
+}: NanoChartSvgProps) {
   return (
     <svg
       viewBox={scene.viewBox}
