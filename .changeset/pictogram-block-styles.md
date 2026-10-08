@@ -1,0 +1,5 @@
+---
+'@samirdamle/nano-charts': minor
+---
+
+pictogram: per-block styling with `blockStyles` span rules, `filled` progress counts, and empty-block treatments. Each block can now be painted individually: `blockStyles: [{ span: [0, 2], color: 'red' }, { span: [3, 3], variant: 'ring' }]` — spans are inclusive, clamped, and direction-free (the same vocabulary as connector `segments`); rules also accept `stroke`/`strokeWidth` for bordered blocks and a `block` shape override (e.g. per-span emoji). New `filled` (datum field, option, or `filledAccessor`) marks the leading blocks as filled so partially-complete series render the rest as empty blocks, styled via `emptyColor`/`emptyVariant` (`'solid'` dims, `'ring'` draws hollow). Connector gaps now default to the earlier block's resolved color so lines continue the block they leave. Fully backward compatible.

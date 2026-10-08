@@ -67,7 +67,7 @@ function renderMark(m: Mark): string {
     case 'use':
       // stroke="none" overrides the root svg's inherited stroke="currentColor"
       // so blocks never pick up an unwanted border (rect/circle do the same).
-      return `<use${attr('href', m.href)}${attr('x', m.x)}${attr('y', m.y)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', 'none')}${attr('data-index', m.index)}/>`;
+      return `<use${attr('href', m.href)}${attr('x', m.x)}${attr('y', m.y)}${attr('fill', m.fill)}${attr('fill-opacity', m.fillOpacity)}${attr('stroke', m.stroke ?? 'none')}${attr('stroke-width', m.strokeWidth)}${attr('data-index', m.index)}/>`;
   }
 }
 

@@ -126,7 +126,8 @@ export function Marks({ marks }: { marks: Mark[] }) {
                 y={mark.y}
                 fill={mark.fill}
                 fillOpacity={mark.fillOpacity}
-                stroke="none"
+                stroke={mark.stroke ?? 'none'}
+                strokeWidth={mark.strokeWidth}
                 data-index={mark.index}
               />
             );

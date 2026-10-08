@@ -73,6 +73,9 @@ export type Mark =
       y: number;
       fill?: string;
       fillOpacity?: number;
+      /** Border paint. Renderers default to `'none'` when absent. */
+      stroke?: string;
+      strokeWidth?: number;
       index?: number;
     };
 
@@ -104,6 +107,8 @@ export interface ScenePoint {
   blocksTotal?: number;
   /** Pictogram: whether the block is a fractional partial fill. */
   partial?: boolean;
+  /** Pictogram: whether the block is unfilled (beyond `filled`). */
+  empty?: boolean;
 }
 
 export interface Scene {
