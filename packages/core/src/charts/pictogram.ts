@@ -113,7 +113,8 @@ export interface PictogramOptions<T = number>
    * rules win, per field. Datum-level `blockStyles` apply after these. */
   blockStyles?: PictogramBlockStyle[];
   /** Draw lines joining a series' rendered blocks, behind the blocks. By
-   * default every adjacent block pair is joined with uniform styling; pass
+   * default every gap between adjacent non-empty blocks is joined with
+   * uniform styling (so connectors stop at the last filled block); pass
    * `segments` for explicit spans with per-segment styling. Series with
    * fewer than two blocks get no connector. Off by default. */
   connector?: PictogramConnectorOptions;
@@ -408,17 +409,22 @@ export function pictogram<T = number>(
 
     const conn = options.connector;
     if (conn && total >= 2) {
-      // Every gap between adjacent blocks gets its own line, center to
-      // center, pushed before the series' block marks so connectors render
-      // behind the blocks. Per-gap lines (rather than one spanning line)
-      // restart the dash pattern at every block, so dashed/dotted styles
-      // read as uniform connectors instead of broken fragments. A gap's
-      // default color is the earlier block's resolved paint, so the line
-      // continues the block it leaves.
+      // Every gap between adjacent blocks gets its own line, pushed before
+      // the series' block marks so connectors render behind the blocks.
+      // Per-gap lines (rather than one spanning line) restart the dash
+      // pattern at every block, so dashed/dotted styles read as uniform
+      // connectors instead of broken fragments.
       const posThickness = (v: number | undefined, fallback: number): number =>
         v !== undefined && Number.isFinite(v) && v > 0 ? v : fallback;
       const baseThickness = posThickness(conn.thickness, 2);
       const baseStyle = conn.style;
+      // A gap renders by default only between non-empty blocks, so the
+      // connector stops at the last filled block instead of running through
+      // empty ones. Explicit `segments` render exactly as specified.
+      const isActive = (k: number): boolean => {
+        const st = resolveBlock(k).state;
+        return st === 'filled' || st === 'partial';
+      };
       interface GapDraw {
         from: number;
         to: number;
@@ -448,6 +454,7 @@ export function pictogram<T = number>(
         }
       } else {
         for (let k = 0; k < total - 1; k++) {
+          if (!isActive(k) || !isActive(k + 1)) continue;
           draws.push({
             from: k,
             to: k + 1,
@@ -467,30 +474,28 @@ export function pictogram<T = number>(
         : round(padding.left + j * pitch + s / 2);
       for (const d of draws) {
         const { strokeDasharray } = dashFor(d.style);
+        // Edge-to-edge: the line fills exactly the gap between the blocks
+        // and never crosses a block's interior, so hollow rings stay clean.
+        // Endpoints sit half a thickness inside the edges so the round caps
+        // land flush at the block boundaries; a degenerate gap collapses to
+        // a dot at its midpoint.
+        const c1 = center(d.from);
+        const c2 = center(d.to);
+        const dir = Math.sign(c2 - c1) || 1;
+        const off = (s + d.strokeWidth) / 2;
+        let p1 = c1 + dir * off;
+        let p2 = c2 - dir * off;
+        if (dir > 0 ? p2 < p1 : p2 > p1) p1 = p2 = (p1 + p2) / 2;
+        const attrs = {
+          stroke: d.stroke,
+          strokeWidth: d.strokeWidth,
+          strokeDasharray,
+          strokeLinecap: 'round' as const,
+        };
         marks.push(
           horizontal
-            ? {
-                type: 'line',
-                x1: center(d.from),
-                y1: fixed,
-                x2: center(d.to),
-                y2: fixed,
-                stroke: d.stroke,
-                strokeWidth: d.strokeWidth,
-                strokeDasharray,
-                strokeLinecap: 'round',
-              }
-            : {
-                type: 'line',
-                x1: fixed,
-                y1: center(d.from),
-                x2: fixed,
-                y2: center(d.to),
-                stroke: d.stroke,
-                strokeWidth: d.strokeWidth,
-                strokeDasharray,
-                strokeLinecap: 'round',
-              },
+            ? { type: 'line', x1: round(p1), y1: fixed, x2: round(p2), y2: fixed, ...attrs }
+            : { type: 'line', x1: fixed, y1: round(p1), x2: fixed, y2: round(p2), ...attrs },
         );
       }
     }

@@ -450,7 +450,7 @@ per block, carrying `col`, `blockNumber`, `blocksTotal`, `partial`, and `empty`.
 | `emptyColor`             | `string`                                          | block's base color | Paint for empty (unfilled) blocks                                  |
 | `emptyVariant`           | `'solid' \| 'ring'`                               | `'solid'`    | How empty blocks render: `'solid'` dims the block, `'ring'` draws only its border |
 | `blockStyles`            | `PictogramBlockStyle[]`                           | —            | Span-based per-block styling applied to every series, in order; datum-level `blockStyles` apply after these |
-| `connector`              | `PictogramConnectorOptions`                       | —            | Draw lines joining each series' rendered blocks, behind the blocks: by default one line per gap between adjacent blocks, or explicit `segments` with per-segment spans and styling; skipped for series with fewer than two blocks |
+| `connector`              | `PictogramConnectorOptions`                       | —            | Draw lines joining each series' rendered blocks, behind the blocks: by default one line per gap between adjacent non-empty blocks (connectors stop at the last filled block), or explicit `segments` with per-segment spans and styling; skipped for series with fewer than two blocks |
 | `idPrefix`               | `string`                                          | auto (`pictogram-N`) | Prefix for `<defs>`/clip ids — unique per chart by default so several pictograms can share a document; pass an explicit value to control the ids |
 | `value` / `label` / `id` | accessors                                         | —            | For custom object arrays                                                  |
 | `colorAccessor`          | `(datum, index) => string \| undefined`           | —            | Per-column color accessor                                                |
@@ -466,9 +466,13 @@ the earlier block's resolved color (so each gap continues the block it leaves),
 `thickness` defaults to `2` (px; non-positive or non-finite values fall back to
 `2`), and `style` is `'solid' | 'dashed' |
 'dotted'` (defaults to `'solid'`, sharing the axis gridline dash vocabulary).
-Lines use round caps. Each gap between adjacent blocks gets its own line, center
-to center, so the dash pattern restarts at every block and `dashed`/`dotted`
-render as uniform connectors.
+Lines use round caps. Each gap between adjacent blocks gets its own line, running
+edge to edge between the blocks — never through a block's interior, so hollow
+rings stay clean — with the dash pattern restarting at every block so
+`dashed`/`dotted` render as uniform connectors. By default only gaps between
+filled (or partial) blocks render, so connectors stop at the last filled block
+instead of running through empty ones; explicit `segments` render exactly as
+specified.
 
 Pass `segments` for explicit spans with per-segment styling:
 
