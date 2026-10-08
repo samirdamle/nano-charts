@@ -1712,19 +1712,18 @@
           })),
         },
         {
-          title: 'Stage completion — dashed',
-          make: () => (pictogram([
-            { value: 4, filled: 2, label: 'Flow A' },
-            { value: 4, filled: 3, label: 'Flow B' },
-            { value: 4, filled: 1, label: 'Flow C' },
-          ], {
+          title: 'Stage completion — dotted',
+          // 3 blocks + 2 double gaps at blockSize 8 → 56 units wide; scale to
+          // 120px so the dotted connector reads clearly.
+          blockScale: 120 / 56,
+          make: () => (pictogram([{ value: 3, filled: 2, label: 'Flow' }], {
             horizontal: true,
-            gap: 1,
+            gap: 2,
             block: { kind: 'circle' },
             color: 'var(--c3)',
             emptyColor: 'var(--faint)',
             emptyVariant: 'ring',
-            connector: { thickness: 3, style: 'dashed' },
+            connector: { thickness: 3, style: 'dotted' },
           })),
         },
         {
