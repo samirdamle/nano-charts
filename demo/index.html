@@ -1681,29 +1681,50 @@
         { title: 'Dots', make: () => (pictogram([4, 6, 3], { block: { kind: 'circle' } })) },
         { title: 'Horizontal rows', make: () => (pictogram([5, 3, 7], { horizontal: true })) },
         {
-          title: 'Connector lines',
-          make: () => (pictogram([3, 7, 5, 2], { connector: {} })),
-        },
-        {
-          title: 'Dashed connectors',
-          make: () => (pictogram([5, 3, 7], {
+          title: 'Stage completion',
+          make: () => (pictogram([
+            { value: 4, filled: 2, label: 'Flow A' },
+            { value: 4, filled: 3, label: 'Flow B' },
+            { value: 4, filled: 1, label: 'Flow C' },
+          ], {
             horizontal: true,
+            gap: 1,
             block: { kind: 'circle' },
-            connector: { style: 'dashed', color: 'var(--text)' },
+            color: 'var(--c3)',
+            emptyColor: 'var(--faint)',
+            emptyVariant: 'ring',
+            connector: { thickness: 3 },
           })),
         },
         {
-          title: 'Connector segments',
-          make: () => (pictogram([6, 6, 6], {
+          title: 'Stage completion — dimmed',
+          make: () => (pictogram([
+            { value: 4, filled: 2, label: 'Flow A' },
+            { value: 4, filled: 3, label: 'Flow B' },
+            { value: 4, filled: 1, label: 'Flow C' },
+          ], {
+            horizontal: true,
+            gap: 1,
             block: { kind: 'circle' },
-            connector: {
-              thickness: 3,
-              segments: [
-                { span: [0, 2], color: 'var(--c4)' },
-                { span: [2, 4], color: 'var(--c3)' },
-                { span: [4, 5], color: 'var(--c2)', style: 'dashed' },
-              ],
-            },
+            color: 'var(--c3)',
+            emptyColor: 'var(--faint)',
+            connector: { thickness: 3 },
+          })),
+        },
+        {
+          title: 'Stage completion — dashed',
+          make: () => (pictogram([
+            { value: 4, filled: 2, label: 'Flow A' },
+            { value: 4, filled: 3, label: 'Flow B' },
+            { value: 4, filled: 1, label: 'Flow C' },
+          ], {
+            horizontal: true,
+            gap: 1,
+            block: { kind: 'circle' },
+            color: 'var(--c3)',
+            emptyColor: 'var(--faint)',
+            emptyVariant: 'ring',
+            connector: { thickness: 3, style: 'dashed' },
           })),
         },
         {

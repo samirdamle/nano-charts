@@ -427,15 +427,16 @@ pictogram([4.5], { block: { kind: 'emoji', emoji: '⭐' } }); // 4 full + 1 half
 
 Each entry is one column (vertical) or row (horizontal) of uniform blocks —
 squares, dots, or emoji — where the **count** of blocks is the value. No axes;
-the units are countable. Entries accept `{ value, label?, color? }` objects
-plus `value`/`label`/`id`/`colorAccessor` accessors for custom objects.
+the units are countable. Entries accept `{ value, label?, color?, filled?,
+blockStyles? }` objects plus `value`/`label`/`id`/`colorAccessor`/`filledAccessor`
+accessors for custom objects.
 
 The block shape is defined once in `<defs>` and stamped with `<use>`, keeping
 output small. Fractional counts render a **partial block**, review-stars
 style: the full shape at 25% opacity (the "empty slot") with the filled
 fraction clipped on top. Blocks are fixed-size, so the scene sizes itself to
 the data (like `heatmap()` with `cellSize`); one hover/click point is emitted
-per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
+per block, carrying `col`, `blockNumber`, `blocksTotal`, `partial`, and `empty`.
 
 | Option                   | Type                                              | Default      | Description                                                              |
 | ------------------------ | ------------------------------------------------- | ------------ | ------------------------------------------------------------------------ |
@@ -444,6 +445,11 @@ per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
 | `gap`                    | `number`                                          | `0.25`       | Space between blocks (and columns/rows) as a fraction of `blockSize`, like `bar()` |
 | `horizontal`             | `boolean`                                         | `false`      | Rows stack left→right instead of columns bottom-up                        |
 | `unit`                   | `number`                                          | `1`          | Data value per block; count = `value / unit`                             |
+| `filled`                 | `number`                                          | `value`      | Filled leading blocks for every series (in data units, like `value`); the rest render as empty — datum-level `filled` wins |
+| `filledAccessor`         | `(datum, index) => number`                         | —            | Per-row filled counts for custom object arrays                           |
+| `emptyColor`             | `string`                                          | block's base color | Paint for empty (unfilled) blocks                                  |
+| `emptyVariant`           | `'solid' \| 'ring'`                               | `'solid'`    | How empty blocks render: `'solid'` dims the block, `'ring'` draws only its border |
+| `blockStyles`            | `PictogramBlockStyle[]`                           | —            | Span-based per-block styling applied to every series, in order; datum-level `blockStyles` apply after these |
 | `connector`              | `PictogramConnectorOptions`                       | —            | Draw lines joining each series' rendered blocks, behind the blocks: by default one line per gap between adjacent blocks, or explicit `segments` with per-segment spans and styling; skipped for series with fewer than two blocks |
 | `idPrefix`               | `string`                                          | auto (`pictogram-N`) | Prefix for `<defs>`/clip ids — unique per chart by default so several pictograms can share a document; pass an explicit value to control the ids |
 | `value` / `label` / `id` | accessors                                         | —            | For custom object arrays                                                  |
@@ -455,9 +461,10 @@ zero blocks; a non-positive or non-finite `unit` falls back to `1`.
 the pastel block palette (`#8fe6c4`, `#7fd8e6`, `#f3a8c7`, `#c6a6e8`, `#f0dd82`,
 cycling), from the same precedence rule `bar()`/`donut()` use.
 
-`connector` takes `{ color?, thickness?, style?, segments? }`: `color` defaults to the
-series' resolved block color, `thickness` defaults to `2` (px; non-positive or
-non-finite values fall back to `2`), and `style` is `'solid' | 'dashed' |
+`connector` takes `{ color?, thickness?, style?, segments? }`: `color` defaults to
+the earlier block's resolved color (so each gap continues the block it leaves),
+`thickness` defaults to `2` (px; non-positive or non-finite values fall back to
+`2`), and `style` is `'solid' | 'dashed' |
 'dotted'` (defaults to `'solid'`, sharing the axis gridline dash vocabulary).
 Lines use round caps. Each gap between adjacent blocks gets its own line, center
 to center, so the dash pattern restarts at every block and `dashed`/`dotted`
@@ -484,6 +491,53 @@ blocks and zero-length spans are skipped. Long spans are subdivided per gap so
 dash patterns stay uniform. When `segments` is present, only those render, in
 order (later entries draw over earlier ones); omitted `color`/`thickness`/`style`
 fields fall back to the connector-level values.
+
+**Per-block styling.** `value` sets the block count (capacity); `filled` sets how
+many leading blocks are filled, and the rest render as empty — the stage-completion
+primitive:
+
+```ts
+pictogram(
+  [
+    { value: 4, filled: 2, label: 'Flow A' },
+    { value: 4, filled: 3, label: 'Flow B' },
+  ],
+  {
+    color: '#52e081',
+    emptyColor: '#e5e5e5',
+    emptyVariant: 'ring', // or 'solid' (dimmed, the default)
+    connector: { thickness: 3 },
+  },
+);
+```
+
+`filled` is in data units like `value` (so it honors `unit`), clamps to
+`[0, value]`, and accepts fractions — `filled: 2.5` renders the transitional
+block with the partial-block treatment. Empty blocks emit points with `value: 0`
+and `empty: true`.
+
+For arbitrary paint, `blockStyles` takes span rules — `{ span, color?, stroke?,
+strokeWidth?, variant?, block? }` — sharing the `span` vocabulary with connector
+`segments` (inclusive, clamped, direction-free). Rules apply in order, later
+rules winning per field; options-level rules apply first, then datum-level ones:
+
+```ts
+pictogram([{ value: 8, color: 'grey' }], {
+  blockStyles: [
+    { span: [0, 1], color: '#f76e6e' },
+    { span: [2, 3], block: { kind: 'emoji', emoji: '⭐' } },
+    { span: [4, 5], variant: 'ring' },
+    { span: [6, 6], color: '#52e081', stroke: '#1a7a3c', strokeWidth: 2 },
+  ],
+});
+```
+
+`variant: 'ring'` draws only the border (fill `none`, stroke in the color);
+`stroke`/`strokeWidth` add a border to solid blocks. A rule's `block` overrides
+the shape for its span (each distinct shape gets one shared `<defs>` entry).
+Per-block resolution order: series base color → `filled`/empty treatment →
+`blockStyles` rules. Rings on emoji fall back to the dimmed treatment, since
+stroked text renders poorly.
 
 ## Rendering
 
@@ -543,9 +597,9 @@ size-limit); all figures below are minified + gzip.
 | -------------------------------------------------------- | ------- | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **12.18 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 13 kB   | **12.89 kB** |
 | `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.61 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **12.07 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **12.81 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
@@ -562,7 +616,7 @@ size-limit); all figures below are minified + gzip.
 | `scatter`  | 4.06 kB |
 | `heatmap`  | 4.25 kB |
 | `radar`    | 2.60 kB |
-| `pictogram`| 3.06 kB |
+| `pictogram`| 3.69 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where

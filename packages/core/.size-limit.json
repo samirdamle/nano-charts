@@ -16,7 +16,7 @@
   {
     "name": "full barrel",
     "path": "dist/index.js",
-    "limit": "12.5 kB",
+    "limit": "13 kB",
     "gzip": true
   }
 ]
