@@ -461,18 +461,19 @@ zero blocks; a non-positive or non-finite `unit` falls back to `1`.
 the pastel block palette (`#8fe6c4`, `#7fd8e6`, `#f3a8c7`, `#c6a6e8`, `#f0dd82`,
 cycling), from the same precedence rule `bar()`/`donut()` use.
 
-`connector` takes `{ color?, thickness?, style?, segments? }`: `color` defaults to
+`connector` takes `{ color?, thickness?, style?, linecap?, segments? }`: `color` defaults to
 the earlier block's resolved color (so each gap continues the block it leaves),
 `thickness` defaults to `2` (px; non-positive or non-finite values fall back to
 `2`), and `style` is `'solid' | 'dashed' |
 'dotted'` (defaults to `'solid'`, sharing the axis gridline dash vocabulary).
-Lines use round caps. Each gap between adjacent blocks gets its own line, running
-edge to edge between the blocks — never through a block's interior, so hollow
-rings stay clean — with the dash pattern restarting at every block so
-`dashed`/`dotted` render as uniform connectors. By default only gaps between
-filled (or partial) blocks render, so connectors stop at the last filled block
-instead of running through empty ones; explicit `segments` render exactly as
-specified.
+`linecap` is `'butt'` (default) or `'round'`: butt caps end flush at the block
+edges so connectors look merged into the blocks. Each gap between adjacent
+blocks gets its own line, running edge to edge between the blocks — never through
+a block's interior, so hollow rings stay clean — with the dash pattern restarting
+at every block so `dashed`/`dotted` render as uniform connectors. By default only
+gaps between filled (or partial) blocks render, so connectors stop at the last
+filled block instead of running through empty ones; explicit `segments` render
+exactly as specified.
 
 Pass `segments` for explicit spans with per-segment styling:
 

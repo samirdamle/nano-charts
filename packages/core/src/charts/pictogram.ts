@@ -43,6 +43,11 @@ export interface PictogramBlockStyle {
 /** Line style for a pictogram connector. */
 export type PictogramConnectorStyle = 'solid' | 'dashed' | 'dotted';
 
+/** End-cap style for a pictogram connector. `'butt'` ends flush at the block
+ * edges so the line looks merged into the blocks; `'round'` keeps pill ends
+ * (and round dots/dashes). */
+export type PictogramConnectorLinecap = 'butt' | 'round';
+
 /** One connector segment: a line from the center of one block to the center
  * of another, drawn behind the blocks. */
 export interface PictogramConnectorSegment {
@@ -57,6 +62,8 @@ export interface PictogramConnectorSegment {
   thickness?: number;
   /** Segment style. Defaults to the connector-level `style`. */
   style?: PictogramConnectorStyle;
+  /** Segment end caps. Defaults to the connector-level `linecap`. */
+  linecap?: PictogramConnectorLinecap;
 }
 
 /** Options for the optional lines joining a series' rendered blocks. */
@@ -68,6 +75,8 @@ export interface PictogramConnectorOptions {
   thickness?: number;
   /** Default segment style. Defaults to `'solid'`. */
   style?: PictogramConnectorStyle;
+  /** Default end caps. Defaults to `'butt'` (flat, merged into the blocks). */
+  linecap?: PictogramConnectorLinecap;
   /** Explicit segments. When present, only these render, in order (so later
    * entries draw over earlier ones). When absent, every adjacent block pair
    * is joined with the top-level styling. */
@@ -431,6 +440,7 @@ export function pictogram<T = number>(
         stroke: string;
         strokeWidth: number;
         style: PictogramConnectorStyle | undefined;
+        linecap: PictogramConnectorLinecap;
       }
       const draws: GapDraw[] = [];
       if (Array.isArray(conn.segments)) {
@@ -441,6 +451,7 @@ export function pictogram<T = number>(
           if (from >= to) continue;
           const strokeWidth = posThickness(seg.thickness, baseThickness);
           const style = seg.style ?? baseStyle;
+          const linecap = seg.linecap ?? conn.linecap ?? 'butt';
           // Subdivide long spans per gap so dash patterns stay uniform.
           for (let k = from; k < to; k++) {
             draws.push({
@@ -449,6 +460,7 @@ export function pictogram<T = number>(
               stroke: seg.color ?? conn.color ?? resolveBlock(k).paint,
               strokeWidth,
               style,
+              linecap,
             });
           }
         }
@@ -461,6 +473,7 @@ export function pictogram<T = number>(
             stroke: conn.color ?? resolveBlock(k).paint,
             strokeWidth: baseThickness,
             style: baseStyle,
+            linecap: conn.linecap ?? 'butt',
           });
         }
       }
@@ -476,13 +489,13 @@ export function pictogram<T = number>(
         const { strokeDasharray } = dashFor(d.style);
         // Edge-to-edge: the line fills exactly the gap between the blocks
         // and never crosses a block's interior, so hollow rings stay clean.
-        // Endpoints sit half a thickness inside the edges so the round caps
-        // land flush at the block boundaries; a degenerate gap collapses to
-        // a dot at its midpoint.
+        // Butt caps end flush at the block edges (the merged look); round
+        // caps sit half a thickness inside so they land flush instead. A
+        // degenerate gap collapses to a dot at its midpoint.
         const c1 = center(d.from);
         const c2 = center(d.to);
         const dir = Math.sign(c2 - c1) || 1;
-        const off = (s + d.strokeWidth) / 2;
+        const off = s / 2 + (d.linecap === 'round' ? d.strokeWidth / 2 : 0);
         let p1 = c1 + dir * off;
         let p2 = c2 - dir * off;
         if (dir > 0 ? p2 < p1 : p2 > p1) p1 = p2 = (p1 + p2) / 2;
@@ -490,7 +503,7 @@ export function pictogram<T = number>(
           stroke: d.stroke,
           strokeWidth: d.strokeWidth,
           strokeDasharray,
-          strokeLinecap: 'round' as const,
+          strokeLinecap: d.linecap,
         };
         marks.push(
           horizontal

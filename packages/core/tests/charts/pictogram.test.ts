@@ -325,16 +325,16 @@ describe('pictogram connector', () => {
 
   it('draws one line per gap, behind the blocks', () => {
     // blockSize 8, gap 1 → pitch 16; maxSlots 3; y-centers 36, 20, 4.
-    // Lines run edge to edge: endpoints sit half a thickness inside the
-    // block edges so the round caps land flush at the boundaries.
+    // Lines run edge to edge with flat butt caps, so they read as merged
+    // into the blocks.
     const scene = pictogram([3, 2], { padding: 0, gap: 1, connector: {} });
     const conn = lines(scene);
     // Series 0 (3 blocks): gaps (36→20) and (20→4) at column center x = 4.
     // Series 1 (2 blocks): gap (36→20) at column center x = 20.
     expect(conn).toHaveLength(3);
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 31, x2: 4, y2: 25 });
-    expect(conn[1]).toMatchObject({ x1: 4, y1: 15, x2: 4, y2: 9 });
-    expect(conn[2]).toMatchObject({ x1: 20, y1: 31, x2: 20, y2: 25 });
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 32, x2: 4, y2: 24 });
+    expect(conn[1]).toMatchObject({ x1: 4, y1: 16, x2: 4, y2: 8 });
+    expect(conn[2]).toMatchObject({ x1: 20, y1: 32, x2: 20, y2: 24 });
     // Each line sits before its series' block marks (behind the blocks).
     const idx = (m: Mark) => scene.marks.indexOf(m);
     expect(idx(conn[1]!)).toBeLessThan(idx(uses(scene)[0]!));
@@ -346,10 +346,10 @@ describe('pictogram connector', () => {
     const conn = lines(scene);
     expect(conn).toHaveLength(3);
     // Row 0: row center y = 4, gaps (4→20) and (20→36), edge to edge.
-    expect(conn[0]).toMatchObject({ x1: 9, y1: 4, x2: 15, y2: 4 });
-    expect(conn[1]).toMatchObject({ x1: 25, y1: 4, x2: 31, y2: 4 });
+    expect(conn[0]).toMatchObject({ x1: 8, y1: 4, x2: 16, y2: 4 });
+    expect(conn[1]).toMatchObject({ x1: 24, y1: 4, x2: 32, y2: 4 });
     // Row 1: row center y = 20, gap (4→20).
-    expect(conn[2]).toMatchObject({ x1: 9, y1: 20, x2: 15, y2: 20 });
+    expect(conn[2]).toMatchObject({ x1: 8, y1: 20, x2: 16, y2: 20 });
   });
 
   it('covers the full rendered extent, including partial blocks', () => {
@@ -357,8 +357,8 @@ describe('pictogram connector', () => {
     const scene = pictogram([2.5], { padding: 0, gap: 1, connector: {} });
     const conn = lines(scene);
     expect(conn).toHaveLength(2);
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 31, x2: 4, y2: 25 });
-    expect(conn[1]).toMatchObject({ x1: 4, y1: 15, x2: 4, y2: 9 });
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 32, x2: 4, y2: 24 });
+    expect(conn[1]).toMatchObject({ x1: 4, y1: 16, x2: 4, y2: 8 });
   });
 
   it('restarts the dash pattern at every block', () => {
@@ -367,9 +367,9 @@ describe('pictogram connector', () => {
     expect(conn).toHaveLength(3);
     // Each line spans exactly one gap with its own dash pattern, so every
     // gap renders an identical connector instead of a broken fragment.
-    expect(conn[0]).toMatchObject({ x1: 9, x2: 15, strokeDasharray: '0.1 4' });
-    expect(conn[1]).toMatchObject({ x1: 25, x2: 31, strokeDasharray: '0.1 4' });
-    expect(conn[2]).toMatchObject({ x1: 41, x2: 47, strokeDasharray: '0.1 4' });
+    expect(conn[0]).toMatchObject({ x1: 8, x2: 16, strokeDasharray: '0.1 4' });
+    expect(conn[1]).toMatchObject({ x1: 24, x2: 32, strokeDasharray: '0.1 4' });
+    expect(conn[2]).toMatchObject({ x1: 40, x2: 48, strokeDasharray: '0.1 4' });
   });
 
   it('skips series with fewer than two blocks', () => {
@@ -388,7 +388,7 @@ describe('pictogram connector', () => {
       stroke: '#123456',
       strokeWidth: 2,
       strokeDasharray: undefined,
-      strokeLinecap: 'round',
+      strokeLinecap: 'butt',
     });
   });
 
@@ -408,16 +408,16 @@ describe('pictogram connector', () => {
       stroke: 'red',
       strokeWidth: 1.5,
       strokeDasharray: '5 4',
-      strokeLinecap: 'round',
+      strokeLinecap: 'butt',
     });
     const dotted = pictogram([3], { padding: 0, connector: { style: 'dotted' } });
     expect(lines(dotted)[0]).toMatchObject({
       strokeDasharray: '0.1 4',
-      strokeLinecap: 'round',
+      strokeLinecap: 'butt',
     });
     const svg = toSVG(dotted);
     expect(svg).toContain(
-      '<line x1="4" y1="19" x2="4" y2="19" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="round"/>',
+      '<line x1="4" y1="20" x2="4" y2="18" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="butt"/>',
     );
   });
 
@@ -440,9 +440,9 @@ describe('pictogram connector', () => {
     });
     const conn = lines(scene);
     expect(conn).toHaveLength(3);
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 47, x2: 4, y2: 41, stroke: 'red' });
-    expect(conn[1]).toMatchObject({ x1: 4, y1: 31, x2: 4, y2: 25, stroke: 'red' });
-    expect(conn[2]).toMatchObject({ x1: 4, y1: 15, x2: 4, y2: 9, stroke: 'blue' });
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 48, x2: 4, y2: 40, stroke: 'red' });
+    expect(conn[1]).toMatchObject({ x1: 4, y1: 32, x2: 4, y2: 24, stroke: 'red' });
+    expect(conn[2]).toMatchObject({ x1: 4, y1: 16, x2: 4, y2: 8, stroke: 'blue' });
   });
 
   it('subdivides long spans per gap so dash patterns stay uniform', () => {
@@ -456,8 +456,8 @@ describe('pictogram connector', () => {
     for (const l of conn) {
       expect(l).toMatchObject({ stroke: 'red', strokeDasharray: '5 4' });
     }
-    expect(conn[0]).toMatchObject({ y1: 47, y2: 41 });
-    expect(conn[2]).toMatchObject({ y1: 15, y2: 9 });
+    expect(conn[0]).toMatchObject({ y1: 48, y2: 40 });
+    expect(conn[2]).toMatchObject({ y1: 16, y2: 8 });
   });
 
   it('clamps out-of-range spans, ignores direction, and skips zero-length spans', () => {
@@ -501,9 +501,8 @@ describe('pictogram connector', () => {
     });
     const conn = lines(scene);
     expect(conn).toHaveLength(1);
-    // Gap (24→14) collapses to a dot at its midpoint: the 2px gap region is
-    // eaten entirely by the half-thickness insets.
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 19, x2: 4, y2: 19, stroke: 'red' });
+    // Gap (24→14): butt caps end flush at the block edges (20 and 18).
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 20, x2: 4, y2: 18, stroke: 'red' });
   });
 
   it('renders nothing for an empty segments array', () => {
@@ -832,9 +831,7 @@ describe('pictogram connectors with per-block paint', () => {
     expect(lines(scene)).toHaveLength(3);
   });
 
-  it('runs edge to edge, never through block interiors', () => {
-    // gap 1, blockSize 8, thickness 4 → endpoints sit 2px inside the edges,
-    // so the round caps land flush at the block boundaries.
+  it('runs edge to edge with flat caps, merged into the blocks', () => {
     const scene = pictogram([2], {
       padding: 0,
       gap: 1,
@@ -843,18 +840,38 @@ describe('pictogram connectors with per-block paint', () => {
     });
     const conn = lines(scene);
     expect(conn).toHaveLength(1);
-    // Block centers at x = 4 and 20; edges at 8 and 16.
-    expect(conn[0]).toMatchObject({ x1: 10, y1: 4, x2: 14, y2: 4 });
+    // Block centers at x = 4 and 20, edges at 8 and 16; butt caps end flush.
+    expect(conn[0]).toMatchObject({ x1: 8, y1: 4, x2: 16, y2: 4, strokeLinecap: 'butt' });
   });
 
-  it('collapses to a dot when the gap is degenerate', () => {
-    // Default gap 0.25 → 2px gap region, eaten entirely by the half-thickness
-    // insets of the default 2px line.
-    const scene = pictogram([2], { padding: 0, connector: {} });
+  it('honors linecap round, landing the caps flush at the edges', () => {
+    const scene = pictogram([2], {
+      padding: 0,
+      gap: 1,
+      horizontal: true,
+      connector: { thickness: 4, linecap: 'round' },
+    });
     const conn = lines(scene);
     expect(conn).toHaveLength(1);
-    // y-centers 14 and 4; the dot sits at the gap midpoint.
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 9, x2: 4, y2: 9 });
+    // Endpoints sit half a thickness inside the edges so the round caps land
+    // flush at the block boundaries.
+    expect(conn[0]).toMatchObject({ x1: 10, y1: 4, x2: 14, y2: 4, strokeLinecap: 'round' });
+  });
+
+  it('lets segments override the connector-level linecap', () => {
+    const scene = pictogram([2], {
+      padding: 0,
+      connector: { segments: [{ span: [0, 1], linecap: 'round' }] },
+    });
+    expect(lines(scene)[0]).toMatchObject({ strokeLinecap: 'round' });
+  });
+
+  it('collapses to a dot when blocks touch', () => {
+    const scene = pictogram([2], { padding: 0, gap: 0, connector: {} });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    // y-centers 12 and 4, shared edge at 8.
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 8, x2: 4, y2: 8 });
   });
 
   it('follows blockStyles recoloring across gaps', () => {
