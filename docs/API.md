@@ -596,15 +596,15 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-09-29):**
+**Enforced budgets (measured 2026-10-10):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 13 kB   | **12.89 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.61 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **12.81 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 13.5 kB | **13.06 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.62 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 13.5 kB | **12.98 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
@@ -621,11 +621,11 @@ size-limit); all figures below are minified + gzip.
 | `scatter`  | 4.06 kB |
 | `heatmap`  | 4.25 kB |
 | `radar`    | 2.60 kB |
-| `pictogram`| 3.69 kB |
+| `pictogram`| 3.77 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 12 kB gzipped,
+2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 13 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.
