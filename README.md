@@ -4,7 +4,7 @@ A monorepo for **tiny SVG charts** — sparklines, micro bars, donuts, bullets, 
 and heatmaps — the kind you repeat hundreds of times across table cells and metric
 cards.
 
-- **12 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
+- **13 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
 - Framework-agnostic core (`data → Scene`) + a `toSVG` serializer; SSR-safe and deterministic.
 - Hover and click events, accessible by default, themeable via `currentColor` and CSS variables.
 - React wrapper in [`@samirdamle/nano-charts-react`](https://www.npmjs.com/package/@samirdamle/nano-charts-react).
