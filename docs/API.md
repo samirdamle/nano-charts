@@ -461,18 +461,19 @@ zero blocks; a non-positive or non-finite `unit` falls back to `1`.
 the pastel block palette (`#8fe6c4`, `#7fd8e6`, `#f3a8c7`, `#c6a6e8`, `#f0dd82`,
 cycling), from the same precedence rule `bar()`/`donut()` use.
 
-`connector` takes `{ color?, thickness?, style?, segments? }`: `color` defaults to
+`connector` takes `{ color?, thickness?, style?, linecap?, segments? }`: `color` defaults to
 the earlier block's resolved color (so each gap continues the block it leaves),
 `thickness` defaults to `2` (px; non-positive or non-finite values fall back to
 `2`), and `style` is `'solid' | 'dashed' |
 'dotted'` (defaults to `'solid'`, sharing the axis gridline dash vocabulary).
-Lines use round caps. Each gap between adjacent blocks gets its own line, running
-edge to edge between the blocks — never through a block's interior, so hollow
-rings stay clean — with the dash pattern restarting at every block so
-`dashed`/`dotted` render as uniform connectors. By default only gaps between
-filled (or partial) blocks render, so connectors stop at the last filled block
-instead of running through empty ones; explicit `segments` render exactly as
-specified.
+`linecap` is `'butt'` (default) or `'round'`: butt caps end flush at the block
+edges so connectors look merged into the blocks. Each gap between adjacent
+blocks gets its own line, running edge to edge between the blocks — never through
+a block's interior, so hollow rings stay clean — with the dash pattern restarting
+at every block so `dashed`/`dotted` render as uniform connectors. By default only
+gaps between filled (or partial) blocks render, so connectors stop at the last
+filled block instead of running through empty ones; explicit `segments` render
+exactly as specified.
 
 Pass `segments` for explicit spans with per-segment styling:
 
@@ -595,15 +596,15 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-09-29):**
+**Enforced budgets (measured 2026-10-10):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 13 kB   | **12.89 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.61 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **12.81 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 15 kB   | **13.06 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.62 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **12.98 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
@@ -620,11 +621,11 @@ size-limit); all figures below are minified + gzip.
 | `scatter`  | 4.06 kB |
 | `heatmap`  | 4.25 kB |
 | `radar`    | 2.60 kB |
-| `pictogram`| 3.69 kB |
+| `pictogram`| 3.77 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 12 kB gzipped,
+2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 13 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

@@ -25,6 +25,7 @@ export {
   type PictogramConnectorOptions,
   type PictogramConnectorSegment,
   type PictogramConnectorStyle,
+  type PictogramConnectorLinecap,
 } from './charts/pictogram';
 export { toSVG } from './render/to-svg';
 export type { Scene, Mark, ScenePoint, BaseOptions, Datum, CenterLabelContext } from './types';
