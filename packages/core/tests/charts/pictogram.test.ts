@@ -367,9 +367,11 @@ describe('pictogram connector', () => {
     expect(conn).toHaveLength(3);
     // Each line spans exactly one gap with its own dash pattern, so every
     // gap renders an identical connector instead of a broken fragment.
-    expect(conn[0]).toMatchObject({ x1: 8, x2: 16, strokeDasharray: '0.1 4' });
-    expect(conn[1]).toMatchObject({ x1: 24, x2: 32, strokeDasharray: '0.1 4' });
-    expect(conn[2]).toMatchObject({ x1: 40, x2: 48, strokeDasharray: '0.1 4' });
+    // Dotted defaults to round caps, so endpoints sit half a thickness
+    // inside the block edges (the caps land flush at the boundaries).
+    expect(conn[0]).toMatchObject({ x1: 9, x2: 15, strokeDasharray: '0.1 4', strokeLinecap: 'round' });
+    expect(conn[1]).toMatchObject({ x1: 25, x2: 31, strokeDasharray: '0.1 4', strokeLinecap: 'round' });
+    expect(conn[2]).toMatchObject({ x1: 41, x2: 47, strokeDasharray: '0.1 4', strokeLinecap: 'round' });
   });
 
   it('skips series with fewer than two blocks', () => {
@@ -413,11 +415,11 @@ describe('pictogram connector', () => {
     const dotted = pictogram([3], { padding: 0, connector: { style: 'dotted' } });
     expect(lines(dotted)[0]).toMatchObject({
       strokeDasharray: '0.1 4',
-      strokeLinecap: 'butt',
+      strokeLinecap: 'round',
     });
     const svg = toSVG(dotted);
     expect(svg).toContain(
-      '<line class="nc-connector nc-connector-0" x1="4" y1="20" x2="4" y2="18" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="butt"/>',
+      '<line class="nc-connector nc-connector-0" x1="4" y1="19" x2="4" y2="19" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="round"/>',
     );
   });
 
@@ -864,6 +866,46 @@ describe('pictogram connectors with per-block paint', () => {
       connector: { segments: [{ span: [0, 1], linecap: 'round' }] },
     });
     expect(lines(scene)[0]).toMatchObject({ strokeLinecap: 'round' });
+  });
+
+  it("defaults dotted connectors to round caps so dots render as dots", () => {
+    const scene = pictogram([3], { padding: 0, connector: { style: 'dotted' } });
+    for (const l of lines(scene)) {
+      expect(l).toMatchObject({ strokeLinecap: 'round' });
+    }
+  });
+
+  it('keeps butt caps as the default for solid and dashed connectors', () => {
+    const solid = pictogram([3], { padding: 0, connector: {} });
+    const dashed = pictogram([3], { padding: 0, connector: { style: 'dashed' } });
+    for (const l of [...lines(solid), ...lines(dashed)]) {
+      expect(l).toMatchObject({ strokeLinecap: 'butt' });
+    }
+  });
+
+  it('resolves the linecap default from each segment\'s own style', () => {
+    const scene = pictogram([3], {
+      padding: 0,
+      connector: {
+        segments: [
+          { span: [0, 1], style: 'dotted' },
+          { span: [1, 2], style: 'solid' },
+        ],
+      },
+    });
+    const conn = lines(scene);
+    expect(conn[0]).toMatchObject({ strokeLinecap: 'round' });
+    expect(conn[1]).toMatchObject({ strokeLinecap: 'butt' });
+  });
+
+  it('lets an explicit linecap override the dotted default', () => {
+    const scene = pictogram([3], {
+      padding: 0,
+      connector: { style: 'dotted', linecap: 'butt' },
+    });
+    for (const l of lines(scene)) {
+      expect(l).toMatchObject({ strokeLinecap: 'butt' });
+    }
   });
 
   it('collapses to a dot when blocks touch', () => {
