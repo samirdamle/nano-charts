@@ -55,7 +55,7 @@ describe('toSVG', () => {
 
   it('applies className and extra attrs', () => {
     const svg = toSVG(scene, { className: 'spark', attrs: { width: 100, height: 20 } });
-    expect(svg).toContain('class="spark"');
+    expect(svg).toContain('class="nc-chart spark"');
     expect(svg).toContain('width="100"');
   });
 
@@ -80,7 +80,7 @@ describe('toSVG', () => {
       className: 'a"><b',
       attrs: { 'data-ok': 1, 'bad name': 2, 'x"><y': 3 },
     });
-    expect(svg).toContain('class="a&quot;&gt;&lt;b"');
+    expect(svg).toContain('class="nc-chart a&quot;&gt;&lt;b"');
     expect(svg).toContain('data-ok="1"');
     expect(svg).not.toContain('bad name');
     expect(svg).not.toContain('x"><y');

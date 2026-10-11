@@ -45,6 +45,7 @@ export function resolveA11y(
 export function sceneShell(
   shell: { width: number; height: number },
   a11y: { title: string; desc: string },
+  options?: Pick<BaseOptions, 'class'>,
 ): Scene {
   return {
     width: shell.width,
@@ -53,6 +54,7 @@ export function sceneShell(
     marks: [],
     points: [],
     a11y,
+    svgClass: options?.class,
   };
 }
 
@@ -89,7 +91,7 @@ export function renderSeriesChart<T>(
   const datums = normalizeSeries(data, accessors);
 
   const a11y = resolveA11y(kind, datums, options);
-  const base = sceneShell({ width, height }, a11y);
+  const base = sceneShell({ width, height }, a11y, options);
   if (datums.length === 0) return base;
 
   const extentPx = markExtent(datums.length);

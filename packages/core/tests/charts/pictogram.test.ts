@@ -100,7 +100,7 @@ describe('pictogram', () => {
       }),
     );
     expect(svg).not.toMatch(/<use[^>]*clip-path/);
-    expect(svg).toContain('<use href="#pictogram-partial-0"');
+    expect(svg).toContain('<use class="nc-block nc-block-4 nc-partial" href="#pictogram-partial-0"');
   });
 
   it('fills partial blocks left-to-right when horizontal', () => {
@@ -264,14 +264,14 @@ describe('pictogram', () => {
       pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, idPrefix: 'pictogram' }),
     );
     expect(svg).toContain('<defs><rect id="pictogram-block" width="8" height="8"/></defs>');
-    expect(svg).toContain('<use href="#pictogram-block" x="0" y="10"');
+    expect(svg).toContain('<use class="nc-block nc-block-1 nc-filled" href="#pictogram-block" x="0" y="10"');
     expect(svg).toContain('data-index="0"');
     expect(svg).toContain(
       '<defs><clipPath id="pictogram-partial-0-clip"><rect x="0" y="4" width="8" height="4"/></clipPath>' +
         '<g id="pictogram-partial-0" clip-path="url(#pictogram-partial-0-clip)">' +
         '<rect width="8" height="8"/></g></defs>',
     );
-    expect(svg).toContain('<use href="#pictogram-partial-0"');
+    expect(svg).toContain('<use class="nc-block nc-block-2 nc-partial" href="#pictogram-partial-0"');
     expect(svg).not.toMatch(/<use[^>]*clip-path/);
     expect(svg).toContain('fill-opacity="0.25"');
   });
@@ -417,7 +417,7 @@ describe('pictogram connector', () => {
     });
     const svg = toSVG(dotted);
     expect(svg).toContain(
-      '<line x1="4" y1="20" x2="4" y2="18" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="butt"/>',
+      '<line class="nc-connector nc-connector-0" x1="4" y1="20" x2="4" y2="18" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="butt"/>',
     );
   });
 
@@ -789,7 +789,7 @@ describe('pictogram blockStyles', () => {
       emptyColor: '#ddd',
     });
     const svg = toSVG(scene);
-    expect(svg).toContain('<use href="#pictogram-block" x="0" y="0" fill="none" stroke="#ddd" stroke-width="2"');
+    expect(svg).toContain('<use class="nc-block nc-block-1 nc-empty" href="#pictogram-block" x="0" y="0" fill="none" stroke="#ddd" stroke-width="2"');
   });
 });
 

@@ -58,6 +58,80 @@ A single datum with no values renders an empty scene (never throws).
 | `padding` | `number \| { top?, right?, bottom?, left? }` | automatic                    | Inner padding in user units; defaults to just enough so marks and axis labels never clip |
 | `title`   | `string`                                     | per-chart default            | `<title>` for screen readers                          |
 | `desc`    | `string`                                     | per-chart default            | `<desc>` for screen readers                           |
+| `class`   | `string`                                     | —                            | CSS class(es) on the `<svg>` element, merged with the built-in `nc-chart` class — see Styling with CSS |
+
+## Styling with CSS
+
+Every chart is styleable with plain CSS — no wrapper divs or inline-style
+threading needed.
+
+**Your class on the svg.** Pass `class` in any chart's options:
+
+```ts
+line(revenue, { class: 'revenue-chart' });
+// <svg class="nc-chart revenue-chart" …>
+```
+
+It merges with the `className` opt of `toSVG` / the `className` prop of the
+React components, so all three compose: `nc-chart` + options `class` +
+render `className`.
+
+**Generated mark classes.** Every mark carries semantic classes under the
+`nc-` prefix — a kind class plus an indexed class, so you can style all of a
+kind or one specific item:
+
+```html
+<svg class="nc-chart revenue-chart" …>
+  <path class="nc-line" …/>
+  <circle class="nc-point nc-point-0" …/>
+  <circle class="nc-point nc-point-1" …/>
+</svg>
+```
+
+```css
+.revenue-chart .nc-point { fill: gold; }      /* all points in this chart */
+.revenue-chart .nc-point-1 { r: 3; }           /* the second point */
+.nc-bar { opacity: 0.9; }                      /* all bars, every chart */
+```
+
+The taxonomy (kinds are chart-agnostic — per-chart scoping comes from your
+svg-level class):
+
+| Kind           | Marks                                              | Example                    |
+| -------------- | -------------------------------------------------- | -------------------------- |
+| `point`        | line/area/scatter/radar dots                       | `nc-point nc-point-2`      |
+| `line`         | line/area/radar strokes                             | `nc-line`                  |
+| `area`         | area/radar fills                                    | `nc-area`                  |
+| `bar`          | bar, win-loss, and bullet measure bars              | `nc-bar nc-bar-0`          |
+| `segment`      | donut segments                                      | `nc-segment nc-segment-1`  |
+| `block`        | pictogram blocks                                    | `nc-block nc-block-3`      |
+| `cell`         | heatmap cells                                       | `nc-cell nc-cell-5`        |
+| `connector`    | bar waterfall links, pictogram gap lines            | `nc-connector nc-connector-0` |
+| `track`        | bar/donut/gauge background tracks                   | `nc-track`                 |
+| `gridline`     | axis gridlines                                      | `nc-gridline nc-gridline-0`|
+| `axis`         | axis lines                                          | `nc-axis nc-axis-x`        |
+| `tick`         | axis tick marks                                     | `nc-tick nc-tick-2`        |
+| `label`        | axis tick labels, donut/gauge center labels         | `nc-label`                 |
+| `highlight`    | highlight zones                                     | `nc-highlight nc-highlight-0` |
+| `zone`         | gauge zone bands                                    | `nc-zone nc-zone-0`        |
+| `arc`          | gauge value arc                                     | `nc-arc`                   |
+| `needle`, `hub`| gauge needle and its pivot dot                      | `nc-needle`                |
+| `range`        | bullet range bands                                  | `nc-range nc-range-0`      |
+| `target`       | bullet target tick                                  | `nc-target`                |
+| `spoke`, `ring`| radar grid spokes and concentric rings              | `nc-spoke nc-spoke-1`      |
+
+Qualifiers ride along as extra classes: marks in a multi-series chart also
+get `nc-series-{i}` (mirroring the `data-series` attribute), axis parts get
+`nc-axis-x` / `nc-axis-y`, and pictogram blocks get their fill state —
+`nc-filled`, `nc-empty`, or `nc-partial`:
+
+```css
+.stages .nc-block.nc-empty { opacity: 0.35; }  /* dim unfinished blocks */
+.stages .nc-series-1 .nc-point { fill: teal; } /* one series' points */
+```
+
+Indexes mirror the `data-index` attributes the renderers already emit, so
+classes and data attributes tell the same story.
 
 ## Axes
 
@@ -557,7 +631,7 @@ toSVG(scene, { className: 'spark', attrs: { role: 'img' } });
 
 | Opt         | Type                               | Description                                   |
 | ----------- | ---------------------------------- | --------------------------------------------- |
-| `className` | `string`                           | Added as the `class` attribute on `<svg>`     |
+| `className` | `string`                           | Merged into the `<svg>` class with `nc-chart` and the scene's `class` option |
 | `style`     | `string`                           | Added as the `style` attribute on `<svg>`     |
 | `attrs`     | `Record<string, string \| number>` | Extra attributes on `<svg>` (names validated) |
 
@@ -596,36 +670,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-10-10):**
+**Enforced budgets (measured 2026-10-11):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
-| `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 15 kB   | **13.06 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.62 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **12.98 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.96 kB** |
+| `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 15 kB   | **13.52 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.83 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **13.4 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 4.73 kB |
-| `area`     | 4.51 kB |
-| `lines`    | 4.64 kB |
-| `bar`      | 5.59 kB |
-| `win-loss` | 2.06 kB |
-| `bullet`   | 1.71 kB |
-| `donut`    | 3.10 kB |
-| `gauge`    | 2.31 kB |
-| `scatter`  | 4.06 kB |
-| `heatmap`  | 4.25 kB |
-| `radar`    | 2.60 kB |
-| `pictogram`| 3.77 kB |
+| `line`     | 4.83 kB |
+| `area`     | 4.59 kB |
+| `lines`    | 4.74 kB |
+| `bar`      | 5.69 kB |
+| `win-loss` | 2.14 kB |
+| `bullet`   | 1.82 kB |
+| `donut`    | 3.19 kB |
+| `gauge`    | 2.40 kB |
+| `scatter`  | 4.17 kB |
+| `heatmap`  | 4.34 kB |
+| `radar`    | 2.71 kB |
+| `pictogram`| 3.93 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 13 kB gzipped,
+2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 13.5 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

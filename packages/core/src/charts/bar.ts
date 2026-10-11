@@ -1,4 +1,5 @@
 import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import { markClass } from '../core/css-classes';
 import { extent, linearScale, round } from '../core/geometry';
 import {
   normalizeSeries,
@@ -174,7 +175,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
           index: col,
         }));
   const a11y = resolveA11y('bar', flat, options);
-  const base = sceneShell({ width, height }, a11y);
+  const base = sceneShell({ width, height }, a11y, options);
   if (columns.length === 0) return base;
 
   const [minT, maxT] = extent(domainValues.length > 0 ? domainValues : [0]);
@@ -286,9 +287,10 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         ? segs.map((_, row) => round(slotPos + subSlot.x(lead + row)))
         : [slotPos];
       const tw = subSlot ? subW : barW;
-      bars.forEach((bp) => {
+      bars.forEach((bp, bi) => {
         marks.push({
           type: 'rect',
+          class: markClass('track', col, bi),
           x: horizontal ? tPos : bp,
           y: horizontal ? bp : tPos,
           width: horizontal ? tLen : tw,
@@ -346,6 +348,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
       marks.push({
         type: 'rect',
+        class: markClass('bar', col, row),
         x,
         y,
         width: w,
@@ -384,6 +387,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
       const to = round(round(slot.x(col + 1)) + barW);
       marks.push({
         type: 'path',
+        class: markClass('connector', col),
         d: horizontal ? `M ${v} ${from} L ${v} ${to}` : `M ${from} ${v} L ${to} ${v}`,
         fill: 'none',
         stroke: connectorStroke,

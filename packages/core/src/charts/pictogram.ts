@@ -10,6 +10,7 @@ import {
 import { pastelColor, resolveSegmentColor } from '../core/palette';
 import { resolvePadding } from '../core/plot';
 import { dashFor } from '../core/axis';
+import { markClass } from '../core/css-classes';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
 export type PictogramBlock =
@@ -302,6 +303,7 @@ export function pictogram<T = number>(
     marks: [],
     points: [],
     a11y: { title, desc },
+    svgClass: options.class,
   };
   if (n === 0) return base;
 
@@ -505,10 +507,11 @@ export function pictogram<T = number>(
           strokeDasharray,
           strokeLinecap: d.linecap,
         };
+        const connectorCls = markClass('connector', d.from);
         marks.push(
           horizontal
-            ? { type: 'line', x1: round(p1), y1: fixed, x2: round(p2), y2: fixed, ...attrs }
-            : { type: 'line', x1: fixed, y1: round(p1), x2: fixed, y2: round(p2), ...attrs },
+            ? { type: 'line', class: connectorCls, x1: round(p1), y1: fixed, x2: round(p2), y2: fixed, ...attrs }
+            : { type: 'line', class: connectorCls, x1: fixed, y1: round(p1), x2: fixed, y2: round(p2), ...attrs },
         );
       }
     }
@@ -536,11 +539,29 @@ export function pictogram<T = number>(
           : { x: 0, y: round(s - fillFraction * s), width: round(s), height: round(fillFraction * s) };
         marks.push({ type: 'defs', id: partialId, shape: b.shape, size: s, radius: b.radius, emoji: b.emoji, clip });
         // The "empty slot" at low opacity, then the filled fraction on top.
-        marks.push({ type: 'use', href, x, y, fill: b.paint, fillOpacity: 0.25, index: pointIndex });
-        marks.push({ type: 'use', href: `#${partialId}`, x, y, fill: b.paint, index: pointIndex });
+        marks.push({
+          type: 'use',
+          class: markClass('block', pointIndex, undefined, 'nc-empty'),
+          href,
+          x,
+          y,
+          fill: b.paint,
+          fillOpacity: 0.25,
+          index: pointIndex,
+        });
+        marks.push({
+          type: 'use',
+          class: markClass('block', pointIndex, undefined, 'nc-partial'),
+          href: `#${partialId}`,
+          x,
+          y,
+          fill: b.paint,
+          index: pointIndex,
+        });
       } else {
         marks.push({
           type: 'use',
+          class: markClass('block', pointIndex, undefined, `nc-${b.state}`),
           href,
           x,
           y,

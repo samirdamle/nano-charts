@@ -3,6 +3,7 @@ import { round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { categoricalColor } from '../core/palette';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
 
 export interface RadarSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -81,7 +82,7 @@ export function radar<T = number>(
     (axisCount === 0
       ? 'radar chart, no data'
       : `radar chart, ${perSeries.length} series, ${axisCount} axes`);
-  const base = sceneShell({ width, height }, { title, desc });
+  const base = sceneShell({ width, height }, { title, desc }, options);
   if (axisCount === 0) return base;
 
   const cx = width / 2;
@@ -126,6 +127,7 @@ export function radar<T = number>(
       const [x, y] = polar(cx, cy, radius, angleAt(i));
       marks.push({
         type: 'path',
+        class: markClass('spoke', i),
         d: `M${round(cx)},${round(cy)} L${x},${y}`,
         fill: 'none',
         stroke: gridStroke,
@@ -133,12 +135,13 @@ export function radar<T = number>(
         strokeOpacity: gridOpacity,
       });
     }
-    for (const frac of [0.25, 0.5, 0.75, 1]) {
+    for (const [ri, frac] of [0.25, 0.5, 0.75, 1].entries()) {
       const ring: [number, number][] = [];
       for (let i = 0; i < axisCount; i++) ring.push(polar(cx, cy, radius * frac, angleAt(i)));
       const d = ring.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ') + ' Z';
       marks.push({
         type: 'path',
+        class: markClass('ring', ri),
         d,
         fill: 'none',
         stroke: gridStroke,
@@ -181,6 +184,7 @@ export function radar<T = number>(
         singlePointDot(seriesPoints[0]!, Math.max(s.dotRadius ?? 1, strokeWidth + 0.5), color, {
           index: points.length,
           seriesIndex,
+          class: markClass('point', points.length, seriesIndex),
         }),
       );
     } else {
@@ -191,10 +195,18 @@ export function radar<T = number>(
       if (s.fill !== false) {
         const opacity = typeof s.fill === 'number' ? s.fill : 0.2;
         const d = closed.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ') + ' Z';
-        marks.push({ type: 'path', d, fill: color, fillOpacity: opacity, stroke: 'none' });
+        marks.push({
+          type: 'path',
+          class: markClass('area', undefined, seriesIndex),
+          d,
+          fill: color,
+          fillOpacity: opacity,
+          stroke: 'none',
+        });
       }
       marks.push({
         type: 'polyline',
+        class: markClass('line', undefined, seriesIndex),
         points: closed,
         fill: 'none',
         stroke: color,
@@ -207,6 +219,7 @@ export function radar<T = number>(
           const p = seriesPoints[i]!;
           marks.push({
             type: 'circle',
+            class: markClass('point', points.length + i, seriesIndex),
             cx: p.x,
             cy: p.y,
             r: s.dotRadius ?? 1,

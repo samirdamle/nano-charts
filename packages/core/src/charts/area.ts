@@ -2,6 +2,7 @@ import type { Mark, Scene } from '../types';
 import { round } from '../core/geometry';
 import { type SeriesInput } from '../core/normalize';
 import { renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
 
 export interface AreaOptions<T = number> extends SeriesChartOptions<T> {
   strokeWidth?: number;
@@ -31,9 +32,10 @@ export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> =
         ` L${last.x},${bottom} Z`;
       const fill = options.fillColor ?? color;
       const marks: Mark[] = [
-        { type: 'path', d, fill, fillOpacity, stroke: 'none' },
+        { type: 'path', class: markClass('area'), d, fill, fillOpacity, stroke: 'none' },
         {
           type: 'polyline',
+          class: markClass('line'),
           points: points.map((p) => [p.x, p.y] as [number, number]),
           fill: 'none',
           stroke: color,
