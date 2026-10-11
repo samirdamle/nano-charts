@@ -27,7 +27,7 @@ describe('NanoChartSvg', () => {
   it('passes className and style to the root svg', () => {
     const { container } = render(<NanoChartSvg scene={scene} className="my-chart" style={{ color: 'red' }} />);
     const svg = container.querySelector('svg');
-    expect(svg?.getAttribute('class')).toBe('my-chart');
+    expect(svg?.getAttribute('class')).toBe('nc-chart my-chart');
     expect(svg?.getAttribute('style')).toBe('color: red;');
   });
 

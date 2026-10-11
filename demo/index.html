@@ -463,6 +463,10 @@
       .chart.tall svg {
         max-height: 220px;
       }
+      /* Styled-with-CSS example: generated nc- classes do the work. */
+      .chart .css-bars .nc-bar { opacity: 0.35; }
+      .chart .css-bars .nc-bar-2,
+      .chart .css-bars .nc-bar-7 { opacity: 1; }
       .readout {
         min-height: 16px;
         padding-top: 10px;
@@ -549,7 +553,7 @@
           </div>
           <aside class="hero-features">
             <ul>
-              <li>13 kB gzipped</li>
+              <li>13.5 kB gzipped</li>
               <li>12 charts</li>
               <li>No dependencies</li>
               <li>Pure JS + SVG</li>
@@ -1245,6 +1249,10 @@
         'Bar',
         [
           { title: 'Basic', make: () => (bar(barValuesDense, { gap: 0.6 })) },
+          {
+            title: 'Styled with CSS',
+            make: () => (bar(barValuesDense, { gap: 0.6, class: 'css-bars' })),
+          },
           { title: 'Rounded caps', make: () => (bar(barValuesDense, { radius: 1, gap: 0.6 })) },
           {
             title: 'Grouped',

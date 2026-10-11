@@ -9,6 +9,7 @@ import {
 } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
 import { gauge } from './gauge';
 
 export interface DonutGauge {
@@ -96,6 +97,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     const fontSize = Math.max(2, Math.round(rInner * 0.425));
     marks.push({
       type: 'text',
+      class: markClass('label'),
       x: round(cx),
       y: round(cy + fontSize * 0.35),
       text: label,
@@ -156,6 +158,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
         options.desc ??
         (datums.length === 0 ? 'donut chart, no data' : `donut chart, ${datums.length} segments`),
     },
+    options,
   );
   if (datums.length === 0 || total === 0) return base;
 
@@ -165,6 +168,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   if (segTrack) {
     marks.push({
       type: 'path',
+      class: markClass('track'),
       d: arcPath(cx, cy, rMid, startAngle, startAngle + span),
       fill: 'none',
       stroke: segTrack.color ?? color,
@@ -196,6 +200,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     const segEnd = Math.max(angle + sweep - halfGapDeg, segStart);
     marks.push({
       type: 'path',
+      class: markClass('segment', i),
       d: arcPath(cx, cy, rMid, segStart, segEnd),
       fill: 'none',
       stroke: segmentColor,

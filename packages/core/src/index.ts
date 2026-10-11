@@ -28,6 +28,7 @@ export {
   type PictogramConnectorLinecap,
 } from './charts/pictogram';
 export { toSVG } from './render/to-svg';
+export { markClass, svgClass, type MarkKind } from './core/css-classes';
 export type { Scene, Mark, ScenePoint, BaseOptions, Datum, CenterLabelContext } from './types';
 export type { ColorScale } from './core/color-scale';
 export type { SeriesInput } from './core/normalize';

@@ -2,6 +2,7 @@ import type { Mark, Scene } from '../types';
 import { splinePath, toDasharray } from '../core/geometry';
 import { type SeriesInput } from '../core/normalize';
 import { renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
 
 export interface LineOptions<T = number> extends SeriesChartOptions<T> {
   /** 'linear' draws straight segments (default); 'spline' draws a smooth curve through the points. */
@@ -26,7 +27,10 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
     (points, _layout, color) => {
       if (points.length < 2) {
         return [
-          singlePointDot(points[0]!, Math.max(dotRadius, strokeWidth + 0.5), color, { index: 0 }),
+          singlePointDot(points[0]!, Math.max(dotRadius, strokeWidth + 0.5), color, {
+            index: 0,
+            class: markClass('point', 0),
+          }),
         ];
       }
 
@@ -34,6 +38,7 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
       const lineMark: Mark = spline
         ? {
             type: 'path',
+            class: markClass('line'),
             d: splinePath(pts),
             fill: 'none',
             stroke: color,
@@ -45,6 +50,7 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
           }
         : {
             type: 'polyline',
+            class: markClass('line'),
             points: pts,
             fill: 'none',
             stroke: color,
@@ -60,7 +66,15 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
           options.dot === 'last' ? [points.length - 1] : points.map((_, i) => i);
         for (const i of dottedIndices) {
           const p = points[i]!;
-          marks.push({ type: 'circle', cx: p.x, cy: p.y, r: dotRadius, fill: color, index: i });
+          marks.push({
+            type: 'circle',
+            class: markClass('point', i),
+            cx: p.x,
+            cy: p.y,
+            r: dotRadius,
+            fill: color,
+            index: i,
+          });
         }
       }
       return marks;

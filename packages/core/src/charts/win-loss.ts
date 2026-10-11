@@ -3,6 +3,7 @@ import { round } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { paddedBox, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
 
 export interface WinLossOptions<T = number>
   extends BaseOptions,
@@ -26,7 +27,7 @@ export function winLoss<T = number>(
   const datums = normalizeSeries(data, accessors);
 
   const a11y = resolveA11y('win/loss', datums, options);
-  const base = sceneShell({ width, height }, a11y);
+  const base = sceneShell({ width, height }, a11y, options);
   if (datums.length === 0) return base;
 
   const box = paddedBox({ width, height, padding });
@@ -58,7 +59,16 @@ export function winLoss<T = number>(
       fill = winColor;
       fillOpacity = 0.4;
     }
-    marks.push({ type: 'rect', x, y, width: round(barW), height: h, fill, fillOpacity });
+    marks.push({
+      type: 'rect',
+      class: markClass('bar', i),
+      x,
+      y,
+      width: round(barW),
+      height: h,
+      fill,
+      fillOpacity,
+    });
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x, y, w: round(barW), h });
   });
 

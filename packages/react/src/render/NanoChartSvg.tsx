@@ -1,6 +1,7 @@
 'use client';
 
 import type { Scene } from '@samirdamle/nano-charts';
+import { svgClass } from '@samirdamle/nano-charts';
 import { Marks } from './Marks';
 import { PointHitTargets } from './PointHitTargets';
 import type { InteractionProps } from '../types';
@@ -24,7 +25,7 @@ export function NanoChartSvg({
       aria-label={scene.a11y.title}
       fill="currentColor"
       stroke="currentColor"
-      className={className}
+      className={svgClass(scene.svgClass, className)}
       style={style}
     >
       <desc>{scene.a11y.desc}</desc>

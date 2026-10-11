@@ -8,6 +8,7 @@ describe('area', () => {
     const poly = scene.marks.find((m) => m.type === 'polyline');
     expect(path).toEqual({
       type: 'path',
+      class: 'nc-area',
       d: 'M0.5,19.5 L0.5,19.5 L50,0.5 L99.5,10 L99.5,19.5 Z',
       fill: 'currentColor',
       fillOpacity: 0.2,

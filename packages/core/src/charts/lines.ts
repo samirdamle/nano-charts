@@ -9,6 +9,7 @@ import {
   type SeriesLayout,
 } from '../core/plot';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 
@@ -49,7 +50,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const count = perSeries.length ? Math.max(...perSeries.map((s) => s.datums.length)) : 0;
   const title = options.title ?? 'line chart';
   const desc = options.desc ?? `${title}, ${perSeries.length} series, up to ${count} points`;
-  const base = sceneShell({ width, height }, { title, desc });
+  const base = sceneShell({ width, height }, { title, desc }, options);
 
   const allValues = perSeries.flatMap((s) => s.datums.map((d) => d.value));
   if (allValues.length === 0) return base;
@@ -127,6 +128,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
     if (seriesPoints.length >= 2) {
       marks.push({
         type: 'polyline',
+        class: markClass('line', undefined, seriesIndex),
         points: seriesPoints.map((p) => [p.x, p.y] as [number, number]),
         fill: 'none',
         stroke: color,
@@ -141,6 +143,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
           const p = seriesPoints[i]!;
           marks.push({
             type: 'circle',
+            class: markClass('point', points.length + i, seriesIndex),
             cx: p.x,
             cy: p.y,
             r: dotRadius,
@@ -155,6 +158,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
         singlePointDot(seriesPoints[0]!, Math.max(dotRadius, strokeWidth + 0.5), color, {
           index: points.length,
           seriesIndex,
+          class: markClass('point', points.length, seriesIndex),
         }),
       );
     }

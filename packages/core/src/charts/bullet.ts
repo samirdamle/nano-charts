@@ -1,6 +1,7 @@
 import type { BaseOptions, Mark, Scene } from '../types';
 import { linearScale, round } from '../core/geometry';
 import { paddedBox, resolvePadding } from '../core/plot';
+import { markClass } from '../core/css-classes';
 
 export interface BulletData {
   value: number;
@@ -36,6 +37,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   for (let i = ranges.length - 1; i >= 0; i--) {
     marks.push({
       type: 'rect',
+      class: markClass('range', i),
       x: round(left),
       y: round(top),
       width: round(xScale(ranges[i]!) - left),
@@ -50,6 +52,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const barY = top + (bottom - top - barH) / 2;
   marks.push({
     type: 'rect',
+    class: markClass('bar'),
     x: round(left),
     y: round(barY),
     width: round(xScale(value) - left),
@@ -61,6 +64,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const tx = round(xScale(target));
   marks.push({
     type: 'line',
+    class: markClass('target'),
     x1: tx,
     y1: round(top),
     x2: tx,
@@ -88,5 +92,6 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
       title: options.title ?? 'bullet chart',
       desc: options.desc ?? `bullet chart, value ${value}, target ${target}, max ${max}`,
     },
+    svgClass: options.class,
   };
 }

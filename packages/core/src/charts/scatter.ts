@@ -8,6 +8,7 @@ import {
 } from '../core/plot';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import { markClass } from '../core/css-classes';
 
 export interface ScatterPoint {
   id?: string | number;
@@ -106,6 +107,7 @@ export function scatter<T = ScatterPoint>(
     marks: [],
     points: [],
     a11y,
+    svgClass: options.class,
   };
   if (pts.length === 0) return base;
 
@@ -159,7 +161,14 @@ export function scatter<T = ScatterPoint>(
   for (const p of pts) {
     const cx = round(xScale(p.x));
     const cy = round(yScale(p.y));
-    marks.push({ type: 'circle', cx, cy, r: radius, fill: p.color ?? color });
+    marks.push({
+      type: 'circle',
+      class: markClass('point', p.index),
+      cx,
+      cy,
+      r: radius,
+      fill: p.color ?? color,
+    });
     points.push({ id: p.id, label: p.label, value: p.y, index: p.index, x: cx, y: cy });
   }
 

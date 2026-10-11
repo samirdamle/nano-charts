@@ -2,6 +2,7 @@ import type { BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '.
 import { arcPath, dialSpan, linearScale, polar, round } from '../core/geometry';
 import { toFiniteNumber } from '../core/normalize';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
 import type { DonutTrackOptions } from './donut';
 
 export interface GaugeInput {
@@ -88,13 +89,14 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
   const zones = options.zones ?? [];
   if (zones.length > 0) {
     let prevTo = min;
-    for (const zone of zones) {
+    for (const [zi, zone] of zones.entries()) {
       const z0 = Math.max(min, prevTo);
       const z1 = Math.min(max, toFiniteNumber(zone.to));
       prevTo = z1;
       if (z1 > z0) {
         marks.push({
           type: 'path',
+          class: markClass('zone', zi),
           d: arcPath(cx, cy, rMid, valueToAngle(z0), valueToAngle(z1)),
           fill: 'none',
           stroke: zone.color,
@@ -109,6 +111,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       options.track === true || options.track === undefined ? {} : options.track;
     marks.push({
       type: 'path',
+      class: markClass('track'),
       d: arcPath(cx, cy, rMid, startAngle, startAngle + span),
       fill: 'none',
       stroke: t.color ?? color,
@@ -124,6 +127,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     if (frac > 0) {
       marks.push({
         type: 'path',
+        class: markClass('arc'),
         d: arcPath(cx, cy, rMid, startAngle, valueAngle),
         fill: 'none',
         stroke: color,
@@ -138,6 +142,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       // below covers the joint, so nothing juts out the other side.
       marks.push({
         type: 'line',
+        class: markClass('needle'),
         x1: round(cx),
         y1: round(cy),
         x2: round(tipX),
@@ -152,6 +157,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       const [b2x, b2y] = polar(cx, cy, hw, valueAngle - 90);
       marks.push({
         type: 'path',
+        class: markClass('needle'),
         d: `M${round(tipX)},${round(tipY)}L${round(b1x)},${round(b1y)}L${round(b2x)},${round(b2y)}Z`,
         fill: needleColor,
         stroke: 'none',
@@ -160,6 +166,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     // Hub dot covering the needle's pivot.
     marks.push({
       type: 'circle',
+      class: markClass('hub'),
       cx: round(cx),
       cy: round(cy),
       r: Math.max(1, round(thickness * 0.3)),
@@ -180,6 +187,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     const ly = mode === 'needle' ? cy + rOuter * 0.45 + fontSize * 0.35 : cy + fontSize * 0.35;
     marks.push({
       type: 'text',
+      class: markClass('label'),
       x: round(cx),
       y: round(ly),
       text: label,
@@ -205,6 +213,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
         title: options.title ?? 'gauge chart',
         desc: options.desc ?? `gauge, ${round(frac * 100)} percent of ${min} to ${max}`,
       },
+      options,
     ),
     marks,
     points,

@@ -1,4 +1,5 @@
 import type { Mark } from '../types';
+import { markClass } from './css-classes';
 import { round } from './geometry';
 import type { ResolvedPadding } from './plot';
 
@@ -204,6 +205,7 @@ export function axisMarks(
 
   const grid: Mark[] = [];
   const axis: Mark[] = [];
+  const axisCls = `nc-axis-${orientation}`;
 
   if (gridValues.length > 0) {
     const g = options.gridlines!;
@@ -211,12 +213,14 @@ export function axisMarks(
     const gt = g.thickness ?? 1;
     const { strokeDasharray, strokeLinecap } = dashFor(g.style);
     const [q0, q1] = crossSpan;
-    for (const v of gridValues) {
+    for (const [gi, v] of gridValues.entries()) {
       const p = round(scale(v));
+      const gridCls = markClass('gridline', gi, undefined, axisCls);
       grid.push(
         horizontal
           ? {
               type: 'line',
+              class: gridCls,
               x1: p,
               y1: round(q0),
               x2: p,
@@ -228,6 +232,7 @@ export function axisMarks(
             }
           : {
               type: 'line',
+              class: gridCls,
               x1: round(q0),
               y1: p,
               x2: round(q1),
@@ -247,6 +252,7 @@ export function axisMarks(
       horizontal
         ? {
             type: 'line',
+            class: markClass('axis', undefined, undefined, axisCls),
             x1: round(s0),
             y1: pos,
             x2: round(s1),
@@ -256,6 +262,7 @@ export function axisMarks(
           }
         : {
             type: 'line',
+            class: markClass('axis', undefined, undefined, axisCls),
             x1: pos,
             y1: round(s0),
             x2: pos,
@@ -272,13 +279,15 @@ export function axisMarks(
   const showLabels = options.labels !== undefined && options.labels !== false;
   const fontSize = options.fontSize ?? 10;
   const labelColor = options.labelColor ?? color;
-  for (const v of tickValues) {
+  for (const [ti, v] of tickValues.entries()) {
     const p = round(scale(v));
     const t1 = round(pos + dir * tickSize);
+    const tickCls = markClass('tick', ti, undefined, axisCls);
     axis.push(
       horizontal
         ? {
             type: 'line',
+            class: tickCls,
             x1: p,
             y1: pos,
             x2: p,
@@ -288,6 +297,7 @@ export function axisMarks(
           }
         : {
             type: 'line',
+            class: tickCls,
             x1: pos,
             y1: p,
             x2: t1,
@@ -302,6 +312,7 @@ export function axisMarks(
         horizontal
           ? {
               type: 'text',
+              class: markClass('label', ti, undefined, axisCls),
               x: p,
               y: round(t1 + (dir > 0 ? 4 + fontSize * 0.8 : -4)),
               text,
@@ -311,6 +322,7 @@ export function axisMarks(
             }
           : {
               type: 'text',
+              class: markClass('label', ti, undefined, axisCls),
               x: round(t1 + dir * 4),
               y: round(p + fontSize * 0.35),
               text,

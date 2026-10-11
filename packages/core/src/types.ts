@@ -15,6 +15,8 @@ export type Mark =
       fill?: 'none';
       strokeDasharray?: string;
       strokeLinecap?: 'butt' | 'round' | 'square';
+      /** Generated CSS classes, e.g. `"nc-point nc-point-3"`. */
+      class?: string;
     }
   | {
       type: 'path';
@@ -26,8 +28,10 @@ export type Mark =
       strokeOpacity?: number;
       strokeDasharray?: string;
       strokeLinecap?: 'butt' | 'round' | 'square';
+      /** Generated CSS classes, e.g. `"nc-point nc-point-3"`. */
+      class?: string;
     }
-  | { type: 'rect'; x: number; y: number; width: number; height: number; fill?: string; fillOpacity?: number; rx?: number; index?: number }
+  | { type: 'rect'; x: number; y: number; width: number; height: number; fill?: string; fillOpacity?: number; rx?: number; index?: number; /** Generated CSS classes, e.g. `"nc-bar nc-bar-2"`. */ class?: string }
   | {
       type: 'circle';
       cx: number;
@@ -38,8 +42,10 @@ export type Mark =
       strokeWidth?: number;
       index?: number;
       seriesIndex?: number;
+      /** Generated CSS classes, e.g. `"nc-point nc-point-3"`. */
+      class?: string;
     }
-  | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number; strokeDasharray?: string; strokeLinecap?: 'butt' | 'round' | 'square' }
+  | { type: 'line'; x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number; strokeDasharray?: string; strokeLinecap?: 'butt' | 'round' | 'square'; /** Generated CSS classes, e.g. `"nc-connector nc-connector-0"`. */ class?: string }
   | {
       type: 'text';
       x: number;
@@ -49,6 +55,8 @@ export type Mark =
       fontWeight?: string | number;
       fill?: string;
       textAnchor?: 'start' | 'middle' | 'end';
+      /** Generated CSS classes, e.g. `"nc-label"`. */
+      class?: string;
     }
   | {
       type: 'defs';
@@ -77,6 +85,8 @@ export type Mark =
       stroke?: string;
       strokeWidth?: number;
       index?: number;
+      /** Generated CSS classes, e.g. `"nc-block nc-block-3"`. */
+      class?: string;
     };
 
 /** Value context passed to a centerLabel formatter: the dial's value, its
@@ -118,6 +128,8 @@ export interface Scene {
   marks: Mark[];
   points: ScenePoint[];
   a11y: { title: string; desc: string };
+  /** Developer CSS class(es) for the `<svg>` element, from `BaseOptions.class`. */
+  svgClass?: string;
 }
 
 export type Padding = number | { top?: number; right?: number; bottom?: number; left?: number };
@@ -129,4 +141,8 @@ export interface BaseOptions {
   padding?: Padding;
   title?: string;
   desc?: string;
+  /** CSS class(es) assigned to the generated `<svg>` element, merged with the
+   * built-in `nc-chart` class. Combine with the generated `nc-` mark classes
+   * to style the chart and its components. */
+  class?: string;
 }

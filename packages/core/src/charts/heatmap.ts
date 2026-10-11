@@ -9,6 +9,7 @@ import {
 } from '../core/plot';
 import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import { markClass } from '../core/css-classes';
 
 export interface HeatmapOptions<T = number> extends BaseOptions {
   value?: (cell: T, row: number, col: number) => number;
@@ -95,6 +96,7 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     viewBox: `0 0 ${width} ${height}`,
     marks: [],
     points: [],
+    svgClass: options.class,
     a11y: {
       title: options.title ?? 'heatmap',
       desc:
@@ -119,6 +121,7 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
       const size = round(cell - gap);
       marks.push({
         type: 'rect',
+        class: markClass('cell', points.length),
         x,
         y,
         width: size,

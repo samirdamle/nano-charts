@@ -1,4 +1,5 @@
 import type { Mark } from '../types';
+import { markClass } from './css-classes';
 import { round } from './geometry';
 
 /**
@@ -34,7 +35,7 @@ export function highlightMarks(
 ): Mark[] {
   if (zones === undefined) return [];
   const marks: Mark[] = [];
-  for (const z of zones) {
+  for (const [zi, z] of zones.entries()) {
     let x0 = box.left;
     let x1 = box.right;
     if (z.x !== undefined) {
@@ -59,6 +60,7 @@ export function highlightMarks(
     if (w <= 0 || h <= 0) continue;
     marks.push({
       type: 'rect',
+      class: markClass('highlight', zi),
       x: round(x),
       y: round(y),
       width: round(w),
