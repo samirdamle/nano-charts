@@ -63,7 +63,8 @@ export interface PictogramConnectorSegment {
   thickness?: number;
   /** Segment style. Defaults to the connector-level `style`. */
   style?: PictogramConnectorStyle;
-  /** Segment end caps. Defaults to the connector-level `linecap`. */
+  /** Segment end caps. Defaults to the connector-level `linecap`, or `'round'`
+   * when the segment's style is `'dotted'` (dots render as dots). */
   linecap?: PictogramConnectorLinecap;
 }
 
@@ -76,7 +77,8 @@ export interface PictogramConnectorOptions {
   thickness?: number;
   /** Default segment style. Defaults to `'solid'`. */
   style?: PictogramConnectorStyle;
-  /** Default end caps. Defaults to `'butt'` (flat, merged into the blocks). */
+  /** Default end caps. Defaults to `'butt'` (flat, merged into the blocks),
+   * or `'round'` when the style is `'dotted'` so dots render as dots. */
   linecap?: PictogramConnectorLinecap;
   /** Explicit segments. When present, only these render, in order (so later
    * entries draw over earlier ones). When absent, every adjacent block pair
@@ -429,6 +431,12 @@ export function pictogram<T = number>(
         v !== undefined && Number.isFinite(v) && v > 0 ? v : fallback;
       const baseThickness = posThickness(conn.thickness, 2);
       const baseStyle = conn.style;
+      // Default end caps are style-aware: dotted connectors get round caps
+      // so the dots render as dots (a 0.1-unit dash with butt caps is a
+      // barely-visible sliver); solid/dashed keep butt caps that end flush
+      // at the block edges. An explicit linecap always wins.
+      const defaultLinecap = (style: PictogramConnectorStyle | undefined): PictogramConnectorLinecap =>
+        style === 'dotted' ? 'round' : 'butt';
       // A gap renders by default only between non-empty blocks, so the
       // connector stops at the last filled block instead of running through
       // empty ones. Explicit `segments` render exactly as specified.
@@ -453,7 +461,7 @@ export function pictogram<T = number>(
           if (from >= to) continue;
           const strokeWidth = posThickness(seg.thickness, baseThickness);
           const style = seg.style ?? baseStyle;
-          const linecap = seg.linecap ?? conn.linecap ?? 'butt';
+          const linecap = seg.linecap ?? conn.linecap ?? defaultLinecap(style);
           // Subdivide long spans per gap so dash patterns stay uniform.
           for (let k = from; k < to; k++) {
             draws.push({
@@ -475,7 +483,7 @@ export function pictogram<T = number>(
             stroke: conn.color ?? resolveBlock(k).paint,
             strokeWidth: baseThickness,
             style: baseStyle,
-            linecap: conn.linecap ?? 'butt',
+            linecap: conn.linecap ?? defaultLinecap(baseStyle),
           });
         }
       }

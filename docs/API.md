@@ -540,8 +540,10 @@ the earlier block's resolved color (so each gap continues the block it leaves),
 `thickness` defaults to `2` (px; non-positive or non-finite values fall back to
 `2`), and `style` is `'solid' | 'dashed' |
 'dotted'` (defaults to `'solid'`, sharing the axis gridline dash vocabulary).
-`linecap` is `'butt'` (default) or `'round'`: butt caps end flush at the block
-edges so connectors look merged into the blocks. Each gap between adjacent
+`linecap` is `'butt'` or `'round'`: butt caps end flush at the block
+edges so connectors look merged into the blocks, and is the default —
+except for `'dotted'` connectors, which default to `'round'` so the dots
+render as dots instead of thin slivers. An explicit `linecap` always wins. Each gap between adjacent
 blocks gets its own line, running edge to edge between the blocks — never through
 a block's interior, so hollow rings stay clean — with the dash pattern restarting
 at every block so `dashed`/`dotted` render as uniform connectors. By default only
@@ -676,9 +678,9 @@ size-limit); all figures below are minified + gzip.
 | -------------------------------------------------------- | ------- | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.96 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 15 kB   | **13.52 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 15 kB   | **13.54 kB** |
 | `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.83 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **13.4 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **13.42 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
