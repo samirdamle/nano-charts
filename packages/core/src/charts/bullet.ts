@@ -1,6 +1,7 @@
 import type { BaseOptions, Mark, Scene } from '../types';
 import { linearScale, round } from '../core/geometry';
-import { paddedBox, resolvePadding } from '../core/plot';
+import { paddedBox } from '../core/plot';
+import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 
 export interface BulletData {
@@ -15,10 +16,7 @@ export interface BulletData {
 export type BulletOptions = BaseOptions;
 
 export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
-  const width = options.width ?? 100;
-  const height = options.height ?? 20;
-  const color = options.color ?? 'currentColor';
-  const padding = resolvePadding(options.padding);
+  const { width, height, color, padding } = resolveChartShell(options);
   // Clamp policy: bullet geometry lives on [0, max]. Negative inputs are
   // clamped to 0 (no rect can get a negative width) and value/target are
   // clamped into [0, max] so nothing draws off-canvas. The scene reflects
@@ -74,9 +72,14 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   });
 
   return {
-    width,
-    height,
-    viewBox: `0 0 ${width} ${height}`,
+    ...sceneShell(
+      { width, height },
+      {
+        title: options.title ?? 'bullet chart',
+        desc: options.desc ?? `bullet chart, value ${value}, target ${target}, max ${max}`,
+      },
+      options,
+    ),
     marks,
     points: [
       {
@@ -88,10 +91,5 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
         y: round((top + bottom) / 2),
       },
     ],
-    a11y: {
-      title: options.title ?? 'bullet chart',
-      desc: options.desc ?? `bullet chart, value ${value}, target ${target}, max ${max}`,
-    },
-    svgClass: options.class,
   };
 }

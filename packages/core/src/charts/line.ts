@@ -1,7 +1,7 @@
 import type { Mark, Scene } from '../types';
 import { splinePath, toDasharray } from '../core/geometry';
 import { type SeriesInput } from '../core/normalize';
-import { renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
+import { lineMarkExtent, renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 
 export interface LineOptions<T = number> extends SeriesChartOptions<T> {
@@ -43,10 +43,8 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
             fill: 'none',
             stroke: color,
             strokeWidth,
-            ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
-            ...(options.strokeLinecap !== undefined
-              ? { strokeLinecap: options.strokeLinecap }
-              : {}),
+            strokeDasharray,
+            strokeLinecap: options.strokeLinecap,
           }
         : {
             type: 'polyline',
@@ -55,10 +53,8 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
             fill: 'none',
             stroke: color,
             strokeWidth,
-            ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
-            ...(options.strokeLinecap !== undefined
-              ? { strokeLinecap: options.strokeLinecap }
-              : {}),
+            strokeDasharray,
+            strokeLinecap: options.strokeLinecap,
           };
       const marks: Mark[] = [lineMark];
       if (options.dot && options.dot !== 'none') {
@@ -79,9 +75,6 @@ export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> =
       }
       return marks;
     },
-    (n) =>
-      n < 2
-        ? Math.max(dotRadius, strokeWidth + 0.5)
-        : Math.max(strokeWidth / 2, options.dot && options.dot !== 'none' ? dotRadius : 0),
+    (n) => lineMarkExtent(n, strokeWidth, dotRadius, options.dot),
   );
 }

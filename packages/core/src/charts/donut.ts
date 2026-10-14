@@ -10,7 +10,7 @@ import {
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
-import { gauge } from './gauge';
+import { gauge, pushCenterLabel } from './gauge';
 
 export interface DonutGauge {
   value: number;
@@ -86,29 +86,6 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   const gap = Number.isFinite(gapRaw) ? Math.max(0, gapRaw) : 0.2;
   const halfGapDeg = gap === 0 ? 0 : ((gap / 2) / rMid) * (180 / Math.PI);
 
-  // Center readout: font sized to the dial's hole, baseline nudged so the
-  // text reads as vertically centered. No fill: inherits currentColor.
-  const pushCenterLabel = (ctx: CenterLabelContext) => {
-    const label =
-      typeof options.centerLabel === 'function' ? options.centerLabel(ctx) : options.centerLabel;
-    if (label === undefined) return;
-    // Half the previous label size, semibold: the readout sits inside the
-    // dial's hole and never overlaps the dial ring.
-    const fontSize = Math.max(2, Math.round(rInner * 0.425));
-    marks.push({
-      type: 'text',
-      class: markClass('label'),
-      x: round(cx),
-      y: round(cy + fontSize * 0.35),
-      text: label,
-      fontSize,
-      fontWeight: 600,
-      textAnchor: 'middle',
-    });
-  };
-
-  const strokeLinecap =
-    options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {};
 
   const trackOpt = options.track;
 
@@ -174,7 +151,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       stroke: segTrack.color ?? color,
       strokeWidth: round(thickness),
       strokeOpacity: segTrack.opacity ?? 0.25,
-      ...strokeLinecap,
+      strokeLinecap: options.strokeLinecap,
     });
   }
 
@@ -206,13 +183,13 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       stroke: segmentColor,
       strokeWidth: round(thickness),
       strokeOpacity: useStripe ? (i % 2 === 0 ? 1 : 0.55) : 1,
-      ...strokeLinecap,
+      strokeLinecap: options.strokeLinecap,
     });
     const [px, py] = polar(cx, cy, rMid, angle + sweep / 2);
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x: round(px), y: round(py) });
     angle += sweep;
   });
-  pushCenterLabel({ value: total, min: 0, max: total, frac: 1 });
+  pushCenterLabel(marks, options.centerLabel, { value: total, min: 0, max: total, frac: 1 }, cx, cy, rInner);
 
   return { ...base, marks, points };
 }
