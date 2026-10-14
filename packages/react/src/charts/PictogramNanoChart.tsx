@@ -1,7 +1,7 @@
 'use client';
 
 import { pictogram, type PictogramInput, type PictogramOptions } from '@samirdamle/nano-charts';
-import { NanoChartSvg } from '../render/NanoChartSvg';
+import { renderNanoChart } from '../render/renderNanoChart';
 import type { InteractionProps } from '../types';
 
 export interface PictogramNanoChartProps<T = number> extends PictogramOptions<T>, InteractionProps {
@@ -9,17 +9,6 @@ export interface PictogramNanoChartProps<T = number> extends PictogramOptions<T>
   data: PictogramInput<T>;
 }
 
-export function PictogramNanoChart<T = number>(props: PictogramNanoChartProps<T>) {
-  const { data, onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
-  const scene = pictogram(data, options);
-  return (
-    <NanoChartSvg
-      scene={scene}
-      onPointHover={onPointHover}
-      onPointClick={onPointClick}
-      className={className}
-      style={style}
-      hitRadius={hitRadius}
-    />
-  );
+export function PictogramNanoChart<T = number>({ data, ...rest }: PictogramNanoChartProps<T>): JSX.Element {
+  return renderNanoChart(pictogram, data, rest);
 }

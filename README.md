@@ -95,7 +95,7 @@ measured 2026-10-11:
 | Core — `toSVG` standalone                    | 1.25 kB | **1.05 kB** |
 | Core — full barrel (all 12 charts + `toSVG`) | 15 kB   | **13.28 kB** |
 | React — `LineNanoChart` standalone            | 5 kB    | **4.83 kB** |
-| React — full barrel                          | 15 kB   | **13.18 kB** |
+| React — full barrel                          | 15 kB   | **13.10 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 
