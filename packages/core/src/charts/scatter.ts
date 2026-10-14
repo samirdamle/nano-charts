@@ -6,7 +6,7 @@ import {
   type PaddedBox,
   type ResolvedPadding,
 } from '../core/plot';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import { markClass } from '../core/css-classes';
 
@@ -123,25 +123,14 @@ export function scatter<T = ScatterPoint>(
     s: { x: (v: number) => number; y: (v: number) => number },
     orientation: 'x' | 'y',
   ): AxisLayout =>
-    orientation === 'x'
-      ? {
-          orientation,
-          domain: xDomain,
-          scale: s.x,
-          crossDomain: yDomain,
-          crossScale: s.y,
-          span: [b.left, b.right],
-          crossSpan: [b.top, b.bottom],
-        }
-      : {
-          orientation,
-          domain: yDomain,
-          scale: s.y,
-          crossDomain: xDomain,
-          crossScale: s.x,
-          span: [b.top, b.bottom],
-          crossSpan: [b.left, b.right],
-        };
+    axisLayout(orientation, {
+      domain: xDomain,
+      scale: s.x,
+      crossDomain: yDomain,
+      crossScale: s.y,
+      span: [b.left, b.right],
+      crossSpan: [b.top, b.bottom],
+    });
 
   // Automatic padding, iterated to a fixed point on the real layout.
   const padding = autoPlotPadding(options.padding, radius, width, height, (p) => {
@@ -176,5 +165,5 @@ export function scatter<T = ScatterPoint>(
   const yA = axisMarks(options.yAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'y'));
   const hl = highlightMarks(options.highlights, { x: xScale, y: yScale }, box);
 
-  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
 }
