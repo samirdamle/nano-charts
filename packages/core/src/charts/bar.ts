@@ -121,7 +121,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
           label: first?.label ?? String(totals[col]),
           value: totals[col] ?? 0,
           index: col,
-          ...(first?.color !== undefined ? { color: first.color } : {}),
+          color: first?.color,
         },
       ];
     });

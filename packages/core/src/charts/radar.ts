@@ -1,7 +1,7 @@
 import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
-import { categoricalColor } from '../core/palette';
+import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 
@@ -47,7 +47,7 @@ export interface RadarOptions extends BaseOptions {
 
 const TAU = Math.PI * 2;
 
-function polar(cx: number, cy: number, radius: number, angle: number): [number, number] {
+function polarRad(cx: number, cy: number, radius: number, angle: number): [number, number] {
   return [round(cx + radius * Math.cos(angle)), round(cy + radius * Math.sin(angle))];
 }
 
@@ -124,7 +124,7 @@ export function radar<T = number>(
         ? Math.min(options.gridOpacity, 1)
         : 0.15;
     for (let i = 0; i < axisCount; i++) {
-      const [x, y] = polar(cx, cy, radius, angleAt(i));
+      const [x, y] = polarRad(cx, cy, radius, angleAt(i));
       marks.push({
         type: 'path',
         class: markClass('spoke', i),
@@ -137,7 +137,7 @@ export function radar<T = number>(
     }
     for (const [ri, frac] of [0.25, 0.5, 0.75, 1].entries()) {
       const ring: [number, number][] = [];
-      for (let i = 0; i < axisCount; i++) ring.push(polar(cx, cy, radius * frac, angleAt(i)));
+      for (let i = 0; i < axisCount; i++) ring.push(polarRad(cx, cy, radius * frac, angleAt(i)));
       const d = ring.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ') + ' Z';
       marks.push({
         type: 'path',
@@ -154,13 +154,18 @@ export function radar<T = number>(
   perSeries.forEach(({ input: s, datums }, seriesIndex) => {
     // Precedence: explicit per-series color > uniform options.color (only if
     // the caller passed it) > categorical palette. Same rule lines() uses.
-    const color =
-      s.color ?? (hasUniformColor ? defaultColor : categoricalColor(seriesIndex, perSeries.length));
+    const color = resolveSegmentColor({
+      explicit: s.color,
+      uniform: defaultColor,
+      usePalette: !hasUniformColor,
+      paletteIndex: seriesIndex,
+      paletteTotal: perSeries.length,
+    });
     const strokeWidth = s.strokeWidth ?? 1;
     const strokeDasharray = toDasharray(s.strokeDasharray);
     const vertex = (i: number): [number, number] => {
       const d = datums[i];
-      return polar(cx, cy, scale(d ? d.value : 0), angleAt(i));
+      return polarRad(cx, cy, scale(d ? d.value : 0), angleAt(i));
     };
 
     const seriesPoints: ScenePoint[] = [];
@@ -175,7 +180,7 @@ export function radar<T = number>(
         x,
         y,
         seriesIndex,
-        ...(s.name !== undefined ? { seriesLabel: s.name } : {}),
+        seriesLabel: s.name,
       });
     }
 
@@ -211,8 +216,8 @@ export function radar<T = number>(
         fill: 'none',
         stroke: color,
         strokeWidth,
-        ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
-        ...(s.strokeLinecap !== undefined ? { strokeLinecap: s.strokeLinecap } : {}),
+        strokeDasharray,
+        strokeLinecap: s.strokeLinecap,
       });
       if (s.dot === 'all') {
         for (let i = 0; i < seriesPoints.length; i++) {

@@ -8,6 +8,7 @@ import {
   type ResolvedPadding,
 } from '../core/plot';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
+import { sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import { markClass } from '../core/css-classes';
 
@@ -78,20 +79,16 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     }
   }
 
-  const base: Scene = {
-    width,
-    height,
-    viewBox: `0 0 ${width} ${height}`,
-    marks: [],
-    points: [],
-    svgClass: options.class,
-    a11y: {
+  const base: Scene = sceneShell(
+    { width, height },
+    {
       title: options.title ?? 'heatmap',
       desc:
         options.desc ??
         (flat.length === 0 ? 'heatmap, no data' : `heatmap, ${rows} by ${cols} cells`),
     },
-  };
+    options,
+  );
   if (flat.length === 0) return base;
 
   const domain = extent(flat);

@@ -31,6 +31,22 @@ export function resolveChartShell(options: BaseOptions): ChartShell {
   };
 }
 
+/**
+ * Max half-size of a line-chart mark that can sit on the plot edge: a lone
+ * point renders as a dot, otherwise the stroke (or dots) set the extent.
+ * Shared by line() and lines() for their auto-padding probe.
+ */
+export function lineMarkExtent(
+  pointCount: number,
+  strokeWidth: number,
+  dotRadius: number,
+  dot?: 'none' | 'last' | 'all',
+): number {
+  return pointCount < 2
+    ? Math.max(dotRadius, strokeWidth + 0.5)
+    : Math.max(strokeWidth / 2, dot && dot !== 'none' ? dotRadius : 0);
+}
+
 /** Resolves the a11y title/desc, falling back to the series summary. */
 export function resolveA11y(
   kind: string,

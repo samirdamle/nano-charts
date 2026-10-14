@@ -7,6 +7,7 @@ import {
   type ResolvedPadding,
 } from '../core/plot';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
+import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import { markClass } from '../core/css-classes';
 
@@ -88,9 +89,7 @@ export function scatter<T = ScatterPoint>(
   data: ScatterInput<T>,
   options: ScatterOptions<T> = {},
 ): Scene {
-  const width = options.width ?? 100;
-  const height = options.height ?? 20;
-  const color = options.color ?? 'currentColor';
+  const { width, height, color } = resolveChartShell(options);
   const radius = options.radius ?? 1;
   const pts = toXY(data, options);
 
@@ -100,15 +99,7 @@ export function scatter<T = ScatterPoint>(
       options.desc ??
       (pts.length === 0 ? 'scatter chart, no data' : `scatter chart, ${pts.length} points`),
   };
-  const base: Scene = {
-    width,
-    height,
-    viewBox: `0 0 ${width} ${height}`,
-    marks: [],
-    points: [],
-    a11y,
-    svgClass: options.class,
-  };
+  const base: Scene = sceneShell({ width, height }, a11y, options);
   if (pts.length === 0) return base;
 
   const xDomain = extent(pts.map((p) => p.x));
