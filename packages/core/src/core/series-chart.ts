@@ -9,7 +9,7 @@ import {
   type SeriesLayout,
 } from './plot';
 import { seriesSummary } from './a11y';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from './axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from './axis';
 import { highlightMarks, type HighlightZones } from './highlight';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
@@ -100,26 +100,15 @@ export function renderSeriesChart<T>(
   const layoutFor = (padding: ResolvedPadding) =>
     seriesLayout(datums.length, valueDomain, { width, height, padding });
   const axisLayoutFor = (l: SeriesLayout, orientation: 'x' | 'y'): AxisLayout =>
-    orientation === 'x'
-      ? {
-          orientation,
-          domain: indexDomain,
-          scale: l.x,
-          crossDomain: valueDomain,
-          crossScale: l.y,
-          span: [l.left, l.right],
-          crossSpan: [l.top, l.bottom],
-          integerTicks: true,
-        }
-      : {
-          orientation,
-          domain: valueDomain,
-          scale: l.y,
-          crossDomain: indexDomain,
-          crossScale: l.x,
-          span: [l.top, l.bottom],
-          crossSpan: [l.left, l.right],
-        };
+    axisLayout(orientation, {
+      domain: indexDomain,
+      scale: l.x,
+      crossDomain: valueDomain,
+      crossScale: l.y,
+      span: [l.left, l.right],
+      crossSpan: [l.top, l.bottom],
+      integerTicks: orientation === 'x' ? true : undefined,
+    });
 
   // Automatic padding, iterated to a fixed point on the real layout
   // (autoPlotPadding re-measures until the padding stops growing).
@@ -148,7 +137,7 @@ export function renderSeriesChart<T>(
 
   return {
     ...base,
-    marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis],
+    marks: layerMarks(hl, xA, yA, marks),
     points,
   };
 }

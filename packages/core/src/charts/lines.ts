@@ -10,7 +10,7 @@ import {
 } from '../core/plot';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
@@ -71,26 +71,15 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const layoutFor = (padding: ResolvedPadding) =>
     seriesLayout(count, valueDomain, { width, height, padding });
   const axisLayoutFor = (l: SeriesLayout, orientation: 'x' | 'y'): AxisLayout =>
-    orientation === 'x'
-      ? {
-          orientation,
-          domain: indexDomain,
-          scale: l.x,
-          crossDomain: valueDomain,
-          crossScale: l.y,
-          span: [l.left, l.right],
-          crossSpan: [l.top, l.bottom],
-          integerTicks: true,
-        }
-      : {
-          orientation,
-          domain: valueDomain,
-          scale: l.y,
-          crossDomain: indexDomain,
-          crossScale: l.x,
-          span: [l.top, l.bottom],
-          crossSpan: [l.left, l.right],
-        };
+    axisLayout(orientation, {
+      domain: indexDomain,
+      scale: l.x,
+      crossDomain: valueDomain,
+      crossScale: l.y,
+      span: [l.left, l.right],
+      crossSpan: [l.top, l.bottom],
+      integerTicks: orientation === 'x' ? true : undefined,
+    });
 
   // Automatic padding, iterated to a fixed point on the real layout
   // (autoPlotPadding re-measures until the padding stops growing).
@@ -170,5 +159,5 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
   const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
 
-  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
 }
