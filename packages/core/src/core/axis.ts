@@ -100,6 +100,9 @@ function decimalsFor(step: number): number {
   return d;
 }
 
+/** Dash pattern and linecap for a line style — the single source of truth
+ * for the style→stroke mapping (axis gridlines and pictogram connectors
+ * both build on it; dotted needs round caps so the dots render as dots). */
 export function dashFor(style: AxisGridlineStyle | undefined): {
   strokeDasharray?: string;
   strokeLinecap?: 'round';
