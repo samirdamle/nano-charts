@@ -10,6 +10,7 @@ import {
 import { pastelColor, resolveSegmentColor } from '../core/palette';
 import { resolvePadding } from '../core/plot';
 import { dashFor } from '../core/axis';
+import { sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
@@ -298,15 +299,14 @@ export function pictogram<T = number>(
           .map((sp) => String(round(sp.full + sp.fraction)))
           .join(', ')}`);
 
-  const base: Scene = {
-    width: round(width + padding.left + padding.right),
-    height: round(height + padding.top + padding.bottom),
-    viewBox: `0 0 ${round(width + padding.left + padding.right)} ${round(height + padding.top + padding.bottom)}`,
-    marks: [],
-    points: [],
-    a11y: { title, desc },
-    svgClass: options.class,
-  };
+  const base: Scene = sceneShell(
+    {
+      width: round(width + padding.left + padding.right),
+      height: round(height + padding.top + padding.bottom),
+    },
+    { title, desc },
+    options,
+  );
   if (n === 0) return base;
 
   const marks: Mark[] = [
@@ -427,16 +427,12 @@ export function pictogram<T = number>(
       // Per-gap lines (rather than one spanning line) restart the dash
       // pattern at every block, so dashed/dotted styles read as uniform
       // connectors instead of broken fragments.
-      const posThickness = (v: number | undefined, fallback: number): number =>
-        v !== undefined && Number.isFinite(v) && v > 0 ? v : fallback;
-      const baseThickness = posThickness(conn.thickness, 2);
+      const baseThickness = positiveFinite(conn.thickness, 2);
       const baseStyle = conn.style;
-      // Default end caps are style-aware: dotted connectors get round caps
-      // so the dots render as dots (a 0.1-unit dash with butt caps is a
-      // barely-visible sliver); solid/dashed keep butt caps that end flush
-      // at the block edges. An explicit linecap always wins.
-      const defaultLinecap = (style: PictogramConnectorStyle | undefined): PictogramConnectorLinecap =>
-        style === 'dotted' ? 'round' : 'butt';
+      // Linecap default comes from dashFor (single source of truth for the
+      // style→stroke mapping): dotted needs round caps so dots render as
+      // dots; anything else gets butt caps flush at the block edges.
+      // An explicit linecap always wins.
       // A gap renders by default only between non-empty blocks, so the
       // connector stops at the last filled block instead of running through
       // empty ones. Explicit `segments` render exactly as specified.
@@ -459,9 +455,9 @@ export function pictogram<T = number>(
           if (!covered) continue;
           const [from, to] = covered;
           if (from >= to) continue;
-          const strokeWidth = posThickness(seg.thickness, baseThickness);
+          const strokeWidth = positiveFinite(seg.thickness, baseThickness);
           const style = seg.style ?? baseStyle;
-          const linecap = seg.linecap ?? conn.linecap ?? defaultLinecap(style);
+          const linecap = seg.linecap ?? conn.linecap ?? dashFor(style).strokeLinecap ?? 'butt';
           // Subdivide long spans per gap so dash patterns stay uniform.
           for (let k = from; k < to; k++) {
             draws.push({
@@ -483,7 +479,7 @@ export function pictogram<T = number>(
             stroke: conn.color ?? resolveBlock(k).paint,
             strokeWidth: baseThickness,
             style: baseStyle,
-            linecap: conn.linecap ?? defaultLinecap(baseStyle),
+            linecap: conn.linecap ?? dashFor(baseStyle).strokeLinecap ?? 'butt',
           });
         }
       }

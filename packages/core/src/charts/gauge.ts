@@ -54,6 +54,39 @@ export interface GaugeOptions extends BaseOptions {
   strokeLinecap?: 'butt' | 'round' | 'square';
 }
 
+/**
+ * Center readout for dial charts: resolves a string|formatter label and
+ * pushes a text mark sized to the dial's hole. `dy` shifts the baseline —
+ * gauge needle mode reads out just below center, clear of the hub (the
+ * classic digital-readout position). Shared by gauge() and donut().
+ */
+export function pushCenterLabel(
+  marks: Mark[],
+  label: string | ((ctx: CenterLabelContext) => string) | undefined,
+  ctx: CenterLabelContext,
+  cx: number,
+  cy: number,
+  rInner: number,
+  dy = 0,
+): void {
+  const text = typeof label === 'function' ? label(ctx) : label;
+  if (text === undefined) return;
+  // Half the previous label size, semibold: the readout sits inside the
+  // dial's hole and never overlaps the dial ring. No fill: inherits
+  // currentColor. Baseline nudged so the text reads as vertically centered.
+  const fontSize = Math.max(2, Math.round(rInner * 0.425));
+  marks.push({
+    type: 'text',
+    class: markClass('label'),
+    x: round(cx),
+    y: round(cy + fontSize * 0.35 + dy),
+    text,
+    fontSize,
+    fontWeight: 600,
+    textAnchor: 'middle',
+  });
+}
+
 export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
   // Gauge defaults to a square 20x20 canvas; otherwise it shares the standard
   // chart shell (width/height/color/padding resolution).
@@ -71,8 +104,6 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
-  const strokeLinecap =
-    options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {};
 
   // Clamp policy: a bad domain pins the value at the bottom of the dial.
   const min = Number.isFinite(options.min) ? (options.min as number) : 0;
@@ -101,8 +132,8 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
           fill: 'none',
           stroke: zone.color,
           strokeWidth: round(thickness),
-          ...(zone.opacity !== undefined ? { strokeOpacity: zone.opacity } : {}),
-          ...strokeLinecap,
+          strokeOpacity: zone.opacity,
+          strokeLinecap: options.strokeLinecap,
         });
       }
     }
@@ -117,7 +148,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       stroke: t.color ?? color,
       strokeWidth: round(thickness),
       strokeOpacity: t.opacity ?? 0.25,
-      ...strokeLinecap,
+      strokeLinecap: options.strokeLinecap,
     });
   }
 
@@ -132,7 +163,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
         fill: 'none',
         stroke: color,
         strokeWidth: round(thickness),
-        ...strokeLinecap,
+        strokeLinecap: options.strokeLinecap,
       });
     }
   } else {
@@ -174,28 +205,16 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     });
   }
 
-  if (options.centerLabel !== undefined) {
-    const label =
-      typeof options.centerLabel === 'function'
-        ? options.centerLabel({ value, min, max, frac })
-        : options.centerLabel;
-    // Half the previous label size: the text stays inside the dial's hole
-    // and can never overlap the dial ring, in either mode.
-    const fontSize = Math.max(2, Math.round(rInner * 0.425));
-    // Arc mode: dead center. Needle mode: just below center, clear of the hub
-    // (the classic digital-readout position).
-    const ly = mode === 'needle' ? cy + rOuter * 0.45 + fontSize * 0.35 : cy + fontSize * 0.35;
-    marks.push({
-      type: 'text',
-      class: markClass('label'),
-      x: round(cx),
-      y: round(ly),
-      text: label,
-      fontSize,
-      fontWeight: 600,
-      textAnchor: 'middle',
-    });
-  }
+  // Arc mode: dead center. Needle mode: just below center, clear of the hub.
+  pushCenterLabel(
+    marks,
+    options.centerLabel,
+    { value, min, max, frac },
+    cx,
+    cy,
+    rInner,
+    mode === 'needle' ? rOuter * 0.45 : 0,
+  );
 
   points.push({
     id: 0,

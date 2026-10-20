@@ -7,7 +7,8 @@ import {
   type PaddedBox,
   type ResolvedPadding,
 } from '../core/plot';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
+import { sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import { markClass } from '../core/css-classes';
 
@@ -39,27 +40,15 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const axisLayoutFor = (b: PaddedBox, orientation: 'x' | 'y'): AxisLayout => {
     const colCenter = (c: number): number => b.left + c * cell + cell / 2;
     const rowCenter = (r: number): number => b.top + r * cell + cell / 2;
-    return orientation === 'x'
-      ? {
-          orientation,
-          domain: [0, cols - 1],
-          scale: colCenter,
-          crossDomain: [0, rows - 1],
-          crossScale: rowCenter,
-          span: [b.left, b.right],
-          crossSpan: [b.top, b.bottom],
-          integerTicks: true,
-        }
-      : {
-          orientation,
-          domain: [0, rows - 1],
-          scale: rowCenter,
-          crossDomain: [0, cols - 1],
-          crossScale: colCenter,
-          span: [b.top, b.bottom],
-          crossSpan: [b.left, b.right],
-          integerTicks: true,
-        };
+    return axisLayout(orientation, {
+      domain: [0, cols - 1],
+      scale: colCenter,
+      crossDomain: [0, rows - 1],
+      crossScale: rowCenter,
+      span: [b.left, b.right],
+      crossSpan: [b.top, b.bottom],
+      integerTicks: true,
+    });
   };
 
   // Automatic padding, iterated to a fixed point on the real layout. The
@@ -90,20 +79,16 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     }
   }
 
-  const base: Scene = {
-    width,
-    height,
-    viewBox: `0 0 ${width} ${height}`,
-    marks: [],
-    points: [],
-    svgClass: options.class,
-    a11y: {
+  const base: Scene = sceneShell(
+    { width, height },
+    {
       title: options.title ?? 'heatmap',
       desc:
         options.desc ??
         (flat.length === 0 ? 'heatmap, no data' : `heatmap, ${rows} by ${cols} cells`),
     },
-  };
+    options,
+  );
   if (flat.length === 0) return base;
 
   const domain = extent(flat);
@@ -160,5 +145,5 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     box,
   );
 
-  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
 }

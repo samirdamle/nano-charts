@@ -16,7 +16,7 @@ import {
   type SeriesLayout,
 } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 
 export interface BarTrackOptions {
@@ -121,7 +121,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
           label: first?.label ?? String(totals[col]),
           value: totals[col] ?? 0,
           index: col,
-          ...(first?.color !== undefined ? { color: first.color } : {}),
+          color: first?.color,
         },
       ];
     });
@@ -208,25 +208,15 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     // along the value scale. Which is "x" flips with `horizontal`.
     const catScale = (i: number): number => slot.x(i) + barW / 2;
     const catDomain: [number, number] = [0, columns.length - 1];
-    const axisFor = (orientation: 'x' | 'y'): AxisLayout => {
-      const v = horizontal
-        ? {
-            x: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
-            y: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
-          }
-        : {
-            x: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
-            y: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
-          };
-      const a = orientation === 'x' ? v.x : v.y;
-      return {
-        orientation,
-        ...a,
-        span: orientation === 'x' ? [l.left, l.right] : [l.top, l.bottom],
-        crossSpan: orientation === 'x' ? [l.top, l.bottom] : [l.left, l.right],
+    const valueSpec = { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale };
+    const catSpec = { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale };
+    const axisFor = (orientation: 'x' | 'y'): AxisLayout =>
+      axisLayout(orientation, {
+        ...(horizontal ? valueSpec : catSpec),
+        span: [l.left, l.right],
+        crossSpan: [l.top, l.bottom],
         integerTicks: orientation === 'x' ? !horizontal : horizontal,
-      };
-    };
+      });
     return { layout: l, valueScale, slot, barW, subSlot, subW, catScale, axisFor };
   };
 
@@ -399,5 +389,5 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   const xA = axisMarks(options.xAxis, axisFor('x'));
   const yA = axisMarks(options.yAxis, axisFor('y'));
 
-  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
 }

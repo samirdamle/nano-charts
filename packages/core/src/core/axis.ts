@@ -72,6 +72,51 @@ export interface AxisLayout {
   integerTicks?: boolean;
 }
 
+/** X-oriented spec for one axis' layout: the y orientation swaps each pair
+ * (domain↔crossDomain, scale↔crossScale, span↔crossSpan). */
+export interface AxisLayoutSpec {
+  domain: [number, number];
+  scale: (value: number) => number;
+  crossDomain: [number, number];
+  crossScale: (value: number) => number;
+  span: [number, number];
+  crossSpan: [number, number];
+  integerTicks?: boolean;
+}
+
+/**
+ * Builds one axis' layout for either orientation from the x-oriented spec.
+ * Replaces the orientation ternary every cartesian chart used to spell out.
+ */
+export function axisLayout(orientation: 'x' | 'y', spec: AxisLayoutSpec): AxisLayout {
+  return orientation === 'x'
+    ? { orientation, ...spec }
+    : {
+        orientation,
+        domain: spec.crossDomain,
+        scale: spec.crossScale,
+        crossDomain: spec.domain,
+        crossScale: spec.scale,
+        span: spec.crossSpan,
+        crossSpan: spec.span,
+        integerTicks: spec.integerTicks,
+      };
+}
+
+/**
+ * Mark layer order shared by the cartesian charts: highlight washes behind
+ * everything, gridlines behind data, axis furniture (line, ticks, labels)
+ * in front.
+ */
+export function layerMarks(
+  highlights: Mark[],
+  xAxis: { grid: Mark[]; axis: Mark[] },
+  yAxis: { grid: Mark[]; axis: Mark[] },
+  marks: Mark[],
+): Mark[] {
+  return [...highlights, ...xAxis.grid, ...yAxis.grid, ...marks, ...xAxis.axis, ...yAxis.axis];
+}
+
 /** Nice-number tick values for a domain: 1/2/5 × 10^n steps covering it. */
 export function niceTicks(domain: [number, number], count = 5): { ticks: number[]; step: number } {
   const [d0, d1] = domain;
@@ -100,6 +145,9 @@ function decimalsFor(step: number): number {
   return d;
 }
 
+/** Dash pattern and linecap for a line style — the single source of truth
+ * for the style→stroke mapping (axis gridlines and pictogram connectors
+ * both build on it; dotted needs round caps so the dots render as dots). */
 export function dashFor(style: AxisGridlineStyle | undefined): {
   strokeDasharray?: string;
   strokeLinecap?: 'round';
