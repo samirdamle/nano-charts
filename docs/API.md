@@ -113,6 +113,7 @@ svg-level class):
 | `tick`         | axis tick marks                                     | `nc-tick nc-tick-2`        |
 | `label`        | axis tick labels, donut/gauge center labels         | `nc-label`                 |
 | `highlight`    | highlight zones                                     | `nc-highlight nc-highlight-0` |
+| `annotation`   | annotation marks                                    | `nc-annotation nc-annotation-0` |
 | `zone`         | gauge zone bands                                    | `nc-zone nc-zone-0`        |
 | `arc`          | gauge value arc                                     | `nc-arc`                   |
 | `needle`, `hub`| gauge needle and its pivot dot                      | `nc-needle`                |
@@ -221,6 +222,63 @@ Notes:
   are clipped to it, and zones entirely outside it are skipped.
 - React components (`LineNanoChart`, `BarNanoChart`, …) accept the same `highlights`
   prop.
+
+## Annotations
+
+`line`, `area`, `lines`, `bar`, `scatter`, `donut`, and `gauge` accept an
+optional `annotations` option: an array of marks laid on top of the chart's
+own marks, in the chart's data coordinates. Annotations are purely visual —
+they are never added to `scene.points`, so they get no hover/click points,
+and they never affect the chart's scales, domains, or automatic padding
+(so a mark at a domain edge can extend up to its `size` past the plot box;
+set explicit `padding` if that clearance matters). Annotations carry the
+`nc-annotation nc-annotation-{i}` classes, where `i` is the annotation's
+position in the input array.
+
+```ts
+line([3, 7, 2, 9, 5, 6], {
+  annotations: [
+    { x: 3, y: 9, shape: 'dot', color: '#ef4444' }, // the peak
+    { x: 2, y: 2, shape: 'triangle' }, // the trough
+    { x: 1, y: 7, shape: 'emoji', emoji: '⚠️', size: 4 }, // a warning
+  ],
+});
+```
+
+| Option        | Type                                              | Default          | Description                                                        |
+| ------------- | ------------------------------------------------- | ---------------- | ------------------------------------------------------------------ |
+| `x`           | `number`                                          | (required)       | Data x — see per-chart mapping below (ignored on donut/gauge)      |
+| `y`           | `number`                                          | (required)       | Data y — see per-chart mapping below                               |
+| `shape`       | `'dot' \| 'square' \| 'triangle' \| 'line' \| 'emoji'` | (required) | Mark shape                                                         |
+| `color`       | `string`                                          | chart's `color`  | Mark color; ignored for `emoji`, whose own colours win             |
+| `size`        | `number`                                          | `2`              | Dot radius, square half-side, triangle center-to-vertex radius, line half-length, or emoji font size, in chart units |
+| `emoji`       | `string`                                          | —                | Required when `shape` is `'emoji'`: the character(s) to render     |
+| `orientation` | `'horizontal' \| 'vertical'`                      | `'horizontal'`   | Line shape only: the dash direction                                |
+
+Notes:
+
+- Per-chart mapping: on `line`/`area`/`lines`, `x` is the data index
+  (fractional indices interpolate along the index axis) and `y` is the data
+  value on the chart's domain — on `lines` that domain is shared across all
+  series, and there is no series targeting in v1. On `bar`, `x` is the
+  category index (an integer) at the category center — grouped/stacked
+  annotations float over the category, not one sub-bar — and `y` is the
+  value on the shared value domain; on horizontal bars the logical `x`/`y`
+  stay as specified and the renderer swaps the axes. On `scatter`, `x` and
+  `y` are data values. On `donut`/`gauge`, `x` is ignored and `y` maps to
+  an angle as `startAngle + (y / domain) × span` — domain `max` in gauge
+  mode, total in segmented donut mode, `[min, max]` on `gauge` — with the
+  mark centered on the ring at mid-thickness radius.
+- Out-of-range annotations are dropped, not clamped: an `x` outside the
+  data (or a non-integer `x` on `bar`), or a `y` outside the chart's
+  domain, renders nothing. Unknown shapes and `emoji` annotations without
+  an `emoji` are likewise dropped, never throwing.
+- The `line` shape here is a small dash at the point, not a full-span
+  reference line — that is a separate v2 feature, as are annotations on
+  `radar`, `heatmap`, `pictogram`, `bullet`, and `winLoss`, series-targeted
+  annotations, and interactive annotations.
+- React components accept the same `annotations` prop; the marks render
+  through the shared `Marks` renderer, but add no hit targets.
 
 ## Charts
 
@@ -672,36 +730,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-10-11):**
+**Enforced budgets (measured 2026-10-26):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.96 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 4.5 kB  | **4.42 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 15 kB   | **13.28 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5 kB    | **4.83 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **13.10 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 15 kB   | **14.02 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 5.5 kB  | **5.30 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **13.71 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 4.83 kB |
-| `area`     | 4.59 kB |
-| `lines`    | 4.74 kB |
-| `bar`      | 5.69 kB |
+| `line`     | 5.35 kB |
+| `area`     | 5.12 kB |
+| `lines`    | 5.33 kB |
+| `bar`      | 6.25 kB |
 | `win-loss` | 2.14 kB |
-| `bullet`   | 1.82 kB |
-| `donut`    | 3.19 kB |
-| `gauge`    | 2.40 kB |
-| `scatter`  | 4.17 kB |
-| `heatmap`  | 4.34 kB |
-| `radar`    | 2.71 kB |
-| `pictogram`| 3.93 kB |
+| `bullet`   | 1.86 kB |
+| `donut`    | 3.64 kB |
+| `gauge`    | 2.87 kB |
+| `scatter`  | 4.77 kB |
+| `heatmap`  | 4.47 kB |
+| `radar`    | 2.78 kB |
+| `pictogram`| 4.02 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 13.3 kB gzipped,
+2–6.5 kB; the whole core library (all twelve charts plus `toSVG`) is 14.0 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

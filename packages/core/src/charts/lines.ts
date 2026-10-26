@@ -1,4 +1,4 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
@@ -12,6 +12,7 @@ import { lineMarkExtent, resolveChartShell, sceneShell, singlePointDot } from '.
 import { markClass } from '../core/css-classes';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import { annotationMarks, indexAnnotationMapper } from '../core/annotations';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -25,7 +26,7 @@ export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   dotRadius?: number;
 }
 
-export interface LinesOptions extends BaseOptions {
+export interface LinesOptions extends BaseOptions, AnnotationOptions {
   /** X axis (index-based). Disabled by default. */
   xAxis?: AxisOptions;
   /** Y axis (value-based). Disabled by default. */
@@ -158,6 +159,13 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const xA = axisMarks(options.xAxis, axisLayoutFor(layout, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
   const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
+  // Annotations sit on top of everything, including axis furniture. The
+  // shared domain spans all series, and there is no series targeting in v1.
+  const annotations = annotationMarks(
+    options.annotations,
+    indexAnnotationMapper(count, valueDomain, layout),
+    defaultColor,
+  );
 
-  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
+  return { ...base, marks: [...layerMarks(hl, xA, yA, marks), ...annotations], points };
 }

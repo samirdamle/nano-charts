@@ -1,8 +1,9 @@
-import type { BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
 import { arcPath, dialSpan, linearScale, polar, round } from '../core/geometry';
 import { toFiniteNumber } from '../core/normalize';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
+import { annotationMarks, dialAnnotationMapper } from '../core/annotations';
 import type { DonutTrackOptions } from './donut';
 
 export interface GaugeInput {
@@ -20,7 +21,7 @@ export interface GaugeZone {
   opacity?: number;
 }
 
-export interface GaugeOptions extends BaseOptions {
+export interface GaugeOptions extends BaseOptions, AnnotationOptions {
   /** Domain minimum. Defaults to 0. */
   min?: number;
   /** 'arc': a foreground arc sweeps to the value. 'needle': a needle points
@@ -214,6 +215,16 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     cy,
     rInner,
     mode === 'needle' ? rOuter * 0.45 : 0,
+  );
+
+  // Annotations sit on top of everything, on the ring at mid-thickness
+  // radius; `y` is the value across [min, max] (x is ignored).
+  marks.push(
+    ...annotationMarks(
+      options.annotations,
+      dialAnnotationMapper(cx, cy, rMid, startAngle, span, [min, max]),
+      color,
+    ),
   );
 
   points.push({

@@ -3,7 +3,7 @@
     "name": "line (standalone)",
     "path": "dist/line.js",
     "import": "{ line }",
-    "limit": "4 kB",
+    "limit": "4.5 kB",
     "gzip": true
   },
   {

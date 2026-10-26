@@ -1,4 +1,4 @@
-import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
 import { extent, round } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
 import {
@@ -11,6 +11,7 @@ import {
 import { seriesSummary } from './a11y';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from './axis';
 import { highlightMarks, type HighlightZones } from './highlight';
+import { annotationMarks, indexAnnotationMapper } from './annotations';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -74,7 +75,10 @@ export function sceneShell(
   };
 }
 
-export interface SeriesChartOptions<T> extends BaseOptions, Partial<SeriesAccessors<T>> {
+export interface SeriesChartOptions<T>
+  extends BaseOptions,
+    Partial<SeriesAccessors<T>>,
+    AnnotationOptions {
   /** X axis (index-based). Disabled by default. */
   xAxis?: AxisOptions;
   /** Y axis (value-based). Disabled by default. */
@@ -150,10 +154,16 @@ export function renderSeriesChart<T>(
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
   // Highlight zones sit behind everything, clipped to the plot.
   const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
+  // Annotations sit on top of everything, including axis furniture.
+  const annotations = annotationMarks(
+    options.annotations,
+    indexAnnotationMapper(datums.length, valueDomain, layout),
+    color,
+  );
 
   return {
     ...base,
-    marks: layerMarks(hl, xA, yA, marks),
+    marks: [...layerMarks(hl, xA, yA, marks), ...annotations],
     points,
   };
 }

@@ -37,6 +37,21 @@ describe('LineNanoChart', () => {
     expect(onPointHover).toHaveBeenCalledWith(null);
   });
 
+  it('passes annotations through and keeps them out of the hit targets', () => {
+    const { container } = render(
+      <LineNanoChart
+        data={[4, 9, 2]}
+        annotations={[{ x: 1, y: 9, shape: 'emoji', emoji: '⚠️', size: 4 }]}
+        onPointHover={vi.fn()}
+      />,
+    );
+    // The annotation renders (classed), but adds no hit target: annotations
+    // are visual-only in v1, so the 3 data points keep exactly 3 targets.
+    expect(container.querySelectorAll('svg > text.nc-annotation')).toHaveLength(1);
+    expect(container.querySelector('svg > text.nc-annotation')?.textContent).toBe('⚠️');
+    expect(container.querySelectorAll('circle[fill="transparent"]')).toHaveLength(3);
+  });
+
   it('fires onPointClick with the point', () => {
     const onPointClick = vi.fn();
     const { container } = render(<LineNanoChart data={[4, 9, 2]} onPointClick={onPointClick} />);

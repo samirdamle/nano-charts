@@ -1,4 +1,4 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, linearScale, round } from '../core/geometry';
 import {
   autoPlotPadding,
@@ -9,6 +9,7 @@ import {
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import { annotationMarks, xyAnnotationMapper } from '../core/annotations';
 import { markClass } from '../core/css-classes';
 
 export interface ScatterPoint {
@@ -33,7 +34,7 @@ export interface ScatterAccessors<T> {
 export type ScatterInput<T = ScatterPoint> = [number, number][] | T[];
 
 export interface ScatterOptions<T = ScatterPoint>
-  extends BaseOptions, Partial<ScatterAccessors<T>> {
+  extends BaseOptions, Partial<ScatterAccessors<T>>, AnnotationOptions {
   radius?: number;
   /** X axis. Disabled by default. */
   xAxis?: AxisOptions;
@@ -155,6 +156,12 @@ export function scatter<T = ScatterPoint>(
   const xA = axisMarks(options.xAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'y'));
   const hl = highlightMarks(options.highlights, { x: xScale, y: yScale }, box);
+  // Annotations sit on top of everything, including axis furniture.
+  const annotations = annotationMarks(
+    options.annotations,
+    xyAnnotationMapper(xDomain, yDomain, xScale, yScale),
+    color,
+  );
 
-  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
+  return { ...base, marks: [...layerMarks(hl, xA, yA, marks), ...annotations], points };
 }

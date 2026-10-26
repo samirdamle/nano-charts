@@ -1,4 +1,4 @@
-import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
 import { markClass } from '../core/css-classes';
 import { extent, linearScale, round } from '../core/geometry';
 import {
@@ -18,6 +18,7 @@ import {
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import { annotationMarks, barAnnotationMapper } from '../core/annotations';
 
 export interface BarTrackOptions {
   /** The "100%" the track represents. When larger than the data max it
@@ -38,7 +39,10 @@ export interface BarTrackOptions {
 export type BarMode = 'stacked' | 'grouped' | 'waterfall';
 
 export interface BarOptions<T = number>
-  extends BaseOptions, Partial<SeriesAccessors<T>>, Partial<SeriesColorAccessor<T>> {
+  extends BaseOptions,
+    Partial<SeriesAccessors<T>>,
+    Partial<SeriesColorAccessor<T>>,
+    AnnotationOptions {
   gap?: number;
   radius?: number;
   horizontal?: boolean;
@@ -388,6 +392,13 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
   const xA = axisMarks(options.xAxis, axisFor('x'));
   const yA = axisMarks(options.yAxis, axisFor('y'));
+  // Annotations sit on top of everything, including axis furniture, at the
+  // category center (grouped/stacked: over the category, not one sub-bar).
+  const annotations = annotationMarks(
+    options.annotations,
+    barAnnotationMapper(columns.length, domain, catScale, valueScale, horizontal),
+    color,
+  );
 
-  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
+  return { ...base, marks: [...layerMarks(hl, xA, yA, marks), ...annotations], points };
 }
