@@ -10,7 +10,7 @@ import {
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
-import { annotationMarks, dialAnnotationMapper } from '../core/annotations';
+import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 import { gauge, pushCenterLabel } from './gauge';
 
 export interface DonutGauge {
@@ -196,13 +196,12 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   // radius; `y` is the value across [0, total] (x is ignored). Gauge mode
   // needs nothing here: it delegates to gauge(), which applies the same
   // mapping with [0, max] and these same startAngle/span values.
-  marks.push(
-    ...annotationMarks(
-      options.annotations,
-      dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]),
-      color,
-    ),
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]), 0),
+    color,
   );
+  marks.push(...annMarks);
 
-  return { ...base, marks, points };
+  return { ...base, marks, points, ...(annotationPoints.length > 0 ? { annotationPoints } : {}) };
 }

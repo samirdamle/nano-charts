@@ -1,4 +1,12 @@
-import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Datum,
+  Mark,
+  ReferenceLineOptions,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { extent, round } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
 import {
@@ -11,7 +19,12 @@ import {
 import { seriesSummary } from './a11y';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from './axis';
 import { highlightMarks, type HighlightZones } from './highlight';
-import { annotationMarks, indexAnnotationMapper } from './annotations';
+import {
+  annotationMarks,
+  indexAnnotationMapper,
+  referenceLineMarks,
+  seriesAwareMapper,
+} from './annotations';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -78,7 +91,8 @@ export function sceneShell(
 export interface SeriesChartOptions<T>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
-    AnnotationOptions {
+    AnnotationOptions,
+    ReferenceLineOptions {
   /** X axis (index-based). Disabled by default. */
   xAxis?: AxisOptions;
   /** Y axis (value-based). Disabled by default. */
@@ -154,17 +168,28 @@ export function renderSeriesChart<T>(
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
   // Highlight zones sit behind everything, clipped to the plot.
   const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
-  // Annotations sit on top of everything, including axis furniture.
-  const annotations = annotationMarks(
+  // Reference lines sit above the data and axes; annotations sit on top
+  // of everything, including axis furniture.
+  const referenceLines = referenceLineMarks(
+    options.referenceLines,
+    {
+      horizontal: (v) => (v >= valueDomain[0] && v <= valueDomain[1] ? layout.y(v) : null),
+      vertical: (v) => (v >= 0 && v <= datums.length - 1 ? layout.x(v) : null),
+      box: layout,
+    },
+    color,
+  );
+  const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    indexAnnotationMapper(datums.length, valueDomain, layout),
+    seriesAwareMapper(indexAnnotationMapper(datums.length, valueDomain, layout), 1),
     color,
   );
 
   return {
     ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...annotations],
+    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
     points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
   };
 }
 

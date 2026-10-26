@@ -1,11 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { area } from '../../src/charts/area';
 import { bar } from '../../src/charts/bar';
+import { bullet } from '../../src/charts/bullet';
 import { donut } from '../../src/charts/donut';
 import { gauge } from '../../src/charts/gauge';
+import { heatmap } from '../../src/charts/heatmap';
 import { line } from '../../src/charts/line';
 import { lines } from '../../src/charts/lines';
+import { pictogram } from '../../src/charts/pictogram';
+import { radar } from '../../src/charts/radar';
 import { scatter } from '../../src/charts/scatter';
+import { winLoss } from '../../src/charts/win-loss';
 import { toSVG } from '../../src/render/to-svg';
 import type { Mark } from '../../src/types';
 
@@ -254,5 +259,332 @@ describe('annotations', () => {
   it('renders annotations through toSVG with their generated classes', () => {
     const svg = toSVG(line([0, 10, 5], { annotations: [{ x: 1, y: 10, shape: 'dot' }] }));
     expect(svg).toContain('class="nc-annotation nc-annotation-0"');
+  });
+});
+
+describe('annotations v2: new chart mappings', () => {
+  it('maps radar annotations to polar points, fractional axes included', () => {
+    const scene = radar([3, 1, 2], {
+      annotations: [
+        { x: 0, y: 3, shape: 'dot' },
+        { x: 1, y: 1.5, shape: 'dot' },
+        { x: 0.5, y: 3, shape: 'dot' },
+        { x: 3, y: 1, shape: 'dot' },
+        { x: 0, y: 4, shape: 'dot' },
+        { x: 0, y: -1, shape: 'dot' },
+      ],
+    });
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(3);
+    // Axis 0 is north, domainMax 3, radius 49 (padding 1), center (50, 50).
+    expect(ann[0]).toMatchObject({ cx: 50, cy: 1 });
+    // Axis 1 at 30°, half radius.
+    expect(ann[1]).toMatchObject({ cx: 71.22, cy: 62.25 });
+    // Halfway between axes 0 and 1: -30°, full radius.
+    expect(ann[2]).toMatchObject({ cx: 92.44, cy: 25.5 });
+    expect(cls(ann[0])).toBe('nc-annotation nc-annotation-0');
+    expect(cls(ann[2])).toBe('nc-annotation nc-annotation-2');
+  });
+
+  it('maps heatmap annotations to cell centers and drops missing cells', () => {
+    const scene = heatmap([[1, 2], [3, 4]], {
+      cellSize: 10,
+      annotations: [
+        { x: 1, y: 0, shape: 'dot' },
+        { x: 0, y: 1, shape: 'dot' },
+        { x: 2, y: 0, shape: 'dot' },
+        { x: 0.5, y: 0, shape: 'dot' },
+      ],
+    });
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(2);
+    expect(ann[0]).toMatchObject({ cx: 15, cy: 5 });
+    expect(ann[1]).toMatchObject({ cx: 5, cy: 15 });
+
+    const ragged = heatmap([[1], [2, 3, 4]], {
+      cellSize: 10,
+      annotations: [
+        { x: 2, y: 0, shape: 'dot' },
+        { x: 2, y: 1, shape: 'dot' },
+      ],
+    });
+    const raggedAnn = annotationsOf(ragged);
+    expect(raggedAnn).toHaveLength(1);
+    expect(raggedAnn[0]).toMatchObject({ cx: 25, cy: 15 });
+  });
+
+  it('maps pictogram annotations to block slots, 1-based, horizontal included', () => {
+    const scene = pictogram([3, 2], {
+      blockSize: 8,
+      annotations: [
+        { x: 0, y: 1, shape: 'dot' },
+        { x: 1, y: 2, shape: 'dot' },
+        { x: 0, y: 4, shape: 'dot' },
+        { x: 2, y: 1, shape: 'dot' },
+        { x: 0, y: 0, shape: 'dot' },
+        { x: 0, y: 1.5, shape: 'dot' },
+      ],
+    });
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(2);
+    // Pitch 10, blocks stack upward: series 0 block 1 centers at (4, 24).
+    expect(ann[0]).toMatchObject({ cx: 4, cy: 24 });
+    expect(ann[1]).toMatchObject({ cx: 14, cy: 14 });
+
+    const horizontal = pictogram([3, 2], {
+      horizontal: true,
+      blockSize: 8,
+      annotations: [{ x: 1, y: 2, shape: 'dot' }],
+    });
+    expect(annotationsOf(horizontal)).toHaveLength(1);
+    expect(annotationsOf(horizontal)[0]).toMatchObject({ cx: 14, cy: 14 });
+  });
+
+  it('maps bullet annotations to values on the centerline, y ignored', () => {
+    const scene = bullet(
+      { value: 60, target: 80, max: 100 },
+      {
+        annotations: [
+          { x: 80, y: 0, shape: 'dot' },
+          { x: 50, y: 999, shape: 'dot' },
+          { x: 101, y: 0, shape: 'dot' },
+          { x: -1, y: 0, shape: 'dot' },
+        ],
+      },
+    );
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(2);
+    // Plot box [1, 99]: value 80 maps to 79.4, centerline 10.
+    expect(ann[0]).toMatchObject({ cx: 79.4, cy: 10 });
+    expect(ann[1]).toMatchObject({ cx: 50, cy: 10 });
+  });
+
+  it('maps winLoss annotations to their index block by sign, y ignored', () => {
+    const scene = winLoss([5, -3, 0], {
+      annotations: [
+        { x: 0, y: 0, shape: 'dot' },
+        { x: 1, y: 0, shape: 'dot' },
+        { x: 2, y: 0, shape: 'dot' },
+        { x: 3, y: 0, shape: 'dot' },
+        { x: 0.5, y: 0, shape: 'dot' },
+      ],
+    });
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(3);
+    // Plot box [1, 99] x [1, 19]: slot 32.67, barW 26.13, centers
+    // 17.34, 50, 82.67; win center 5.5, loss center 14.5, zero 10.
+    expect(ann[0]).toMatchObject({ cx: 17.34, cy: 5.5 });
+    expect(ann[1]).toMatchObject({ cx: 50, cy: 14.5 });
+    expect(ann[2]).toMatchObject({ cx: 82.67, cy: 10 });
+  });
+});
+
+describe('annotations v2: series targeting', () => {
+  it('colors lines annotations by series and drops unknown series', () => {
+    const scene = lines(
+      [
+        { data: [1, 2], color: 'red' },
+        { data: [2, 1], color: 'blue' },
+      ],
+      {
+        annotations: [
+          { x: 0, y: 1, shape: 'dot', seriesIndex: 1 },
+          { x: 0, y: 1, shape: 'dot', seriesIndex: 2 },
+          { x: 0, y: 1, shape: 'dot', seriesIndex: 1.5 },
+          { x: 0, y: 1, shape: 'dot' },
+        ],
+      },
+    );
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(2);
+    expect(ann[0]).toMatchObject({ fill: 'blue', class: 'nc-annotation nc-annotation-0' });
+    expect(ann[1]).toMatchObject({ fill: 'currentColor', class: 'nc-annotation nc-annotation-3' });
+  });
+
+  it('moves grouped bar annotations onto the sub-bar, keeps stacked at category center', () => {
+    const grouped = bar(
+      [
+        [3, 6],
+        [9, 2],
+      ],
+      {
+        mode: 'grouped',
+        annotations: [{ x: 0, y: 5, shape: 'dot', seriesIndex: 1 }],
+      },
+    );
+    const groupedAnn = annotationsOf(grouped);
+    expect(groupedAnn).toHaveLength(1);
+    // Column 0 bars at 7 and 27, width 16: sub-bar 1 centers at 35.
+    expect(groupedAnn[0]).toMatchObject({ cx: 35 });
+    const rects = grouped.marks.filter((m) => m.type === 'rect');
+    expect(groupedAnn[0]).toMatchObject({ fill: (rects[1] as { fill?: string }).fill });
+
+    const stacked = bar(
+      [
+        [3, 6],
+        [9, 2],
+      ],
+      {
+        annotations: [{ x: 0, y: 5, shape: 'dot', seriesIndex: 1 }],
+      },
+    );
+    const stackedAnn = annotationsOf(stacked);
+    expect(stackedAnn).toHaveLength(1);
+    // Category center: slot starts at 5, barW 40.
+    expect(stackedAnn[0]).toMatchObject({ cx: 25 });
+
+    const ragged = bar(
+      [
+        [3, 6],
+        [9],
+      ],
+      {
+        mode: 'grouped',
+        annotations: [
+          { x: 1, y: 5, shape: 'dot', seriesIndex: 1 },
+          { x: 0, y: 5, shape: 'dot', seriesIndex: 1 },
+        ],
+      },
+    );
+    const raggedAnn = annotationsOf(ragged);
+    expect(raggedAnn).toHaveLength(1);
+    expect(cls(raggedAnn[0])).toBe('nc-annotation nc-annotation-1');
+  });
+
+  it('accepts seriesIndex 0 on single-series charts and drops it on series-less charts', () => {
+    const single = line([1, 2], {
+      annotations: [
+        { x: 0, y: 1, shape: 'dot', seriesIndex: 0 },
+        { x: 0, y: 1, shape: 'dot', seriesIndex: 1 },
+      ],
+    });
+    expect(annotationsOf(single)).toHaveLength(1);
+
+    const noSeries = donut([1, 2], {
+      annotations: [{ x: 0, y: 1, shape: 'dot', seriesIndex: 0 }],
+    });
+    expect(annotationsOf(noSeries)).toHaveLength(0);
+  });
+});
+
+describe('annotations v2: reference lines', () => {
+  it('draws full-span lines on line charts, drops out-of-domain ones, gaps preserved', () => {
+    const scene = line([0, 10, 5], {
+      referenceLines: [
+        { value: 5, orientation: 'horizontal' },
+        { value: 11, orientation: 'horizontal' },
+        { value: 1, orientation: 'vertical', style: 'dashed', color: 'red', thickness: 2 },
+        { value: 0.5, orientation: 'vertical' },
+        { value: 3, orientation: 'vertical' },
+      ],
+      annotations: [{ x: 1, y: 10, shape: 'dot' }],
+    });
+    const ref = scene.marks.filter((m) => cls(m).includes('nc-reference-line'));
+    expect(ref).toHaveLength(3);
+    // Plot box [0.5, 99.5] x [0.5, 19.5]; value 5 maps to y 10.
+    expect(ref[0]).toMatchObject({
+      type: 'line',
+      x1: 0.5,
+      y1: 10,
+      x2: 99.5,
+      y2: 10,
+      stroke: 'currentColor',
+      strokeWidth: 1,
+      class: 'nc-reference-line nc-reference-line-0',
+    });
+    expect(ref[1]).toMatchObject({
+      type: 'line',
+      x1: 50,
+      y1: 0.5,
+      x2: 50,
+      y2: 19.5,
+      stroke: 'red',
+      strokeWidth: 2,
+      strokeDasharray: '5 4',
+      class: 'nc-reference-line nc-reference-line-2',
+    });
+    // Fractional index interpolates, like annotations.
+    expect(ref[2]).toMatchObject({ x1: 25.25, x2: 25.25, class: 'nc-reference-line nc-reference-line-3' });
+    // Layer order: after the data polyline, before the annotation.
+    const polylineIdx = scene.marks.findIndex((m) => m.type === 'polyline');
+    const annIdx = scene.marks.findIndex((m) => cls(m).includes('nc-annotation'));
+    expect(scene.marks.indexOf(ref[0]!)).toBeGreaterThan(polylineIdx);
+    expect(annIdx).toBeGreaterThan(scene.marks.indexOf(ref[2]!));
+  });
+
+  it('swaps the perpendicular axis on horizontal bars', () => {
+    const scene = bar([10, 20], {
+      horizontal: true,
+      referenceLines: [
+        { value: 15, orientation: 'vertical' },
+        { value: 1, orientation: 'horizontal' },
+        { value: 999, orientation: 'vertical' },
+      ],
+    });
+    const ref = scene.marks.filter((m) => cls(m).includes('nc-reference-line'));
+    expect(ref).toHaveLength(2);
+    // Vertical line: constant x on the value axis, spanning the plot height.
+    const vertical = ref[0] as { x1: number; x2: number; y1: number; y2: number };
+    expect(vertical.x1).toBe(vertical.x2);
+    expect(vertical.y1).toBeLessThan(vertical.y2);
+    // Horizontal line: constant y on the category axis, spanning the width.
+    const horizontal = ref[1] as { y1: number; y2: number; x1: number; x2: number };
+    expect(horizontal.y1).toBe(horizontal.y2);
+    expect(horizontal.x1).toBeLessThan(horizontal.x2);
+  });
+
+  it('draws scatter reference lines on both data scales', () => {
+    const scene = scatter(
+      [
+        [0, 0],
+        [10, 10],
+      ],
+      {
+        referenceLines: [{ value: 5, orientation: 'horizontal' }],
+      },
+    );
+    const ref = scene.marks.filter((m) => cls(m).includes('nc-reference-line'));
+    expect(ref).toHaveLength(1);
+    const horizontal = ref[0] as { y1: number; y2: number; x1: number; x2: number };
+    expect(horizontal.y1).toBe(horizontal.y2);
+    expect(horizontal.x1).toBeLessThan(horizontal.x2);
+    expect(cls(ref[0])).toBe('nc-reference-line nc-reference-line-0');
+  });
+});
+
+describe('annotations v2: interactive annotations', () => {
+  it('exposes only interactive annotations in scene.annotationPoints', () => {
+    const scene = line([0, 10, 5], {
+      annotations: [
+        { x: 1, y: 10, shape: 'dot', interactive: true, label: 'Peak' },
+        { x: 0, y: 0, shape: 'dot' },
+        { x: 5, y: 10, shape: 'dot', interactive: true },
+      ],
+    });
+    expect(scene.annotationPoints).toEqual([{ annotationIndex: 0, x: 50, y: 0.5, label: 'Peak' }]);
+    // Data points untouched.
+    expect(scene.points).toHaveLength(3);
+  });
+
+  it('omits annotationPoints entirely when nothing is interactive', () => {
+    const scene = line([0, 10, 5], {
+      annotations: [{ x: 1, y: 10, shape: 'dot' }],
+    });
+    expect(scene.annotationPoints).toBeUndefined();
+  });
+
+  it('carries seriesIndex on interactive points', () => {
+    const scene = lines(
+      [
+        { data: [1, 2], color: 'red' },
+        { data: [2, 1], color: 'blue' },
+      ],
+      {
+        annotations: [{ x: 0, y: 1, shape: 'dot', interactive: true, seriesIndex: 1 }],
+      },
+    );
+    expect(scene.annotationPoints).toEqual([
+      expect.objectContaining({ annotationIndex: 0, seriesIndex: 1 }),
+    ]);
   });
 });

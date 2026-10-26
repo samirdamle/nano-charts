@@ -1,8 +1,9 @@
-import type { BaseOptions, Mark, Scene } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene } from '../types';
 import { linearScale, round } from '../core/geometry';
 import { paddedBox } from '../core/plot';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
+import { annotationMarks, bulletAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 
 export interface BulletData {
   value: number;
@@ -13,7 +14,7 @@ export interface BulletData {
   label?: string;
 }
 
-export type BulletOptions = BaseOptions;
+export type BulletOptions = BaseOptions & AnnotationOptions;
 
 export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const { width, height, color, padding } = resolveChartShell(options);
@@ -71,6 +72,15 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     strokeWidth: 1,
   });
 
+  // Annotations sit on top of everything, at their value on the
+  // centerline; `y` is ignored.
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(bulletAnnotationMapper(xScale, max, (top + bottom) / 2), 0),
+    color,
+  );
+  marks.push(...annMarks);
+
   return {
     ...sceneShell(
       { width, height },
@@ -91,5 +101,6 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
         y: round((top + bottom) / 2),
       },
     ],
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
   };
 }

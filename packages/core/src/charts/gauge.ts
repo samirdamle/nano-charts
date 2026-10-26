@@ -3,7 +3,7 @@ import { arcPath, dialSpan, linearScale, polar, round } from '../core/geometry';
 import { toFiniteNumber } from '../core/normalize';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
-import { annotationMarks, dialAnnotationMapper } from '../core/annotations';
+import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 import type { DonutTrackOptions } from './donut';
 
 export interface GaugeInput {
@@ -219,13 +219,12 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
 
   // Annotations sit on top of everything, on the ring at mid-thickness
   // radius; `y` is the value across [min, max] (x is ignored).
-  marks.push(
-    ...annotationMarks(
-      options.annotations,
-      dialAnnotationMapper(cx, cy, rMid, startAngle, span, [min, max]),
-      color,
-    ),
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [min, max]), 0),
+    color,
   );
+  marks.push(...annMarks);
 
   points.push({
     id: 0,
@@ -247,5 +246,6 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     ),
     marks,
     points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
   };
 }

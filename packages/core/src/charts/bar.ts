@@ -1,4 +1,12 @@
-import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Datum,
+  Mark,
+  ReferenceLineOptions,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { markClass } from '../core/css-classes';
 import { extent, linearScale, round } from '../core/geometry';
 import {
@@ -18,7 +26,12 @@ import {
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
-import { annotationMarks, barAnnotationMapper } from '../core/annotations';
+import {
+  annotationMarks,
+  barAnnotationMapper,
+  referenceLineMarks,
+  seriesAwareMapper,
+} from '../core/annotations';
 
 export interface BarTrackOptions {
   /** The "100%" the track represents. When larger than the data max it
@@ -42,7 +55,8 @@ export interface BarOptions<T = number>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
     Partial<SeriesColorAccessor<T>>,
-    AnnotationOptions {
+    AnnotationOptions,
+    ReferenceLineOptions {
   gap?: number;
   radius?: number;
   horizontal?: boolean;
@@ -392,13 +406,65 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
   const xA = axisMarks(options.xAxis, axisFor('x'));
   const yA = axisMarks(options.yAxis, axisFor('y'));
-  // Annotations sit on top of everything, including axis furniture, at the
-  // category center (grouped/stacked: over the category, not one sub-bar).
-  const annotations = annotationMarks(
+  // Annotations sit on top of everything, including axis furniture. A
+  // seriesIndex moves a grouped-bar annotation onto that sub-bar and
+  // defaults its color to the segment's color; stacked/single bars keep
+  // the category center. A series absent from this column drops.
+  // Reference lines sit just below the annotations; on a horizontal bar
+  // chart the perpendicular axis is the category axis for horizontal
+  // lines and the value axis for vertical ones.
+  const seriesCount = Math.max(0, ...columns.map((segs) => segs.length));
+  const seriesAt = (col: number, si: number) => {
+    const segs = columns[col]!;
+    if (si >= segs.length) return null;
+    const seg = segs[si]!;
+    const segmentColor = resolveSegmentColor({
+      explicit: seg.color,
+      uniform: color,
+      usePalette: segs.length > 1 && !hasUniformColor,
+      paletteIndex: si,
+      paletteTotal: segs.length,
+    });
+    if (!subSlot) return { color: segmentColor };
+    const lead = (groupCount - segs.length) / 2;
+    return { center: slot.x(col) + subSlot.x(lead + si) + subW / 2, color: segmentColor };
+  };
+  const referenceLines = referenceLineMarks(
+    options.referenceLines,
+    {
+      horizontal: (v) =>
+        horizontal
+          ? Number.isInteger(v) && v >= 0 && v < columns.length
+            ? catScale(v)
+            : null
+          : v >= domain[0] && v <= domain[1]
+            ? valueScale(v)
+            : null,
+      vertical: (v) =>
+        horizontal
+          ? v >= domain[0] && v <= domain[1]
+            ? valueScale(v)
+            : null
+          : Number.isInteger(v) && v >= 0 && v < columns.length
+            ? catScale(v)
+            : null,
+      box: layout,
+    },
+    color,
+  );
+  const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    barAnnotationMapper(columns.length, domain, catScale, valueScale, horizontal),
+    seriesAwareMapper(
+      barAnnotationMapper(columns.length, domain, catScale, valueScale, horizontal, seriesAt),
+      seriesCount,
+    ),
     color,
   );
 
-  return { ...base, marks: [...layerMarks(hl, xA, yA, marks), ...annotations], points };
+  return {
+    ...base,
+    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

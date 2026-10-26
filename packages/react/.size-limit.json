@@ -3,7 +3,7 @@
     "name": "LineNanoChart (standalone)",
     "path": "dist/line.js",
     "import": "{ LineNanoChart }",
-    "limit": "5.5 kB",
+    "limit": "6 kB",
     "gzip": true
   },
   {

@@ -1,4 +1,11 @@
-import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Mark,
+  ReferenceLineOptions,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { extent, linearScale, round } from '../core/geometry';
 import {
   autoPlotPadding,
@@ -9,7 +16,12 @@ import {
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
-import { annotationMarks, xyAnnotationMapper } from '../core/annotations';
+import {
+  annotationMarks,
+  referenceLineMarks,
+  seriesAwareMapper,
+  xyAnnotationMapper,
+} from '../core/annotations';
 import { markClass } from '../core/css-classes';
 
 export interface ScatterPoint {
@@ -34,7 +46,7 @@ export interface ScatterAccessors<T> {
 export type ScatterInput<T = ScatterPoint> = [number, number][] | T[];
 
 export interface ScatterOptions<T = ScatterPoint>
-  extends BaseOptions, Partial<ScatterAccessors<T>>, AnnotationOptions {
+  extends BaseOptions, Partial<ScatterAccessors<T>>, AnnotationOptions, ReferenceLineOptions {
   radius?: number;
   /** X axis. Disabled by default. */
   xAxis?: AxisOptions;
@@ -157,11 +169,26 @@ export function scatter<T = ScatterPoint>(
   const yA = axisMarks(options.yAxis, axisLayoutFor(box, { x: xScale, y: yScale }, 'y'));
   const hl = highlightMarks(options.highlights, { x: xScale, y: yScale }, box);
   // Annotations sit on top of everything, including axis furniture.
-  const annotations = annotationMarks(
+  // Reference lines sit just below them.
+  const referenceLines = referenceLineMarks(
+    options.referenceLines,
+    {
+      horizontal: (v) => (v >= yDomain[0] && v <= yDomain[1] ? yScale(v) : null),
+      vertical: (v) => (v >= xDomain[0] && v <= xDomain[1] ? xScale(v) : null),
+      box,
+    },
+    color,
+  );
+  const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    xyAnnotationMapper(xDomain, yDomain, xScale, yScale),
+    seriesAwareMapper(xyAnnotationMapper(xDomain, yDomain, xScale, yScale), 1),
     color,
   );
 
-  return { ...base, marks: [...layerMarks(hl, xA, yA, marks), ...annotations], points };
+  return {
+    ...base,
+    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

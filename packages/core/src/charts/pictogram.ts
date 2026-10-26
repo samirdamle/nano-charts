@@ -1,4 +1,4 @@
-import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
 import { round } from '../core/geometry';
 import {
   normalizeSeries,
@@ -12,6 +12,7 @@ import { resolvePadding } from '../core/plot';
 import { dashFor } from '../core/axis';
 import { sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
+import { annotationMarks, pictogramAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
 export type PictogramBlock =
@@ -93,7 +94,8 @@ export type FilledAccessor<T> = (row: T, index: number) => number;
 export interface PictogramOptions<T = number>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
-    Partial<SeriesColorAccessor<T>> {
+    Partial<SeriesColorAccessor<T>>,
+    AnnotationOptions {
   /** Block shape. Defaults to a square rect. */
   block?: PictogramBlock;
   /** Block edge in px. Defaults to 8. */
@@ -595,5 +597,17 @@ export function pictogram<T = number>(
     }
   });
 
-  return { ...base, marks, points };
+  // Annotations sit on top of everything, centered on their block's slot.
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(pictogramAnnotationMapper(padding, pitch, s, horizontal, maxSlots, slots), 0),
+    options.color ?? 'currentColor',
+  );
+
+  return {
+    ...base,
+    marks: [...marks, ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

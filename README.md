@@ -4,7 +4,7 @@ A monorepo for **tiny SVG charts** — sparklines, micro bars, donuts, bullets, 
 and heatmaps — the kind you repeat hundreds of times across table cells and metric
 cards.
 
-- **14.0 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
+- **15.3 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
 - Framework-agnostic core (`data → Scene`) + a `toSVG` serializer; SSR-safe and deterministic.
 - Hover and click events, accessible by default, themeable via `currentColor` and CSS variables.
 - React wrapper in [`@samirdamle/nano-charts-react`](https://www.npmjs.com/package/@samirdamle/nano-charts-react).
@@ -91,11 +91,11 @@ measured 2026-10-26:
 
 | Entry                                        | Budget  | Measured    |
 | -------------------------------------------- | ------- | ----------- |
-| Core — `line` standalone                     | 4.5 kB  | **4.42 kB** |
+| Core — `line` standalone                     | 5 kB    | **4.84 kB** |
 | Core — `toSVG` standalone                    | 1.25 kB | **1.05 kB** |
-| Core — full barrel (all 12 charts + `toSVG`) | 15 kB   | **14.02 kB** |
-| React — `LineNanoChart` standalone            | 5.5 kB  | **5.30 kB** |
-| React — full barrel                          | 15 kB   | **13.71 kB** |
+| Core — full barrel (all 12 charts + `toSVG`) | 15.5 kB | **15.32 kB** |
+| React — `LineNanoChart` standalone            | 6 kB    | **5.80 kB** |
+| React — full barrel                          | 15 kB   | **14.96 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 

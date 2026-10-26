@@ -1,9 +1,10 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
+import { annotationMarks, radarAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 
 export interface RadarSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -34,7 +35,7 @@ function isSeriesArray<T>(input: RadarInput<T>): input is RadarSeries<T>[] {
 
 export type RadarInput<T = number> = SeriesInput<T> | RadarSeries<T>[];
 
-export interface RadarOptions extends BaseOptions {
+export interface RadarOptions extends BaseOptions, AnnotationOptions {
   /** Domain ceiling; defaults to the largest value across all series. */
   max?: number;
   /** Decorative spider grid (spokes + rings). Default true. */
@@ -151,6 +152,8 @@ export function radar<T = number>(
     }
   }
 
+  const seriesColors: string[] = [];
+
   perSeries.forEach(({ input: s, datums }, seriesIndex) => {
     // Precedence: explicit per-series color > uniform options.color (only if
     // the caller passed it) > categorical palette. Same rule lines() uses.
@@ -161,6 +164,7 @@ export function radar<T = number>(
       paletteIndex: seriesIndex,
       paletteTotal: perSeries.length,
     });
+    seriesColors.push(color);
     const strokeWidth = s.strokeWidth ?? 1;
     const strokeDasharray = toDasharray(s.strokeDasharray);
     const vertex = (i: number): [number, number] => {
@@ -239,5 +243,23 @@ export function radar<T = number>(
     points.push(...seriesPoints);
   });
 
-  return { ...base, marks, points };
+  // Annotations sit on top of everything, at the polar point for their
+  // axis/value — regardless of the drawn polygons. Series targeting colors
+  // by series but never moves the mark: the domain is shared.
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(
+      radarAnnotationMapper(cx, cy, radius, axisCount, domainMax),
+      perSeries.length,
+      (si) => seriesColors[si],
+    ),
+    defaultColor,
+  );
+
+  return {
+    ...base,
+    marks: [...marks, ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

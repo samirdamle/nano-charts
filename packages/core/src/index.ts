@@ -39,6 +39,9 @@ export type {
   Annotation,
   AnnotationShape,
   AnnotationOptions,
+  SceneAnnotationPoint,
+  ReferenceLine,
+  ReferenceLineOptions,
 } from './types';
 export type { ColorScale } from './core/color-scale';
 export type { SeriesInput } from './core/normalize';
