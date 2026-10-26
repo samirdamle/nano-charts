@@ -1,4 +1,4 @@
-import type { BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
 import { arcPath, dialSpan, polar, round } from '../core/geometry';
 import {
   normalizeSeries,
@@ -10,6 +10,7 @@ import {
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
+import { annotationMarks, dialAnnotationMapper } from '../core/annotations';
 import { gauge, pushCenterLabel } from './gauge';
 
 export interface DonutGauge {
@@ -29,7 +30,8 @@ export interface DonutTrackOptions {
 export interface DonutOptions<T = number>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
-    Partial<SeriesColorAccessor<T>> {
+    Partial<SeriesColorAccessor<T>>,
+    AnnotationOptions {
   thickness?: number;
   startAngle?: number;
   /** End of the dial's angle domain in degrees (same convention as startAngle:
@@ -190,6 +192,17 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     angle += sweep;
   });
   pushCenterLabel(marks, options.centerLabel, { value: total, min: 0, max: total, frac: 1 }, cx, cy, rInner);
+  // Annotations sit on top of everything, on the ring at mid-thickness
+  // radius; `y` is the value across [0, total] (x is ignored). Gauge mode
+  // needs nothing here: it delegates to gauge(), which applies the same
+  // mapping with [0, max] and these same startAngle/span values.
+  marks.push(
+    ...annotationMarks(
+      options.annotations,
+      dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]),
+      color,
+    ),
+  );
 
   return { ...base, marks, points };
 }

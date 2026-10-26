@@ -4,7 +4,7 @@ A monorepo for **tiny SVG charts** — sparklines, micro bars, donuts, bullets, 
 and heatmaps — the kind you repeat hundreds of times across table cells and metric
 cards.
 
-- **13.3 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
+- **14.0 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
 - Framework-agnostic core (`data → Scene`) + a `toSVG` serializer; SSR-safe and deterministic.
 - Hover and click events, accessible by default, themeable via `currentColor` and CSS variables.
 - React wrapper in [`@samirdamle/nano-charts-react`](https://www.npmjs.com/package/@samirdamle/nano-charts-react).
@@ -87,15 +87,15 @@ Built for pages that render _hundreds_ of tiny charts, where per-chart byte
 cost dominates. Zero runtime dependencies in core; React is a peer dependency
 of the React package. Import one chart per subpath and ship only what you use.
 Budgets are enforced in CI (`pnpm size`); all figures minified + gzip,
-measured 2026-10-11:
+measured 2026-10-26:
 
 | Entry                                        | Budget  | Measured    |
 | -------------------------------------------- | ------- | ----------- |
-| Core — `line` standalone                     | 4 kB    | **3.96 kB** |
+| Core — `line` standalone                     | 4.5 kB  | **4.42 kB** |
 | Core — `toSVG` standalone                    | 1.25 kB | **1.05 kB** |
-| Core — full barrel (all 12 charts + `toSVG`) | 15 kB   | **13.28 kB** |
-| React — `LineNanoChart` standalone            | 5 kB    | **4.83 kB** |
-| React — full barrel                          | 15 kB   | **13.10 kB** |
+| Core — full barrel (all 12 charts + `toSVG`) | 15 kB   | **14.02 kB** |
+| React — `LineNanoChart` standalone            | 5.5 kB  | **5.30 kB** |
+| React — full barrel                          | 15 kB   | **13.71 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 

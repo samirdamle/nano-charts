@@ -553,7 +553,7 @@
           </div>
           <aside class="hero-features">
             <ul>
-              <li>13.3 kB gzipped</li>
+              <li>14.0 kB gzipped</li>
               <li>12 charts</li>
               <li>No dependencies</li>
               <li>Pure JS + SVG</li>
@@ -1185,6 +1185,16 @@
             ],
           })),
         },
+        {
+          title: 'Annotations',
+          make: () => (line([3, 7, 2, 9, 5, 6], {
+            annotations: [
+              { x: 3, y: 9, shape: 'dot', color: 'var(--c4)' },
+              { x: 2, y: 2, shape: 'triangle', color: 'var(--c2)' },
+              { x: 1, y: 7, shape: 'emoji', emoji: '⚠️', size: 4 },
+            ],
+          })),
+        },
       ]);
 
       group('Area', [
@@ -1402,6 +1412,15 @@
         },
         { title: 'Round caps', make: () => (donut({ value: 75, max: 100 }, { strokeLinecap: 'round' })) },
         {
+          title: 'Annotations',
+          make: () => (donut([4, 3, 2], {
+            annotations: [
+              { y: 4, shape: 'dot', color: 'var(--c4)' },
+              { y: 7, shape: 'emoji', emoji: '⭐', size: 4 },
+            ],
+          })),
+        },
+        {
           title: 'Center label',
           make: () => (donut({ value: 72, max: 100 }, { centerLabel: '72%' })),
         },
@@ -1520,6 +1539,17 @@
             highlights: [
               // x + y: rectangle around the blue cluster at (2, 8)
               { x: [-0.5, 4.5], y: [5, 10.5], color: 'color-mix(in srgb, var(--c1) 20%, transparent)' },
+            ],
+          })),
+        },
+        {
+          title: 'Annotations',
+          tall: true,
+          make: () => (scatter(scatterClusters, {
+            height: 60,
+            annotations: [
+              { x: 2, y: 8, shape: 'square', color: 'var(--c1)', size: 2 },
+              { x: 8, y: 7.5, shape: 'emoji', emoji: '🎯', size: 5 },
             ],
           })),
         },

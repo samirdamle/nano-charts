@@ -30,6 +30,7 @@ export type MarkKind =
   | 'label'
   | 'highlight'
   | 'zone'
+  | 'annotation'
   | 'arc'
   | 'needle'
   | 'hub'

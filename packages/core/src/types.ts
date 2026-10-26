@@ -132,6 +132,37 @@ export interface Scene {
   svgClass?: string;
 }
 
+/** Shape of one annotation mark, laid on top of the chart's own marks. */
+export type AnnotationShape = 'dot' | 'square' | 'triangle' | 'line' | 'emoji';
+
+/**
+ * One annotation, in the chart's data coordinates (see each chart's docs for
+ * what `x` and `y` mean there). `size` is one number interpreted per shape:
+ * dot radius, square half-side, triangle center-to-vertex radius, line
+ * half-length, emoji font size. Defaults to 2. `color` defaults to the
+ * chart's color; it is ignored for `emoji`, whose own colours win.
+ */
+export interface Annotation {
+  x: number;
+  y: number;
+  shape: AnnotationShape;
+  color?: string;
+  size?: number;
+  /** Required when `shape` is `'emoji'`: the character(s) to render. */
+  emoji?: string;
+  /** Line shape only: `'horizontal'` (default) or `'vertical'`. */
+  orientation?: 'horizontal' | 'vertical';
+}
+
+/** Opt-in annotations, shared by the charts that support them (v1: line,
+ * area, lines, bar, scatter, donut, gauge). Purely visual: annotations are
+ * marks only, never `scene.points`, and never affect the chart's scales,
+ * domains, or automatic padding. Out-of-range annotations are dropped, not
+ * clamped to an edge. */
+export interface AnnotationOptions {
+  annotations?: Annotation[];
+}
+
 export type Padding = number | { top?: number; right?: number; bottom?: number; left?: number };
 
 export interface BaseOptions {
