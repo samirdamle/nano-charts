@@ -3,7 +3,7 @@
 React components for [`@samirdamle/nano-charts`](https://www.npmjs.com/package/@samirdamle/nano-charts) —
 tiny SVG charts, with hover/click interactivity built in.
 
-- **15.0 kB** gzipped for all chart components — React itself is a peer dependency.
+- **14.9 kB** gzipped for all chart components — React itself is a peer dependency.
 
 ## Install
 

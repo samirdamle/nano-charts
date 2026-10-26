@@ -22,6 +22,7 @@ import { highlightMarks, type HighlightZones } from '../core/highlight';
 import {
   annotationMarks,
   indexAnnotationMapper,
+  indexRefLineScales,
   referenceLineMarks,
   seriesAwareMapper,
 } from '../core/annotations';
@@ -179,11 +180,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   // below the annotations.
   const referenceLines = referenceLineMarks(
     options.referenceLines,
-    {
-      horizontal: (v) => (v >= valueDomain[0] && v <= valueDomain[1] ? layout.y(v) : null),
-      vertical: (v) => (v >= 0 && v <= count - 1 ? layout.x(v) : null),
-      box: layout,
-    },
+    indexRefLineScales(layout, count, valueDomain),
     defaultColor,
   );
   const { marks: annMarks, annotationPoints } = annotationMarks(

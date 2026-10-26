@@ -61,6 +61,33 @@ function inDomain(v: number, domain: [number, number]): boolean {
   return v >= domain[0] && v <= domain[1];
 }
 
+/** Integer index inside [0, count): one check for the mappers' index rules. */
+function inIndex(v: number, count: number): boolean {
+  return Number.isInteger(v) && v >= 0 && v < count;
+}
+
+/**
+ * Reference-line scales for index charts (line, area, lines): a horizontal
+ * line sits at a value on the shared domain, a vertical line at an index
+ * (fractional indices interpolate, like annotations). Shared by
+ * series-chart and lines so the drop rules stay identical.
+ */
+export function indexRefLineScales(
+  layout: SeriesLayout,
+  count: number,
+  domain: [number, number],
+): {
+  horizontal: (v: number) => number | null;
+  vertical: (v: number) => number | null;
+  box: PaddedBox;
+} {
+  return {
+    horizontal: (v) => (inDomain(v, domain) ? layout.y(v) : null),
+    vertical: (v) => (v >= 0 && v <= count - 1 ? layout.x(v) : null),
+    box: layout,
+  };
+}
+
 /**
  * Index-based charts (line, area, lines): `x` is the data index (fractional
  * indices interpolate along the index axis), `y` is the data value.
@@ -108,7 +135,7 @@ export function barAnnotationMapper(
   seriesAt?: (col: number, seriesIndex: number) => { center?: number; color?: string } | null,
 ): AnnotationMapper {
   return (a, seriesIndex) => {
-    if (!isFinitePair(a) || !Number.isInteger(a.x) || a.x < 0 || a.x > count - 1) return null;
+    if (!isFinitePair(a) || !inIndex(a.x, count)) return null;
     if (!inDomain(a.y, domain)) return null;
     let cat = catScale(a.x);
     let color: string | undefined;
@@ -161,16 +188,7 @@ export function heatmapAnnotationMapper(
   hasCell: (row: number, col: number) => boolean,
 ): AnnotationMapper {
   return (a) => {
-    if (
-      !isFinitePair(a) ||
-      !Number.isInteger(a.x) ||
-      !Number.isInteger(a.y) ||
-      a.x < 0 ||
-      a.x > cols - 1 ||
-      a.y < 0 ||
-      a.y > rows - 1 ||
-      !hasCell(a.y, a.x)
-    ) {
+    if (!isFinitePair(a) || !inIndex(a.x, cols) || !inIndex(a.y, rows) || !hasCell(a.y, a.x)) {
       return null;
     }
     return { x: box.left + a.x * cell + cell / 2, y: box.top + a.y * cell + cell / 2 };
@@ -192,11 +210,10 @@ export function pictogramAnnotationMapper(
   slotsPerSeries: number[],
 ): AnnotationMapper {
   return (a) => {
-    if (!isFinitePair(a) || !Number.isInteger(a.x) || !Number.isInteger(a.y)) return null;
+    if (!isFinitePair(a) || !inIndex(a.x, slotsPerSeries.length)) return null;
     const series = a.x;
     const block = a.y - 1;
-    if (series < 0 || series > slotsPerSeries.length - 1) return null;
-    if (block < 0 || block > (slotsPerSeries[series] ?? 0) - 1) return null;
+    if (!inIndex(block, slotsPerSeries[series] ?? 0)) return null;
     const bx = horizontal ? padding.left + block * pitch : padding.left + series * pitch;
     const by = horizontal
       ? padding.top + series * pitch
@@ -235,7 +252,7 @@ export function winLossAnnotationMapper(
   values: number[],
 ): AnnotationMapper {
   return (a) => {
-    if (!Number.isInteger(a.x) || a.x < 0 || a.x > values.length - 1) return null;
+    if (!inIndex(a.x, values.length)) return null;
     const v = values[a.x]!;
     const cy = v > 0 ? (box.top + center) / 2 : v < 0 ? (center + box.bottom) / 2 : center;
     return { x: slotX(a.x) + barWidth / 2, y: cy };
@@ -286,12 +303,9 @@ export function annotationMarks(
   const marks: Mark[] = [];
   const annotationPoints: SceneAnnotationPoint[] = [];
   for (const [i, a] of annotations.entries()) {
+    const si = a.seriesIndex;
     const seriesIndex =
-      a.seriesIndex !== undefined && Number.isInteger(a.seriesIndex) && a.seriesIndex >= 0
-        ? a.seriesIndex
-        : a.seriesIndex === undefined
-          ? undefined
-          : null;
+      si === undefined ? undefined : Number.isInteger(si) && si >= 0 ? si : null;
     if (seriesIndex === null) continue;
     const point = toPoint(a, seriesIndex);
     if (point === null) continue;
@@ -406,35 +420,20 @@ export function referenceLineMarks(
         : 1;
     const stroke = line.color ?? color;
     const cls = markClass('reference-line', i);
-    if (line.orientation === 'horizontal') {
-      const y = scales.horizontal(line.value);
-      if (y === null) continue;
-      marks.push({
-        type: 'line',
-        class: cls,
-        x1: round(box.left),
-        y1: round(y),
-        x2: round(box.right),
-        y2: round(y),
-        stroke,
-        strokeWidth: thickness,
-        ...dashFor(line.style),
-      });
-    } else {
-      const x = scales.vertical(line.value);
-      if (x === null) continue;
-      marks.push({
-        type: 'line',
-        class: cls,
-        x1: round(x),
-        y1: round(box.top),
-        x2: round(x),
-        y2: round(box.bottom),
-        stroke,
-        strokeWidth: thickness,
-        ...dashFor(line.style),
-      });
-    }
+    const horizontal = line.orientation === 'horizontal';
+    const pos = horizontal ? scales.horizontal(line.value) : scales.vertical(line.value);
+    if (pos === null) continue;
+    marks.push({
+      type: 'line',
+      class: cls,
+      x1: round(horizontal ? box.left : pos),
+      y1: round(horizontal ? pos : box.top),
+      x2: round(horizontal ? box.right : pos),
+      y2: round(horizontal ? pos : box.bottom),
+      stroke,
+      strokeWidth: thickness,
+      ...dashFor(line.style),
+    });
   }
   return marks;
 }
