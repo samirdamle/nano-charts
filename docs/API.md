@@ -806,22 +806,22 @@ size-limit); all figures below are minified + gzip.
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 5.65 kB |
-| `area`     | 5.41 kB |
-| `lines`    | 5.63 kB |
-| `bar`      | 6.67 kB |
-| `win-loss` | 2.75 kB |
-| `bullet`   | 2.43 kB |
-| `donut`    | 3.77 kB |
-| `gauge`    | 2.98 kB |
-| `scatter`  | 5.08 kB |
-| `heatmap`  | 4.98 kB |
-| `radar`    | 3.42 kB |
-| `pictogram`| 4.62 kB |
+| `line`     | 5.79 kB |
+| `area`     | 5.54 kB |
+| `lines`    | 5.77 kB |
+| `bar`      | 6.83 kB |
+| `win-loss` | 2.81 kB |
+| `bullet`   | 2.49 kB |
+| `donut`    | 3.86 kB |
+| `gauge`    | 3.06 kB |
+| `scatter`  | 5.20 kB |
+| `heatmap`  | 5.10 kB |
+| `radar`    | 3.50 kB |
+| `pictogram`| 4.73 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2.5–6.7 kB; the whole core library (all twelve charts plus `toSVG`) is 15.3 kB gzipped,
+2.5–6.8 kB; the whole core library (all twelve charts plus `toSVG`) is 15.3 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.
