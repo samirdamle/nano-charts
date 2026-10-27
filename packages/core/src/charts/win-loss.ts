@@ -4,7 +4,12 @@ import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core
 import { paddedBox, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
-import { annotationMarks, seriesAwareMapper, winLossAnnotationMapper } from '../core/annotations';
+import {
+  annotationMarks,
+  inIndex,
+  seriesAwareMapper,
+  type AnnotationMapper,
+} from '../core/annotations';
 
 export interface WinLossOptions<T = number>
   extends BaseOptions,
@@ -37,27 +42,33 @@ export function winLoss<T = number>(
   const barHeight = center - box.top;
   const { barWidth: barW, x: slotX } = slotLayout(datums.length, box.left, box.right, gap);
 
+  // Block rect shared by the block loop below and the annotation mapper:
+  // unrounded geometry — the loop rounds each edge, the mapper centers
+  // from the same rect, so the two can never disagree.
+  const blockRect = (i: number) => {
+    const v = datums[i]!.value;
+    if (v > 0) return { x: slotX(i), y: box.top, w: barW, h: barHeight };
+    if (v < 0) return { x: slotX(i), y: center, w: barW, h: barHeight };
+    return { x: slotX(i), y: center - 0.5, w: barW, h: 1 };
+  };
+
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
   datums.forEach((d, i) => {
-    const x = round(slotX(i));
-    let y: number;
-    let h: number;
+    const r = blockRect(i);
+    const x = round(r.x);
+    const y = round(r.y);
+    const w = round(r.w);
+    const h = round(r.h);
     let fill: string;
     let fillOpacity: number | undefined;
     if (d.value > 0) {
-      y = round(box.top);
-      h = round(barHeight);
       fill = winColor;
     } else if (d.value < 0) {
-      y = round(center);
-      h = round(barHeight);
       fill = lossColor;
       fillOpacity = lossColor === winColor ? 0.4 : undefined;
     } else {
-      y = round(center - 0.5);
-      h = 1;
       fill = winColor;
       fillOpacity = 0.4;
     }
@@ -66,30 +77,28 @@ export function winLoss<T = number>(
       class: markClass('bar', i),
       x,
       y,
-      width: round(barW),
+      width: w,
       height: h,
       fill,
       fillOpacity,
     });
-    points.push({ id: d.id, label: d.label, value: d.value, index: i, x, y, w: round(barW), h });
+    points.push({ id: d.id, label: d.label, value: d.value, index: i, x, y, w, h });
   });
 
   // Annotations sit on top of everything, centered on their index's
   // block (upper half win, lower half loss, centerline zero); `y` is
   // ignored. Centers match the drawn rects exactly (rounded slot edges
   // and widths, as the points use).
+  // Thin mapper over the shared block rect: `x` is the data index
+  // (integer), `y` ignored — the mark centers on that index's block.
+  const winLossMapper: AnnotationMapper = (a) => {
+    if (!inIndex(a.x, datums.length)) return null;
+    const r = blockRect(a.x);
+    return { x: round(r.x) + round(r.w) / 2, y: r.y + r.h / 2 };
+  };
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(
-      winLossAnnotationMapper(
-        (i) => round(slotX(i)),
-        round(barW),
-        box,
-        center,
-        datums.map((d) => d.value),
-      ),
-      0,
-    ),
+    seriesAwareMapper(winLossMapper, 0),
     options.color ?? 'currentColor',
   );
 

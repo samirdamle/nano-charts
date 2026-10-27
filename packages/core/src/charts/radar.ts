@@ -4,7 +4,12 @@ import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
-import { annotationMarks, radarAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import {
+  annotationMarks,
+  isFinitePair,
+  seriesAwareMapper,
+  type AnnotationMapper,
+} from '../core/annotations';
 
 export interface RadarSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -95,6 +100,12 @@ export function radar<T = number>(
   const startAngle = -Math.PI / 2;
   const angleAt = (i: number) => startAngle + (i * TAU) / axisCount;
 
+  // Polar point shared by the series vertices below and the annotation
+  // mapper: axis index (fractional indices interpolate, like line charts)
+  // and radius in pixels.
+  const pointAt = (axis: number, radiusPx: number): [number, number] =>
+    polarRad(cx, cy, radiusPx, angleAt(axis));
+
   // Clamp policy: non-finite values become 0 and negatives can't produce a
   // negative radius — both are treated as zero for the layout math. Points
   // keep the raw values (datum identity for tooltips).
@@ -169,7 +180,7 @@ export function radar<T = number>(
     const strokeDasharray = toDasharray(s.strokeDasharray);
     const vertex = (i: number): [number, number] => {
       const d = datums[i];
-      return polarRad(cx, cy, scale(d ? d.value : 0), angleAt(i));
+      return pointAt(i, scale(d ? d.value : 0));
     };
 
     const seriesPoints: ScenePoint[] = [];
@@ -246,13 +257,20 @@ export function radar<T = number>(
   // Annotations sit on top of everything, at the polar point for their
   // axis/value — regardless of the drawn polygons. Series targeting colors
   // by series but never moves the mark: the domain is shared.
+  // Thin mapper over the shared polar point: `x` is the axis index,
+  // `y` the value on the shared domain ceiling. Unlike the data policy
+  // (values clamp), out-of-range annotations drop. The chart returns
+  // early on zero axes, so the axisCount guard the old mapper carried
+  // is unreachable here.
+  const radarMapper: AnnotationMapper = (a) => {
+    if (!isFinitePair(a) || a.x < 0 || a.x > axisCount - 1) return null;
+    if (a.y < 0 || a.y > domainMax) return null;
+    const [x, y] = pointAt(a.x, domainMax === 0 ? 0 : (a.y / domainMax) * radius);
+    return { x, y };
+  };
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(
-      radarAnnotationMapper(cx, cy, radius, axisCount, domainMax),
-      perSeries.length,
-      (si) => seriesColors[si],
-    ),
+    seriesAwareMapper(radarMapper, perSeries.length, (si) => seriesColors[si]),
     defaultColor,
   );
 

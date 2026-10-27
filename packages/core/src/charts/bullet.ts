@@ -29,6 +29,9 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
 
   const { left, right, top, bottom } = paddedBox({ width, height, padding });
   const xScale = linearScale([0, max], [left, right]);
+  // Centerline shared by the measure bar's scene point and the annotation
+  // mapper: one value for the bullet's vertical center.
+  const centerY = (top + bottom) / 2;
 
   const marks: Mark[] = [];
 
@@ -76,7 +79,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   // centerline; `y` is ignored.
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(bulletAnnotationMapper(xScale, max, (top + bottom) / 2), 0),
+    seriesAwareMapper(bulletAnnotationMapper(xScale, max, centerY), 0),
     color,
   );
   marks.push(...annMarks);
@@ -98,7 +101,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
         value,
         index: 0,
         x: round(xScale(value)),
-        y: round((top + bottom) / 2),
+        y: round(centerY),
       },
     ],
     ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
