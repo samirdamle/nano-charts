@@ -1,5 +1,38 @@
 # @samirdamle/nano-charts-react
 
+## 0.2.0
+
+### Minor Changes
+
+- 7a45c94: Annotations v2: annotations on the remaining five charts, full-span reference lines, series targeting, and interactive annotations.
+
+  - Annotations on `radar` (`x` = axis index, fractional indices interpolate the angle; `y` = value on the shared domain ceiling), `heatmap` (`x` = column, `y` = row, both integers, at the cell center; missing ragged cells drop), `pictogram` (`x` = series index, `y` = 1-based block number matching `scene.points`' `blockNumber`, centered on the block's slot; horizontal keeps logical coordinates), `bullet` (`x` = value on `[0, max]`, `y` ignored, on the centerline), and `winLoss` (`x` = data index, `y` ignored, centered on that index's block by sign). Every chart now accepts `annotations`.
+  - Full-span `referenceLines` on the cartesian charts (`line`, `area`, `lines`, `bar`, `scatter`): `{ value, orientation, color?, thickness?, style? }`, drawn across the plot area only, above the data and below the annotations, never rescaling the chart, out-of-domain values dropped. On horizontal bars the perpendicular axis is the category axis for horizontal lines and the value axis for vertical ones. Reference line marks carry `nc-reference-line nc-reference-line-{i}` classes.
+  - Series targeting: an optional `seriesIndex` on an annotation, positional like `scene.points`' `seriesIndex`. On `lines` and `radar` it tags the annotation with the series and defaults its color to that series' color (position unchanged — the scale is shared); on grouped `bar` it moves the annotation onto that sub-bar (and defaults its color to the segment's color); stacked and single bars keep the category center. A `seriesIndex` naming no series on that chart drops the annotation, including a series absent from one ragged bar column; charts without series drop any annotation carrying one.
+  - Interactive annotations: an annotation with `interactive: true` appears in the new `scene.annotationPoints` layer (never `scene.points`), and the React wrappers render hit targets for it (same `hitRadius` as data points, default 4) behind the new `onAnnotationHover` / `onAnnotationClick` props; an interactive annotation's `label` becomes its accessible name. The chart description is unchanged. Non-interactive annotations still add no hit targets.
+
+  Fully backward compatible: charts without `annotations` or `referenceLines` render byte-identical scenes, and annotations without `interactive` behave exactly as in v1. Size budgets raised for the new code: core `line` standalone 4.5 → 5 kB, core barrel 15 → 15.5 kB, React `LineNanoChart` standalone 5.5 → 6 kB; all figures refreshed on all surfaces. An internal refactor of the annotation builders (shared index ref-line scales, one unified reference-line builder, shared integer-index validation) trims the barrel to 15.29 kB with no behavior change.
+
+- 11e6e41: Rename all React components from `…Chart` to `…NanoChart` (`LineChart` → `LineNanoChart`, `AreaChart` → `AreaNanoChart`, etc., including the `…ChartProps` interfaces) so they don't collide with chart components from other libraries (e.g. Recharts). Core function names (`line()`, `bar()`, …) are unchanged.
+
+### Patch Changes
+
+- 2fb9375: Add `annotations` to `line`, `area`, `lines`, `bar`, `scatter`, `donut`, and `gauge` (and their React components, which pass the option through): an array of marks laid on top of the chart's own marks, in the chart's data coordinates — `{ x, y, shape, color?, size?, emoji?, orientation? }` with `shape` one of `'dot' | 'square' | 'triangle' | 'line' | 'emoji'`. On `line`/`area`/`lines`, `x` is the data index (fractional indices interpolate) and `y` the data value on the chart's domain (shared across series on `lines`, no series targeting in v1); on `bar`, `x` is the category index at the category center and `y` the value on the shared domain (horizontal bars keep logical `x`/`y`); on `scatter`, `x`/`y` are data values; on `donut`/`gauge`, `x` is ignored and `y` maps to an angle as `startAngle + (y / domain) × span` (domain `max` in gauge mode, total in segmented donut mode, `[min, max]` on `gauge`), centered on the ring at mid-thickness radius. `color` defaults to the chart's color (ignored for emoji, whose own colours win); `size` defaults to `2` and means dot radius, square half-side, triangle center-to-vertex radius, line half-length, or emoji font size; `line` is a small dash at the point (horizontal by default, `orientation: 'vertical'` for a vertical dash), not a full-span reference line. Annotations are purely visual (never `scene.points`, no hover/click, no a11y change), never affect scales, domains, or automatic padding, and out-of-range annotations are dropped, not clamped to an edge. Annotation marks carry `nc-annotation nc-annotation-{i}` classes. Fully backward compatible: charts without `annotations` render byte-identical scenes. Size budgets raised for the new code: core `line` standalone 4 → 4.5 kB, React `LineNanoChart` standalone 5 → 5.5 kB.
+- d8fd98e: CSS classes for styling charts: new `class` option in `BaseOptions` assigns developer CSS class(es) to the generated `<svg>` element (merged with the built-in `nc-chart` class and any `toSVG`/`className` render opt), and every mark now carries generated semantic classes — a kind class plus an indexed class (`nc-point nc-point-3`, `nc-bar nc-bar-2`, `nc-segment`, `nc-block`, `nc-line`, `nc-area`, `nc-cell`, `nc-connector`, `nc-track`, `nc-gridline`, `nc-axis`, `nc-tick`, `nc-label`, …). Multi-series marks also get `nc-series-{i}` (mirroring `data-series`), axis parts get `nc-axis-x`/`nc-axis-y`, and pictogram blocks get their fill state (`nc-filled`/`nc-empty`/`nc-partial`). Indexes mirror the existing `data-index` attributes. Fully backward compatible.
+- 796efec: Add `connector` to `pictogram()` (and `PictogramChart`): an optional `{ color?, thickness?, style? }` object that draws one line per series joining its rendered blocks, from the center of the first block to the center of the last, rendered behind the blocks. Defaults to a solid 2px line in the series' block color; `style` accepts `'solid' | 'dashed' | 'dotted'`. Series with fewer than two blocks get no connector.
+- d1f317c: internal refactor (no behavior change): the 11 chart wrapper components now share a single `renderNanoChart` body — each wrapper only declares its props interface and splits its data prop (`data`, or `series` for radar). Public API, prop types, and generic inference are unchanged.
+- Updated dependencies [2fb9375]
+- Updated dependencies [7a45c94]
+- Updated dependencies [00696c6]
+- Updated dependencies [d8fd98e]
+- Updated dependencies [e222183]
+- Updated dependencies [38df00c]
+- Updated dependencies [b353bc5]
+- Updated dependencies [796efec]
+- Updated dependencies [e8c6e93]
+- Updated dependencies [b05f13c]
+  - @samirdamle/nano-charts@0.7.0
+
 ## 0.1.5
 
 ### Patch Changes
