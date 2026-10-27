@@ -15,13 +15,24 @@ export function renderNanoChart<D, O>(
   data: D,
   props: O & InteractionProps,
 ): JSX.Element {
-  const { onPointHover, onPointClick, className, style, hitRadius, ...options } = props;
+  const {
+    onPointHover,
+    onPointClick,
+    onAnnotationHover,
+    onAnnotationClick,
+    className,
+    style,
+    hitRadius,
+    ...options
+  } = props;
   const scene = render(data, options as O);
   return (
     <NanoChartSvg
       scene={scene}
       onPointHover={onPointHover}
       onPointClick={onPointClick}
+      onAnnotationHover={onAnnotationHover}
+      onAnnotationClick={onAnnotationClick}
       className={className}
       style={style}
       hitRadius={hitRadius}

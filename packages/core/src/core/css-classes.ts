@@ -31,6 +31,7 @@ export type MarkKind =
   | 'highlight'
   | 'zone'
   | 'annotation'
+  | 'reference-line'
   | 'arc'
   | 'needle'
   | 'hub'

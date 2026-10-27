@@ -1,4 +1,4 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round } from '../core/geometry';
 import { makeColorScale, type ColorScale } from '../core/color-scale';
 import {
@@ -11,8 +11,9 @@ import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type Axi
 import { sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import { markClass } from '../core/css-classes';
+import { annotationMarks, heatmapAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 
-export interface HeatmapOptions<T = number> extends BaseOptions {
+export interface HeatmapOptions<T = number> extends BaseOptions, AnnotationOptions {
   value?: (cell: T, row: number, col: number) => number;
   colorScale?: [string, string] | ColorScale;
   gap?: number;
@@ -145,5 +146,20 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     box,
   );
 
-  return { ...base, marks: layerMarks(hl, xA, yA, marks), points };
+  // Annotations sit on top of everything, at their cell's center.
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(
+      heatmapAnnotationMapper(box, cell, rows, cols, (r, c) => matrix[r]?.[c] !== undefined),
+      0,
+    ),
+    options.color ?? 'currentColor',
+  );
+
+  return {
+    ...base,
+    marks: [...layerMarks(hl, xA, yA, marks), ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

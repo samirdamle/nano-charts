@@ -59,4 +59,45 @@ describe('LineNanoChart', () => {
     fireEvent.click(hitTargets[0]!);
     expect(onPointClick).toHaveBeenCalledWith(expect.objectContaining({ index: 0, value: 4 }));
   });
+
+  it('fires onAnnotationHover/onAnnotationClick for interactive annotations only', () => {
+    const onAnnotationHover = vi.fn();
+    const onAnnotationClick = vi.fn();
+    const { container } = render(
+      <LineNanoChart
+        data={[4, 9, 2]}
+        annotations={[
+          { x: 1, y: 9, shape: 'dot', interactive: true, label: 'Peak' },
+          { x: 0, y: 4, shape: 'dot' },
+        ]}
+        onPointHover={vi.fn()}
+        onAnnotationHover={onAnnotationHover}
+        onAnnotationClick={onAnnotationClick}
+      />,
+    );
+    // 3 data targets + 1 annotation target (the non-interactive one adds none).
+    expect(container.querySelectorAll('circle[fill="transparent"]')).toHaveLength(4);
+    const annTarget = container.querySelector('circle[aria-label="Peak"]');
+    expect(annTarget).not.toBeNull();
+    fireEvent.mouseEnter(annTarget!);
+    expect(onAnnotationHover).toHaveBeenCalledWith(
+      expect.objectContaining({ annotationIndex: 0, label: 'Peak' }),
+    );
+    fireEvent.mouseLeave(annTarget!);
+    expect(onAnnotationHover).toHaveBeenCalledWith(null);
+    fireEvent.click(annTarget!);
+    expect(onAnnotationClick).toHaveBeenCalledWith(expect.objectContaining({ annotationIndex: 0 }));
+  });
+
+  it('adds no annotation target when the annotation callbacks are absent', () => {
+    const { container } = render(
+      <LineNanoChart
+        data={[4, 9, 2]}
+        annotations={[{ x: 1, y: 9, shape: 'dot', interactive: true, label: 'Peak' }]}
+        onPointHover={vi.fn()}
+      />,
+    );
+    expect(container.querySelectorAll('circle[fill="transparent"]')).toHaveLength(3);
+    expect(container.querySelector('circle[aria-label="Peak"]')).toBeNull();
+  });
 });

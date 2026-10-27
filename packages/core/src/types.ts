@@ -127,6 +127,8 @@ export interface Scene {
   viewBox: string;
   marks: Mark[];
   points: ScenePoint[];
+  /** Hit entries for interactive annotations only; absent when none exist. */
+  annotationPoints?: SceneAnnotationPoint[];
   a11y: { title: string; desc: string };
   /** Developer CSS class(es) for the `<svg>` element, from `BaseOptions.class`. */
   svgClass?: string;
@@ -152,15 +154,64 @@ export interface Annotation {
   emoji?: string;
   /** Line shape only: `'horizontal'` (default) or `'vertical'`. */
   orientation?: 'horizontal' | 'vertical';
+  /**
+   * Series targeting (v2): the series this annotation belongs to, by
+   * position (matches `scene.points`' `seriesIndex`). On series charts it
+   * defaults the annotation's color to that series' color, and on grouped
+   * bars it moves the annotation onto that sub-bar; elsewhere position is
+   * unchanged. A `seriesIndex` naming no series on that chart drops the
+   * annotation; charts without series drop any annotation carrying one.
+   */
+  seriesIndex?: number;
+  /**
+   * Interactivity (v2): only annotations with `interactive: true` appear
+   * in `scene.annotationPoints` and get hit targets in the React wrappers.
+   * Default off — annotations stay purely visual unless opted in.
+   */
+  interactive?: boolean;
+  /** Accessible name for an interactive annotation (used as its aria-label). */
+  label?: string;
 }
 
-/** Opt-in annotations, shared by the charts that support them (v1: line,
- * area, lines, bar, scatter, donut, gauge). Purely visual: annotations are
- * marks only, never `scene.points`, and never affect the chart's scales,
- * domains, or automatic padding. Out-of-range annotations are dropped, not
- * clamped to an edge. */
+/** An interactive annotation's hit entry, for the React wrappers. */
+export interface SceneAnnotationPoint {
+  /** Position in the input `annotations` array (gaps preserved on drops). */
+  annotationIndex: number;
+  x: number;
+  y: number;
+  label?: string;
+  seriesIndex?: number;
+}
+
+/** Opt-in annotations, shared by every chart. Purely visual by default:
+ * annotations are marks only, never `scene.points`, and never affect the
+ * chart's scales, domains, or automatic padding. Out-of-range annotations
+ * are dropped, not clamped to an edge. Interactive annotations (v2) appear
+ * in `scene.annotationPoints`, never in `scene.points`. */
 export interface AnnotationOptions {
   annotations?: Annotation[];
+}
+
+/**
+ * One full-span reference line (v2), on the cartesian charts only (line,
+ * area, lines, bar, scatter). `orientation: 'horizontal'` draws at
+ * `y = value` spanning the plot width; `'vertical'` draws at `x = value`
+ * spanning the plot height. The coordinate is read on the perpendicular
+ * axis's scale (so on a horizontal bar chart a horizontal line's position
+ * is a category index and a vertical line's is a value). Never rescales
+ * the chart; an out-of-domain value is dropped, like an annotation.
+ */
+export interface ReferenceLine {
+  value: number;
+  orientation: 'horizontal' | 'vertical';
+  color?: string;
+  thickness?: number;
+  style?: 'solid' | 'dashed' | 'dotted';
+}
+
+/** Opt-in reference lines, shared by the cartesian charts. */
+export interface ReferenceLineOptions {
+  referenceLines?: ReferenceLine[];
 }
 
 export type Padding = number | { top?: number; right?: number; bottom?: number; left?: number };

@@ -553,7 +553,7 @@
           </div>
           <aside class="hero-features">
             <ul>
-              <li>14.0 kB gzipped</li>
+              <li>15.3 kB gzipped</li>
               <li>12 charts</li>
               <li>No dependencies</li>
               <li>Pure JS + SVG</li>
@@ -1195,6 +1195,15 @@
             ],
           })),
         },
+        {
+          title: 'Reference lines',
+          make: () => (line([3, 7, 2, 9, 5, 6], {
+            referenceLines: [
+              { value: 7, orientation: 'horizontal', style: 'dashed', color: 'var(--c4)' },
+              { value: 3, orientation: 'vertical', style: 'dotted', color: 'var(--c2)' },
+            ],
+          })),
+        },
       ]);
 
       group('Area', [
@@ -1628,10 +1637,27 @@
             lossColor: 'var(--c4)',
           })),
         },
+        {
+          title: 'Annotations',
+          make: () => (winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
+            winColor: 'var(--c3)',
+            lossColor: 'var(--c4)',
+            annotations: [
+              { x: 3, shape: 'emoji', emoji: '🔥', size: 4 },
+              { x: 10, shape: 'dot', color: 'var(--c4)' },
+            ],
+          })),
+        },
       ]);
 
       group('Bullet', [
         { title: 'Basic', make: () => (bullet({ value: 80, target: 90, ranges: [50, 75, 100] })) },
+        {
+          title: 'Annotations',
+          make: () => (bullet({ value: 80, target: 90, ranges: [50, 75, 100] }, {
+            annotations: [{ x: 90, shape: 'triangle', color: 'var(--c4)' }],
+          })),
+        },
       ]);
 
       group('Radar', [
@@ -1659,6 +1685,17 @@
         {
           title: 'Custom max, no grid',
           make: () => (radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false, color: '#f3a8c7' })),
+        },
+        {
+          title: 'Annotations',
+          make: () => (radar([4, 9, 2, 7, 5], {
+            color: '#f3a8c7',
+            gridOpacity: 0.35,
+            annotations: [
+              { x: 1, y: 9, shape: 'dot', color: 'var(--c4)' },
+              { x: 3, y: 7, shape: 'emoji', emoji: '⭐', size: 4 },
+            ],
+          })),
         },
       ]);
 
@@ -1700,6 +1737,14 @@
             if (date < 1 || date > 30) return null;
             return `${days[point.col]}, Sep ${date} = ${point.value}`;
           },
+        },
+        {
+          title: 'Annotations',
+          make: () => (heatmap(corrMatrix, {
+            cellSize: 20,
+            gap: 2,
+            annotations: [{ x: 2, y: 1, shape: 'square', color: 'var(--c4)', size: 3 }],
+          })),
         },
       ]);
 
@@ -1768,6 +1813,15 @@
           title: 'Hover the blocks',
           make: () => (pictogram([3, 2.5, 4])),
           interactive: true,
+        },
+        {
+          title: 'Annotations',
+          make: () => (pictogram([3, 7, 5, 2], {
+            annotations: [
+              { x: 1, y: 7, shape: 'dot', color: 'var(--c4)' },
+              { x: 0, y: 3, shape: 'emoji', emoji: '⭐', size: 4 },
+            ],
+          })),
         },
       ], { blockScale: 1.6 });
     </script>
