@@ -1149,6 +1149,24 @@
           ])),
         },
         {
+          title: 'Annotations',
+          make: () => (lines([
+            { data: [7, 9, 6, 10, 8, 9], name: 'Revenue', color: 'var(--c1)' },
+            {
+              data: [4, 5, 4, 6, 5, 6],
+              name: 'Target',
+              color: 'var(--c2)',
+              strokeDasharray: [3, 2],
+            },
+          ], {
+            annotations: [
+              { x: 0, y: 7, shape: 'dot', color: 'var(--c4)' },
+              { x: 4, y: 8, shape: 'square', seriesIndex: 0 },
+              { x: 3, y: 6, shape: 'triangle', seriesIndex: 1 },
+            ],
+          })),
+        },
+        {
           title: 'Axes & gridlines',
           tall: true,
           make: () => (line([0, 18, 9, 26, 14, 30, 21], {
@@ -1389,6 +1407,33 @@
               },
             })),
           },
+          {
+            title: 'Annotations',
+            make: () => (bar(
+              groupedBars.map((pair) =>
+                pair.map((value, row) => ({ value, color: groupColors[row] })),
+              ),
+              {
+                mode: 'grouped',
+                annotations: [
+                  { x: 1, y: 16, shape: 'dot', color: 'var(--c4)' },
+                  { x: 0, y: 7, shape: 'square', seriesIndex: 1 },
+                  { x: 4, y: 17, shape: 'emoji', emoji: '⭐', size: 4 },
+                ],
+              },
+            )),
+          },
+          {
+            title: 'Reference lines (horizontal)',
+            make: () => (bar(barValues, {
+              horizontal: true,
+              height: 40,
+              referenceLines: [
+                { value: 2, orientation: 'horizontal', style: 'dashed', color: 'var(--c4)' },
+                { value: 6, orientation: 'vertical', style: 'dotted', color: 'var(--c2)' },
+              ],
+            })),
+          },
         ],
         3,
       );
@@ -1478,6 +1523,15 @@
         {
           title: 'Line needle',
           make: () => (gauge({ value: 35, max: 100 }, { mode: 'needle', needle: 'line' })),
+        },
+        {
+          title: 'Annotations',
+          make: () => (gauge({ value: 72, max: 100 }, {
+            annotations: [
+              { y: 50, shape: 'dot', color: 'var(--c4)' },
+              { y: 90, shape: 'emoji', emoji: '🎯', size: 4 },
+            ],
+          })),
         },
       ]);
 
