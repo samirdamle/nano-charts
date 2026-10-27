@@ -12,7 +12,13 @@ import { resolvePadding } from '../core/plot';
 import { dashFor } from '../core/axis';
 import { sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
-import { annotationMarks, pictogramAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import {
+  annotationMarks,
+  inIndex,
+  isFinitePair,
+  seriesAwareMapper,
+  type AnnotationMapper,
+} from '../core/annotations';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
 export type PictogramBlock =
@@ -287,6 +293,13 @@ export function pictogram<T = number>(
   const slots = splits.map((sp) => sp.full + (sp.fraction > 0 ? 1 : 0));
   const maxSlots = slots.length > 0 ? Math.max(...slots) : 0;
 
+  // Block-slot origin shared by the block loop below and the annotation
+  // mapper: one formula for a block's position, so the two can never drift.
+  const blockOrigin = (series: number, block: number) => ({
+    x: horizontal ? padding.left + block * pitch : padding.left + series * pitch,
+    y: horizontal ? padding.top + series * pitch : padding.top + (maxSlots - 1 - block) * pitch,
+  });
+
   const span = (k: number) => k * s + Math.max(0, k - 1) * g;
   const width = horizontal ? span(maxSlots) : span(n);
   const height = horizontal ? span(n) : span(maxSlots);
@@ -526,8 +539,7 @@ export function pictogram<T = number>(
       const isPartial = b.state === 'partial';
       // Vertical: columns left→right, blocks stack bottom-up.
       // Horizontal: rows top→bottom, blocks stack left→right.
-      const bx = horizontal ? padding.left + k * pitch : padding.left + j * pitch;
-      const by = horizontal ? padding.top + j * pitch : padding.top + (maxSlots - 1 - k) * pitch;
+      const { x: bx, y: by } = blockOrigin(j, k);
       const x = round(bx);
       const y = round(by);
       const href = `#${defsIdFor({ shape: b.shape, radius: b.radius, emoji: b.emoji })}`;
@@ -598,9 +610,19 @@ export function pictogram<T = number>(
   });
 
   // Annotations sit on top of everything, centered on their block's slot.
+  // Thin mapper over the shared block origin: `x` is the series index,
+  // `y` the 1-based block number (matching `scene.points`' `blockNumber`).
+  // Partial and empty blocks still count as slots.
+  const pictogramMapper: AnnotationMapper = (a) => {
+    if (!isFinitePair(a) || !inIndex(a.x, slots.length)) return null;
+    const block = a.y - 1;
+    if (!inIndex(block, slots[a.x] ?? 0)) return null;
+    const o = blockOrigin(a.x, block);
+    return { x: o.x + s / 2, y: o.y + s / 2 };
+  };
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(pictogramAnnotationMapper(padding, pitch, s, horizontal, maxSlots, slots), 0),
+    seriesAwareMapper(pictogramMapper, 0),
     options.color ?? 'currentColor',
   );
 
