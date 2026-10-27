@@ -28,9 +28,12 @@ import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type Axi
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import {
   annotationMarks,
-  barAnnotationMapper,
+  inDomain,
+  inIndex,
+  isFinitePair,
   referenceLineMarks,
   seriesAwareMapper,
+  type AnnotationMapper,
 } from '../core/annotations';
 
 export interface BarTrackOptions {
@@ -260,6 +263,10 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     layoutFor(padding),
   );
 
+  // Grouped sub-bar offset shared by the track loop, the segment loop,
+  // and `seriesAt` below: one formula for a column's lead-in.
+  const leadOf = (count: number) => (subSlot ? (groupCount - count) / 2 : 0);
+
   // Highlight zones address the chart's x/y scales: the value scale on the
   // value axis, bar centers on the category axis. Drawn behind everything,
   // clipped to the plot.
@@ -290,7 +297,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     const trackRx = track.radius ?? options.radius;
     columns.forEach((segs, col) => {
       const slotPos = round(slot.x(col));
-      const lead = subSlot ? (groupCount - segs.length) / 2 : 0;
+      const lead = leadOf(segs.length);
       const bars = subSlot
         ? segs.map((_, row) => round(slotPos + subSlot.x(lead + row)))
         : [slotPos];
@@ -313,7 +320,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
   columns.forEach((segs, col) => {
     const slotPos = round(slot.x(col));
-    const lead = subSlot ? (groupCount - segs.length) / 2 : 0;
+    const lead = leadOf(segs.length);
     const multi = segs.length > 1;
     let cursor = 0; // running stacked value
     segs.forEach((seg, row) => {
@@ -426,7 +433,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
       paletteTotal: segs.length,
     });
     if (!subSlot) return { color: segmentColor };
-    const lead = (groupCount - segs.length) / 2;
+    const lead = leadOf(segs.length);
     return { center: slot.x(col) + subSlot.x(lead + si) + subW / 2, color: segmentColor };
   };
   const referenceLines = referenceLineMarks(
@@ -452,12 +459,31 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     },
     color,
   );
+  // Thin mapper: `x` is the category index (an integer), `y` the data
+  // value on the shared domain. The category position is the category
+  // center; `horizontal` swaps the axes. A `seriesIndex` resolves through
+  // `seriesAt` (grouped mode moves onto the sub-bar, other modes keep the
+  // category center); a series absent from the column drops. `seriesAt`
+  // itself stays exactly as it was: the loop rounds slot positions while
+  // the mapper centers from raw ones, so the two computations are not
+  // interchangeable and only the lead formula is shared.
+  const barMapper: AnnotationMapper = (a, seriesIndex) => {
+    if (!isFinitePair(a) || !inIndex(a.x, columns.length)) return null;
+    if (!inDomain(a.y, domain)) return null;
+    let cat = catScale(a.x);
+    let color: string | undefined;
+    if (seriesIndex !== undefined) {
+      const resolved = seriesAt(a.x, seriesIndex);
+      if (resolved === null) return null;
+      if (resolved.center !== undefined) cat = resolved.center;
+      color = resolved.color;
+    }
+    const val = valueScale(a.y);
+    return horizontal ? { x: val, y: cat, color } : { x: cat, y: val, color };
+  };
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(
-      barAnnotationMapper(columns.length, domain, catScale, valueScale, horizontal, seriesAt),
-      seriesCount,
-    ),
+    seriesAwareMapper(barMapper, seriesCount),
     color,
   );
 

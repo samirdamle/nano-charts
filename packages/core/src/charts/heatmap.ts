@@ -11,7 +11,13 @@ import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type Axi
 import { sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import { markClass } from '../core/css-classes';
-import { annotationMarks, heatmapAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import {
+  annotationMarks,
+  inIndex,
+  isFinitePair,
+  seriesAwareMapper,
+  type AnnotationMapper,
+} from '../core/annotations';
 
 export interface HeatmapOptions<T = number> extends BaseOptions, AnnotationOptions {
   value?: (cell: T, row: number, col: number) => number;
@@ -70,6 +76,11 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const width = cols * cell + padding.left + padding.right;
   const height = rows * cell + padding.top + padding.bottom;
   const box = paddedBox({ width, height, padding });
+
+  // Cell centers shared by the highlight scales below and the annotation
+  // mapper: one formula for a cell's center.
+  const colCenter = (c: number): number => box.left + c * cell + cell / 2;
+  const rowCenter = (r: number): number => box.top + r * cell + cell / 2;
 
   const flat: number[] = [];
   for (let r = 0; r < rows; r++) {
@@ -137,22 +148,19 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const xA = axisMarks(options.xAxis, axisLayoutFor(box, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(box, 'y'));
   // Highlight zones address cell centers, like the axis ticks.
-  const hl = highlightMarks(
-    options.highlights,
-    {
-      x: (c: number) => box.left + c * cell + cell / 2,
-      y: (r: number) => box.top + r * cell + cell / 2,
-    },
-    box,
-  );
+  const hl = highlightMarks(options.highlights, { x: colCenter, y: rowCenter }, box);
 
   // Annotations sit on top of everything, at their cell's center.
+  // Thin mapper over the shared cell centers: `x` is the column, `y` the
+  // row (integers); missing ragged cells drop.
+  const heatmapMapper: AnnotationMapper = (a) => {
+    if (!isFinitePair(a) || !inIndex(a.x, cols) || !inIndex(a.y, rows)) return null;
+    if (matrix[a.y]?.[a.x] === undefined) return null;
+    return { x: colCenter(a.x), y: rowCenter(a.y) };
+  };
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(
-      heatmapAnnotationMapper(box, cell, rows, cols, (r, c) => matrix[r]?.[c] !== undefined),
-      0,
-    ),
+    seriesAwareMapper(heatmapMapper, 0),
     options.color ?? 'currentColor',
   );
 

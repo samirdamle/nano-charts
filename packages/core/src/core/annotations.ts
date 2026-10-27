@@ -7,8 +7,9 @@ import type { PaddedBox, SeriesLayout } from './plot';
 /**
  * Annotations: small marks laid on top of a chart's own marks, in the chart's
  * data coordinates. The shared builder below turns an annotation into its
- * mark once a chart has mapped it to pixel coordinates; the per-chart
- * mappers beside it own the data→pixel step and the out-of-range rule:
+ * mark once a chart has mapped it to pixel coordinates; chart-specific
+ * mappers live beside their charts, sharing the chart's geometry helpers,
+ * and own the data→pixel step and the out-of-range rule:
  * a mapper returns `null` and the annotation is dropped, never clamped.
  *
  * Follows the highlightMarks precedent: shared helpers in core/, each chart
@@ -53,16 +54,16 @@ export function seriesAwareMapper(
   };
 }
 
-function isFinitePair(a: Annotation): boolean {
+export function isFinitePair(a: Annotation): boolean {
   return Number.isFinite(a.x) && Number.isFinite(a.y);
 }
 
-function inDomain(v: number, domain: [number, number]): boolean {
+export function inDomain(v: number, domain: [number, number]): boolean {
   return v >= domain[0] && v <= domain[1];
 }
 
 /** Integer index inside [0, count): one check for the mappers' index rules. */
-function inIndex(v: number, count: number): boolean {
+export function inIndex(v: number, count: number): boolean {
   return Number.isInteger(v) && v >= 0 && v < count;
 }
 
@@ -117,112 +118,6 @@ export function xyAnnotationMapper(
 }
 
 /**
- * Bar charts: `x` is the category index (an integer — a fractional index has
- * no bar to sit on), `y` is the data value on the shared value domain.
- * The category position is the category center; `horizontal` swaps the axes.
- * With a `seriesIndex`, `seriesAt` resolves that series within the column:
- * grouped mode returns the sub-bar's center, other modes return no center
- * (the category center stands) — either way `null` drops the annotation
- * when the series has no segment in that column, and a returned `color`
- * becomes the annotation's default color.
- */
-export function barAnnotationMapper(
-  count: number,
-  domain: [number, number],
-  catScale: (i: number) => number,
-  valueScale: (v: number) => number,
-  horizontal: boolean,
-  seriesAt?: (col: number, seriesIndex: number) => { center?: number; color?: string } | null,
-): AnnotationMapper {
-  return (a, seriesIndex) => {
-    if (!isFinitePair(a) || !inIndex(a.x, count)) return null;
-    if (!inDomain(a.y, domain)) return null;
-    let cat = catScale(a.x);
-    let color: string | undefined;
-    if (seriesIndex !== undefined && seriesAt) {
-      const resolved = seriesAt(a.x, seriesIndex);
-      if (resolved === null) return null;
-      if (resolved.center !== undefined) cat = resolved.center;
-      color = resolved.color;
-    }
-    const val = valueScale(a.y);
-    return horizontal ? { x: val, y: cat, color } : { x: cat, y: val, color };
-  };
-}
-
-/**
- * Radar: `x` is the axis index (fractional indices interpolate the angle,
- * like line charts), `y` is the value. The mark sits at the polar point
- * regardless of the drawn polygons. Unlike radar's own data policy (values
- * clamp into the domain), out-of-range annotations drop. Angles are in
- * degrees for `polar`, matching the chart's own -90° start.
- */
-export function radarAnnotationMapper(
-  cx: number,
-  cy: number,
-  radius: number,
-  axisCount: number,
-  domainMax: number,
-): AnnotationMapper {
-  return (a) => {
-    if (axisCount <= 0) return null;
-    if (!isFinitePair(a) || a.x < 0 || a.x > axisCount - 1) return null;
-    if (a.y < 0 || a.y > domainMax) return null;
-    const angle = -90 + (a.x * 360) / axisCount;
-    const r = domainMax === 0 ? 0 : (a.y / domainMax) * radius;
-    const [x, y] = polar(cx, cy, r, angle);
-    return { x, y };
-  };
-}
-
-/**
- * Heatmap: `x` is the column index, `y` the row index — both integers, like
- * bar categories — placed at the cell center (the same formula the axis
- * ticks and highlight zones use). Missing cells in ragged rows drop.
- */
-export function heatmapAnnotationMapper(
-  box: PaddedBox,
-  cell: number,
-  rows: number,
-  cols: number,
-  hasCell: (row: number, col: number) => boolean,
-): AnnotationMapper {
-  return (a) => {
-    if (!isFinitePair(a) || !inIndex(a.x, cols) || !inIndex(a.y, rows) || !hasCell(a.y, a.x)) {
-      return null;
-    }
-    return { x: box.left + a.x * cell + cell / 2, y: box.top + a.y * cell + cell / 2 };
-  };
-}
-
-/**
- * Pictogram: `x` is the series index, `y` the 1-based block number
- * (matching `scene.points`' `blockNumber`), centered on that block's slot.
- * Partial and empty blocks still count as slots. `horizontal` keeps the
- * logical coordinates — the renderer swaps the axes, as with bars.
- */
-export function pictogramAnnotationMapper(
-  padding: { left: number; top: number },
-  pitch: number,
-  blockSize: number,
-  horizontal: boolean,
-  maxSlots: number,
-  slotsPerSeries: number[],
-): AnnotationMapper {
-  return (a) => {
-    if (!isFinitePair(a) || !inIndex(a.x, slotsPerSeries.length)) return null;
-    const series = a.x;
-    const block = a.y - 1;
-    if (!inIndex(block, slotsPerSeries[series] ?? 0)) return null;
-    const bx = horizontal ? padding.left + block * pitch : padding.left + series * pitch;
-    const by = horizontal
-      ? padding.top + series * pitch
-      : padding.top + (maxSlots - 1 - block) * pitch;
-    return { x: bx + blockSize / 2, y: by + blockSize / 2 };
-  };
-}
-
-/**
  * Bullet: the chart runs horizontally, so `x` is the value on [0, max] and
  * `y` is ignored; the mark sits on the bullet's centerline (the measure
  * bar's center, matching its scene point).
@@ -235,27 +130,6 @@ export function bulletAnnotationMapper(
   return (a) => {
     if (!Number.isFinite(a.x) || a.x < 0 || a.x > max) return null;
     return { x: xScale(a.x), y: centerY };
-  };
-}
-
-/**
- * WinLoss: `x` is the data index (an integer), `y` is ignored — win/loss
- * blocks don't encode magnitude. The mark centers on that index's block:
- * the upper half for a win, the lower half for a loss, the centerline
- * for a zero.
- */
-export function winLossAnnotationMapper(
-  slotX: (i: number) => number,
-  barWidth: number,
-  box: PaddedBox,
-  center: number,
-  values: number[],
-): AnnotationMapper {
-  return (a) => {
-    if (!inIndex(a.x, values.length)) return null;
-    const v = values[a.x]!;
-    const cy = v > 0 ? (box.top + center) / 2 : v < 0 ? (center + box.bottom) / 2 : center;
-    return { x: slotX(a.x) + barWidth / 2, y: cy };
   };
 }
 
