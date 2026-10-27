@@ -1,8 +1,15 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
-import { categoricalColor } from '../core/palette';
+import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
+import {
+  annotationMarks,
+  isFinitePair,
+  seriesAwareMapper,
+  type AnnotationMapper,
+} from '../core/annotations';
 
 export interface RadarSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -33,7 +40,7 @@ function isSeriesArray<T>(input: RadarInput<T>): input is RadarSeries<T>[] {
 
 export type RadarInput<T = number> = SeriesInput<T> | RadarSeries<T>[];
 
-export interface RadarOptions extends BaseOptions {
+export interface RadarOptions extends BaseOptions, AnnotationOptions {
   /** Domain ceiling; defaults to the largest value across all series. */
   max?: number;
   /** Decorative spider grid (spokes + rings). Default true. */
@@ -46,7 +53,7 @@ export interface RadarOptions extends BaseOptions {
 
 const TAU = Math.PI * 2;
 
-function polar(cx: number, cy: number, radius: number, angle: number): [number, number] {
+function polarRad(cx: number, cy: number, radius: number, angle: number): [number, number] {
   return [round(cx + radius * Math.cos(angle)), round(cy + radius * Math.sin(angle))];
 }
 
@@ -81,7 +88,7 @@ export function radar<T = number>(
     (axisCount === 0
       ? 'radar chart, no data'
       : `radar chart, ${perSeries.length} series, ${axisCount} axes`);
-  const base = sceneShell({ width, height }, { title, desc });
+  const base = sceneShell({ width, height }, { title, desc }, options);
   if (axisCount === 0) return base;
 
   const cx = width / 2;
@@ -92,6 +99,12 @@ export function radar<T = number>(
   );
   const startAngle = -Math.PI / 2;
   const angleAt = (i: number) => startAngle + (i * TAU) / axisCount;
+
+  // Polar point shared by the series vertices below and the annotation
+  // mapper: axis index (fractional indices interpolate, like line charts)
+  // and radius in pixels.
+  const pointAt = (axis: number, radiusPx: number): [number, number] =>
+    polarRad(cx, cy, radiusPx, angleAt(axis));
 
   // Clamp policy: non-finite values become 0 and negatives can't produce a
   // negative radius — both are treated as zero for the layout math. Points
@@ -123,9 +136,10 @@ export function radar<T = number>(
         ? Math.min(options.gridOpacity, 1)
         : 0.15;
     for (let i = 0; i < axisCount; i++) {
-      const [x, y] = polar(cx, cy, radius, angleAt(i));
+      const [x, y] = polarRad(cx, cy, radius, angleAt(i));
       marks.push({
         type: 'path',
+        class: markClass('spoke', i),
         d: `M${round(cx)},${round(cy)} L${x},${y}`,
         fill: 'none',
         stroke: gridStroke,
@@ -133,12 +147,13 @@ export function radar<T = number>(
         strokeOpacity: gridOpacity,
       });
     }
-    for (const frac of [0.25, 0.5, 0.75, 1]) {
+    for (const [ri, frac] of [0.25, 0.5, 0.75, 1].entries()) {
       const ring: [number, number][] = [];
-      for (let i = 0; i < axisCount; i++) ring.push(polar(cx, cy, radius * frac, angleAt(i)));
+      for (let i = 0; i < axisCount; i++) ring.push(polarRad(cx, cy, radius * frac, angleAt(i)));
       const d = ring.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ') + ' Z';
       marks.push({
         type: 'path',
+        class: markClass('ring', ri),
         d,
         fill: 'none',
         stroke: gridStroke,
@@ -148,16 +163,24 @@ export function radar<T = number>(
     }
   }
 
+  const seriesColors: string[] = [];
+
   perSeries.forEach(({ input: s, datums }, seriesIndex) => {
     // Precedence: explicit per-series color > uniform options.color (only if
     // the caller passed it) > categorical palette. Same rule lines() uses.
-    const color =
-      s.color ?? (hasUniformColor ? defaultColor : categoricalColor(seriesIndex, perSeries.length));
+    const color = resolveSegmentColor({
+      explicit: s.color,
+      uniform: defaultColor,
+      usePalette: !hasUniformColor,
+      paletteIndex: seriesIndex,
+      paletteTotal: perSeries.length,
+    });
+    seriesColors.push(color);
     const strokeWidth = s.strokeWidth ?? 1;
     const strokeDasharray = toDasharray(s.strokeDasharray);
     const vertex = (i: number): [number, number] => {
       const d = datums[i];
-      return polar(cx, cy, scale(d ? d.value : 0), angleAt(i));
+      return pointAt(i, scale(d ? d.value : 0));
     };
 
     const seriesPoints: ScenePoint[] = [];
@@ -172,7 +195,7 @@ export function radar<T = number>(
         x,
         y,
         seriesIndex,
-        ...(s.name !== undefined ? { seriesLabel: s.name } : {}),
+        seriesLabel: s.name,
       });
     }
 
@@ -181,6 +204,7 @@ export function radar<T = number>(
         singlePointDot(seriesPoints[0]!, Math.max(s.dotRadius ?? 1, strokeWidth + 0.5), color, {
           index: points.length,
           seriesIndex,
+          class: markClass('point', points.length, seriesIndex),
         }),
       );
     } else {
@@ -191,22 +215,31 @@ export function radar<T = number>(
       if (s.fill !== false) {
         const opacity = typeof s.fill === 'number' ? s.fill : 0.2;
         const d = closed.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ') + ' Z';
-        marks.push({ type: 'path', d, fill: color, fillOpacity: opacity, stroke: 'none' });
+        marks.push({
+          type: 'path',
+          class: markClass('area', undefined, seriesIndex),
+          d,
+          fill: color,
+          fillOpacity: opacity,
+          stroke: 'none',
+        });
       }
       marks.push({
         type: 'polyline',
+        class: markClass('line', undefined, seriesIndex),
         points: closed,
         fill: 'none',
         stroke: color,
         strokeWidth,
-        ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
-        ...(s.strokeLinecap !== undefined ? { strokeLinecap: s.strokeLinecap } : {}),
+        strokeDasharray,
+        strokeLinecap: s.strokeLinecap,
       });
       if (s.dot === 'all') {
         for (let i = 0; i < seriesPoints.length; i++) {
           const p = seriesPoints[i]!;
           marks.push({
             type: 'circle',
+            class: markClass('point', points.length + i, seriesIndex),
             cx: p.x,
             cy: p.y,
             r: s.dotRadius ?? 1,
@@ -221,5 +254,30 @@ export function radar<T = number>(
     points.push(...seriesPoints);
   });
 
-  return { ...base, marks, points };
+  // Annotations sit on top of everything, at the polar point for their
+  // axis/value — regardless of the drawn polygons. Series targeting colors
+  // by series but never moves the mark: the domain is shared.
+  // Thin mapper over the shared polar point: `x` is the axis index,
+  // `y` the value on the shared domain ceiling. Unlike the data policy
+  // (values clamp), out-of-range annotations drop. The chart returns
+  // early on zero axes, so the axisCount guard the old mapper carried
+  // is unreachable here.
+  const radarMapper: AnnotationMapper = (a) => {
+    if (!isFinitePair(a) || a.x < 0 || a.x > axisCount - 1) return null;
+    if (a.y < 0 || a.y > domainMax) return null;
+    const [x, y] = pointAt(a.x, domainMax === 0 ? 0 : (a.y / domainMax) * radius);
+    return { x, y };
+  };
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(radarMapper, perSeries.length, (si) => seriesColors[si]),
+    defaultColor,
+  );
+
+  return {
+    ...base,
+    marks: [...marks, ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

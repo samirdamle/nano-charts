@@ -19,11 +19,30 @@ export {
   type PictogramOptions,
   type PictogramInput,
   type PictogramBlock,
+  type PictogramBlockStyle,
+  type PictogramEmptyVariant,
+  type FilledAccessor,
   type PictogramConnectorOptions,
+  type PictogramConnectorSegment,
   type PictogramConnectorStyle,
+  type PictogramConnectorLinecap,
 } from './charts/pictogram';
 export { toSVG } from './render/to-svg';
-export type { Scene, Mark, ScenePoint, BaseOptions, Datum, CenterLabelContext } from './types';
+export { markClass, svgClass, type MarkKind } from './core/css-classes';
+export type {
+  Scene,
+  Mark,
+  ScenePoint,
+  BaseOptions,
+  Datum,
+  CenterLabelContext,
+  Annotation,
+  AnnotationShape,
+  AnnotationOptions,
+  SceneAnnotationPoint,
+  ReferenceLine,
+  ReferenceLineOptions,
+} from './types';
 export type { ColorScale } from './core/color-scale';
 export type { SeriesInput } from './core/normalize';
 export type { AxisOptions, AxisGridlineOptions, AxisGridlineStyle, AxisLayout } from './core/axis';

@@ -100,7 +100,7 @@ describe('pictogram', () => {
       }),
     );
     expect(svg).not.toMatch(/<use[^>]*clip-path/);
-    expect(svg).toContain('<use href="#pictogram-partial-0"');
+    expect(svg).toContain('<use class="nc-block nc-block-4 nc-partial" href="#pictogram-partial-0"');
   });
 
   it('fills partial blocks left-to-right when horizontal', () => {
@@ -264,14 +264,14 @@ describe('pictogram', () => {
       pictogram([2.5], { blockSize: 8, gap: 0.25, padding: 0, idPrefix: 'pictogram' }),
     );
     expect(svg).toContain('<defs><rect id="pictogram-block" width="8" height="8"/></defs>');
-    expect(svg).toContain('<use href="#pictogram-block" x="0" y="10"');
+    expect(svg).toContain('<use class="nc-block nc-block-1 nc-filled" href="#pictogram-block" x="0" y="10"');
     expect(svg).toContain('data-index="0"');
     expect(svg).toContain(
       '<defs><clipPath id="pictogram-partial-0-clip"><rect x="0" y="4" width="8" height="4"/></clipPath>' +
         '<g id="pictogram-partial-0" clip-path="url(#pictogram-partial-0-clip)">' +
         '<rect width="8" height="8"/></g></defs>',
     );
-    expect(svg).toContain('<use href="#pictogram-partial-0"');
+    expect(svg).toContain('<use class="nc-block nc-block-2 nc-partial" href="#pictogram-partial-0"');
     expect(svg).not.toMatch(/<use[^>]*clip-path/);
     expect(svg).toContain('fill-opacity="0.25"');
   });
@@ -323,43 +323,60 @@ describe('pictogram connector', () => {
     expect(lines(scene)).toHaveLength(0);
   });
 
-  it('draws one vertical connector per series, behind its blocks', () => {
-    // blockSize 8, gap 0.25 → pitch 10; maxSlots 7.
-    const scene = pictogram([3, 2], { padding: 0, connector: {} });
+  it('draws one line per gap, behind the blocks', () => {
+    // blockSize 8, gap 1 → pitch 16; maxSlots 3; y-centers 36, 20, 4.
+    // Lines run edge to edge with flat butt caps, so they read as merged
+    // into the blocks.
+    const scene = pictogram([3, 2], { padding: 0, gap: 1, connector: {} });
     const conn = lines(scene);
-    expect(conn).toHaveLength(2);
-    // Series 0: column center x = 4, from bottom block center (24) to top (4).
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 24, x2: 4, y2: 4 });
-    // Series 1: column center x = 14, from bottom block center (24) to top (14).
-    expect(conn[1]).toMatchObject({ x1: 14, y1: 24, x2: 14, y2: 14 });
-    // Each connector sits before its series' block marks (behind the blocks).
+    // Series 0 (3 blocks): gaps (36→20) and (20→4) at column center x = 4.
+    // Series 1 (2 blocks): gap (36→20) at column center x = 20.
+    expect(conn).toHaveLength(3);
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 32, x2: 4, y2: 24 });
+    expect(conn[1]).toMatchObject({ x1: 4, y1: 16, x2: 4, y2: 8 });
+    expect(conn[2]).toMatchObject({ x1: 20, y1: 32, x2: 20, y2: 24 });
+    // Each line sits before its series' block marks (behind the blocks).
     const idx = (m: Mark) => scene.marks.indexOf(m);
-    expect(idx(conn[0]!)).toBeLessThan(idx(uses(scene)[0]!));
-    expect(idx(conn[1]!)).toBeLessThan(idx(uses(scene)[3]!));
+    expect(idx(conn[1]!)).toBeLessThan(idx(uses(scene)[0]!));
+    expect(idx(conn[2]!)).toBeLessThan(idx(uses(scene)[3]!));
   });
 
-  it('draws one horizontal connector per series', () => {
-    const scene = pictogram([3, 2], { padding: 0, horizontal: true, connector: {} });
+  it('draws one line per gap when horizontal', () => {
+    const scene = pictogram([3, 2], { padding: 0, gap: 1, horizontal: true, connector: {} });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(3);
+    // Row 0: row center y = 4, gaps (4→20) and (20→36), edge to edge.
+    expect(conn[0]).toMatchObject({ x1: 8, y1: 4, x2: 16, y2: 4 });
+    expect(conn[1]).toMatchObject({ x1: 24, y1: 4, x2: 32, y2: 4 });
+    // Row 1: row center y = 20, gap (4→20).
+    expect(conn[2]).toMatchObject({ x1: 8, y1: 20, x2: 16, y2: 20 });
+  });
+
+  it('covers the full rendered extent, including partial blocks', () => {
+    // 2.5 → 2 full + 1 partial slot; gaps (36→20) and (20→4), edge to edge.
+    const scene = pictogram([2.5], { padding: 0, gap: 1, connector: {} });
     const conn = lines(scene);
     expect(conn).toHaveLength(2);
-    // Row 0: row center y = 4, from left block center (4) to right (24).
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 4, x2: 24, y2: 4 });
-    // Row 1: row center y = 14, from left block center (4) to right (14).
-    expect(conn[1]).toMatchObject({ x1: 4, y1: 14, x2: 14, y2: 14 });
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 32, x2: 4, y2: 24 });
+    expect(conn[1]).toMatchObject({ x1: 4, y1: 16, x2: 4, y2: 8 });
   });
 
-  it('spans the full rendered extent, including partial blocks', () => {
-    // 2.5 → 2 full + 1 partial slot; connector covers all three slots.
-    const scene = pictogram([2.5], { padding: 0, connector: {} });
+  it('restarts the dash pattern at every block', () => {
+    const scene = pictogram([4], { padding: 0, gap: 1, horizontal: true, connector: { style: 'dotted' } });
     const conn = lines(scene);
-    expect(conn).toHaveLength(1);
-    // maxSlots 3: bottom block center y = 24, top (partial) block center y = 4.
-    expect(conn[0]).toMatchObject({ x1: 4, y1: 24, x2: 4, y2: 4 });
+    expect(conn).toHaveLength(3);
+    // Each line spans exactly one gap with its own dash pattern, so every
+    // gap renders an identical connector instead of a broken fragment.
+    // Dotted defaults to round caps, so endpoints sit half a thickness
+    // inside the block edges (the caps land flush at the boundaries).
+    expect(conn[0]).toMatchObject({ x1: 9, x2: 15, strokeDasharray: '0.1 4', strokeLinecap: 'round' });
+    expect(conn[1]).toMatchObject({ x1: 25, x2: 31, strokeDasharray: '0.1 4', strokeLinecap: 'round' });
+    expect(conn[2]).toMatchObject({ x1: 41, x2: 47, strokeDasharray: '0.1 4', strokeLinecap: 'round' });
   });
 
   it('skips series with fewer than two blocks', () => {
     const scene = pictogram([3, 1, 0], { padding: 0, connector: {} });
-    expect(lines(scene)).toHaveLength(1);
+    expect(lines(scene)).toHaveLength(2);
   });
 
   it('defaults to solid 2px in the series block color', () => {
@@ -368,12 +385,12 @@ describe('pictogram connector', () => {
       connector: {},
     });
     const conn = lines(scene);
-    expect(conn).toHaveLength(1);
+    expect(conn).toHaveLength(2);
     expect(conn[0]).toMatchObject({
       stroke: '#123456',
       strokeWidth: 2,
       strokeDasharray: undefined,
-      strokeLinecap: 'round',
+      strokeLinecap: 'butt',
     });
   });
 
@@ -381,7 +398,7 @@ describe('pictogram connector', () => {
     const scene = pictogram([3, 4], { padding: 0, connector: {} });
     const conn = lines(scene);
     expect(conn[0]!.stroke).toBe(pastelColor(0));
-    expect(conn[1]!.stroke).toBe(pastelColor(1));
+    expect(conn[2]!.stroke).toBe(pastelColor(1));
   });
 
   it('honors custom color, thickness, and dashed/dotted styles', () => {
@@ -393,7 +410,7 @@ describe('pictogram connector', () => {
       stroke: 'red',
       strokeWidth: 1.5,
       strokeDasharray: '5 4',
-      strokeLinecap: 'round',
+      strokeLinecap: 'butt',
     });
     const dotted = pictogram([3], { padding: 0, connector: { style: 'dotted' } });
     expect(lines(dotted)[0]).toMatchObject({
@@ -402,13 +419,109 @@ describe('pictogram connector', () => {
     });
     const svg = toSVG(dotted);
     expect(svg).toContain(
-      '<line x1="4" y1="24" x2="4" y2="4" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="round"/>',
+      '<line class="nc-connector nc-connector-0" x1="4" y1="19" x2="4" y2="19" stroke="#8fe6c4" stroke-width="2" stroke-dasharray="0.1 4" stroke-linecap="round"/>',
     );
   });
 
   it('ignores non-positive or non-finite thickness', () => {
     const scene = pictogram([3], { padding: 0, connector: { thickness: 0 } });
     expect(lines(scene)[0]).toMatchObject({ strokeWidth: 2 });
+  });
+
+  it('draws explicit segments with per-segment colors', () => {
+    // 4 blocks, gap 1 → y-centers 52, 36, 20, 4; lines run edge to edge.
+    const scene = pictogram([4], {
+      padding: 0,
+      gap: 1,
+      connector: {
+        segments: [
+          { span: [0, 2], color: 'red' },
+          { span: [2, 3], color: 'blue' },
+        ],
+      },
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(3);
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 48, x2: 4, y2: 40, stroke: 'red' });
+    expect(conn[1]).toMatchObject({ x1: 4, y1: 32, x2: 4, y2: 24, stroke: 'red' });
+    expect(conn[2]).toMatchObject({ x1: 4, y1: 16, x2: 4, y2: 8, stroke: 'blue' });
+  });
+
+  it('subdivides long spans per gap so dash patterns stay uniform', () => {
+    const scene = pictogram([4], {
+      padding: 0,
+      gap: 1,
+      connector: { segments: [{ span: [0, 3], style: 'dashed', color: 'red' }] },
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(3);
+    for (const l of conn) {
+      expect(l).toMatchObject({ stroke: 'red', strokeDasharray: '5 4' });
+    }
+    expect(conn[0]).toMatchObject({ y1: 48, y2: 40 });
+    expect(conn[2]).toMatchObject({ y1: 16, y2: 8 });
+  });
+
+  it('clamps out-of-range spans, ignores direction, and skips zero-length spans', () => {
+    const scene = pictogram([3], {
+      padding: 0,
+      connector: {
+        segments: [
+          { span: [0, 99], color: 'red' },
+          { span: [1, 1], color: 'blue' },
+          { span: [2, 0], color: 'green' },
+        ],
+      },
+    });
+    const conn = lines(scene);
+    // [0, 99] → [0, 2] (2 gaps, red); [1, 1] skipped; [2, 0] → [0, 2] (2 gaps, green).
+    expect(conn).toHaveLength(4);
+    expect(conn.map((l) => l.stroke)).toEqual(['red', 'red', 'green', 'green']);
+  });
+
+  it('falls back to connector-level styling for omitted segment fields', () => {
+    const scene = pictogram([2], {
+      padding: 0,
+      connector: {
+        color: 'red',
+        thickness: 3,
+        style: 'dashed',
+        segments: [{ span: [0, 1] }, { span: [0, 1], color: 'blue', thickness: 1, style: 'dotted' }],
+      },
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(2);
+    expect(conn[0]).toMatchObject({ stroke: 'red', strokeWidth: 3, strokeDasharray: '5 4' });
+    // Segment-level values win over the connector-level ones.
+    expect(conn[1]).toMatchObject({ stroke: 'blue', strokeWidth: 1, strokeDasharray: '0.1 4' });
+  });
+
+  it('renders only the listed segments when segments are present', () => {
+    const scene = pictogram([4], {
+      padding: 0,
+      connector: { segments: [{ span: [1, 2], color: 'red' }] },
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    // Gap (24→14): butt caps end flush at the block edges (20 and 18).
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 20, x2: 4, y2: 18, stroke: 'red' });
+  });
+
+  it('renders nothing for an empty segments array', () => {
+    const scene = pictogram([4], { padding: 0, connector: { segments: [] } });
+    expect(lines(scene)).toHaveLength(0);
+  });
+
+  it('ignores invalid segments', () => {
+    const scene = pictogram([2], {
+      padding: 0,
+      connector: {
+        segments: [{ span: [0, 1], color: 'red' }, null as never, { span: [Number.NaN, 1] }],
+      },
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    expect(conn[0]).toMatchObject({ stroke: 'red' });
   });
 });
 
@@ -445,5 +558,390 @@ describe('pictogram mark types', () => {
     expect(svg).toContain(
       '<use href="#p-partial-0" x="0" y="0" fill="red" stroke="none" data-index="0"/>',
     );
+  });
+});
+
+describe('pictogram filled / empty blocks', () => {
+  it('renders blocks beyond `filled` as dimmed empties', () => {
+    const scene = pictogram([{ value: 4, filled: 2, color: '#52e081' }], { padding: 0 });
+    const u = uses(scene);
+    expect(u).toHaveLength(4);
+    // Filled blocks: full color, no dimming, no stroke keys.
+    expect(u[0]).toMatchObject({ fill: '#52e081' });
+    expect(u[0]).not.toHaveProperty('fillOpacity');
+    expect(u[0]).not.toHaveProperty('stroke');
+    expect(u[1]).toMatchObject({ fill: '#52e081' });
+    // Empty blocks default to the block's base color, dimmed like the empty
+    // slot under a partial block.
+    expect(u[2]).toMatchObject({ fill: '#52e081', fillOpacity: 0.25 });
+    expect(u[3]).toMatchObject({ fill: '#52e081', fillOpacity: 0.25 });
+    // Points: empties carry value 0 and the empty flag.
+    expect(scene.points[2]).toMatchObject({ value: 0, empty: true });
+    expect(scene.points[0]).toMatchObject({ value: 1 });
+    expect(scene.points[0]!.empty).toBeUndefined();
+  });
+
+  it('paints empty blocks with emptyColor and emptyVariant ring', () => {
+    const scene = pictogram([{ value: 4, filled: 2, color: '#52e081' }], {
+      padding: 0,
+      blockSize: 8,
+      emptyColor: '#e5e5e5',
+      emptyVariant: 'ring',
+    });
+    const u = uses(scene);
+    expect(u[2]).toMatchObject({ fill: 'none', stroke: '#e5e5e5', strokeWidth: 2 });
+    expect(u[2]).not.toHaveProperty('fillOpacity');
+    expect(u[3]).toMatchObject({ fill: 'none', stroke: '#e5e5e5' });
+  });
+
+  it('renders a fractional `filled` with the partial-block treatment', () => {
+    const scene = pictogram([{ value: 4, filled: 2.5, color: '#52e081' }], {
+      padding: 0,
+      idPrefix: 'pictogram',
+    });
+    // 2 full uses + dim slot + overlay + 1 empty use.
+    expect(uses(scene)).toHaveLength(5);
+    expect(partialDefs(scene)).toHaveLength(1);
+    const partialUses = uses(scene).slice(2, 4);
+    expect(partialUses[0]).toMatchObject({ fill: '#52e081', fillOpacity: 0.25 });
+    expect(partialUses[1]).toMatchObject({ href: '#pictogram-partial-0', fill: '#52e081' });
+    expect(uses(scene)[4]).toMatchObject({ fill: '#52e081', fillOpacity: 0.25 });
+    expect(scene.points[2]).toMatchObject({ partial: true, value: 0.5 });
+    expect(scene.points[3]).toMatchObject({ empty: true, value: 0 });
+  });
+
+  it('clamps `filled` to [0, value]', () => {
+    const over = pictogram([{ value: 4, filled: 99, color: 'red' }], { padding: 0 });
+    expect(uses(over).every((u) => u.fill === 'red' && !('fillOpacity' in u))).toBe(true);
+    const under = pictogram([{ value: 4, filled: -3, color: 'red' }], { padding: 0 });
+    expect(uses(under).every((u) => u.fillOpacity === 0.25)).toBe(true);
+    expect(under.points.every((p) => p.empty === true && p.value === 0)).toBe(true);
+  });
+
+  it('applies options.filled to every series; datum filled wins', () => {
+    const scene = pictogram(
+      [{ value: 4, filled: 1, color: 'red' }, { value: 4, color: 'blue' }],
+      { padding: 0, filled: 3 },
+    );
+    const u = uses(scene);
+    // Series 0: datum filled 1 → 1 full + 3 dimmed.
+    expect(u.slice(0, 4).map((m) => m.fillOpacity ?? 1)).toEqual([1, 0.25, 0.25, 0.25]);
+    // Series 1: options filled 3 → 3 full + 1 dimmed.
+    expect(u.slice(4).map((m) => m.fillOpacity ?? 1)).toEqual([1, 1, 1, 0.25]);
+  });
+
+  it('reads filled counts from filledAccessor for object input', () => {
+    const scene = pictogram(
+      [
+        { name: 'a', total: 4, done: 2 },
+        { name: 'b', total: 4, done: 3 },
+      ],
+      {
+        padding: 0,
+        value: (d) => d.total,
+        label: (d) => d.name,
+        filledAccessor: (d) => d.done,
+        color: 'red',
+      },
+    );
+    const u = uses(scene);
+    expect(u.slice(0, 4).map((m) => m.fillOpacity ?? 1)).toEqual([1, 1, 0.25, 0.25]);
+    expect(u.slice(4).map((m) => m.fillOpacity ?? 1)).toEqual([1, 1, 1, 0.25]);
+  });
+
+  it('keeps plain values fully filled (backward compatible)', () => {
+    const scene = pictogram([3], { padding: 0, idPrefix: 'pictogram' });
+    const u = uses(scene);
+    expect(u).toHaveLength(3);
+    for (const m of u) {
+      expect(m).not.toHaveProperty('fillOpacity');
+      expect(m).not.toHaveProperty('stroke');
+      expect(m).not.toHaveProperty('strokeWidth');
+    }
+    expect(scene.points.every((p) => p.empty === undefined)).toBe(true);
+  });
+});
+
+describe('pictogram blockStyles', () => {
+  it('recolors spans of blocks', () => {
+    const scene = pictogram([{ value: 6, color: 'grey' }], {
+      padding: 0,
+      blockStyles: [
+        { span: [0, 1], color: 'red' },
+        { span: [4, 5], color: 'blue' },
+      ],
+    });
+    expect(uses(scene).map((u) => u.fill)).toEqual(['red', 'red', 'grey', 'grey', 'blue', 'blue']);
+  });
+
+  it('lets later rules win, per field', () => {
+    const scene = pictogram([{ value: 4, color: 'grey' }], {
+      padding: 0,
+      emptyVariant: 'ring',
+      emptyColor: '#ddd',
+      blockStyles: [
+        { span: [0, 3], color: 'red', variant: 'ring' },
+        { span: [1, 2], color: 'blue' },
+      ],
+    });
+    const u = uses(scene);
+    // Rule 2 overrides only color on [1,2]; variant ring survives from rule 1.
+    expect(u[0]).toMatchObject({ fill: 'none', stroke: 'red' });
+    expect(u[1]).toMatchObject({ fill: 'none', stroke: 'blue' });
+    expect(u[2]).toMatchObject({ fill: 'none', stroke: 'blue' });
+    expect(u[3]).toMatchObject({ fill: 'none', stroke: 'red' });
+  });
+
+  it('clamps spans and ignores direction', () => {
+    const scene = pictogram([{ value: 4, color: 'grey' }], {
+      padding: 0,
+      blockStyles: [{ span: [3, 99], color: 'red' }, { span: [1, 0], color: 'blue' }],
+    });
+    expect(uses(scene).map((u) => u.fill)).toEqual(['blue', 'blue', 'grey', 'red']);
+  });
+
+  it('skips unusable spans', () => {
+    const scene = pictogram([{ value: 2, color: 'grey' }], {
+      padding: 0,
+      blockStyles: [
+        { span: [0, 0], color: 'red' },
+        { span: [NaN, 1] },
+        { span: undefined as never },
+      ] as never,
+    });
+    expect(uses(scene).map((u) => u.fill)).toEqual(['red', 'grey']);
+  });
+
+  it('applies datum blockStyles after options blockStyles', () => {
+    const scene = pictogram(
+      [{ value: 3, color: 'grey', blockStyles: [{ span: [0, 2], color: 'green' }] }],
+      { padding: 0, blockStyles: [{ span: [0, 2], color: 'red' }] },
+    );
+    expect(uses(scene).map((u) => u.fill)).toEqual(['green', 'green', 'green']);
+  });
+
+  it('draws bordered blocks with explicit stroke and strokeWidth', () => {
+    const scene = pictogram([{ value: 2, color: 'red' }], {
+      padding: 0,
+      blockStyles: [{ span: [0, 0], stroke: '#7a1f1f', strokeWidth: 3 }],
+    });
+    const u = uses(scene);
+    expect(u[0]).toMatchObject({ fill: 'red', stroke: '#7a1f1f', strokeWidth: 3 });
+    expect(u[1]).not.toHaveProperty('stroke');
+  });
+
+  it('honors an explicit strokeWidth on rings', () => {
+    const scene = pictogram([{ value: 2, color: 'red' }], {
+      padding: 0,
+      blockStyles: [{ span: [0, 1], variant: 'ring', strokeWidth: 4 }],
+    });
+    const u = uses(scene);
+    expect(u[0]).toMatchObject({ fill: 'none', stroke: 'red', strokeWidth: 4 });
+  });
+
+  it('renders per-span emoji overrides with their own defs', () => {
+    const scene = pictogram([{ value: 4, color: 'grey' }], {
+      padding: 0,
+      block: { kind: 'emoji', emoji: '⚪' },
+      idPrefix: 'pictogram',
+      blockStyles: [
+        { span: [0, 1], block: { kind: 'emoji', emoji: '⭐' } },
+        { span: [2, 2], block: { kind: 'emoji', emoji: '🔥' } },
+      ],
+    });
+    const d = defs(scene).filter((m) => m.clip === undefined);
+    expect(d).toHaveLength(3);
+    expect(d.map((m) => m.emoji)).toEqual(['⚪', '⭐', '🔥']);
+    const u = uses(scene);
+    expect(u[0]).toMatchObject({ href: '#pictogram-block-1' });
+    expect(u[1]).toMatchObject({ href: '#pictogram-block-1' });
+    expect(u[2]).toMatchObject({ href: '#pictogram-block-2' });
+    expect(u[3]).toMatchObject({ href: '#pictogram-block' });
+  });
+
+  it('reuses one defs entry per distinct shape', () => {
+    const scene = pictogram([{ value: 4 }], {
+      padding: 0,
+      blockStyles: [
+        { span: [0, 0], block: { kind: 'circle' } },
+        { span: [1, 1], block: { kind: 'circle' } },
+      ],
+    });
+    const d = defs(scene).filter((m) => m.clip === undefined);
+    expect(d).toHaveLength(2); // chart rect + one shared circle
+    expect(uses(scene)[0]).toMatchObject({ href: uses(scene)[1]!.href });
+  });
+
+  it('falls back to dimmed for rings on emoji', () => {
+    const scene = pictogram([{ value: 2 }], {
+      padding: 0,
+      block: { kind: 'emoji', emoji: '⚪' },
+      blockStyles: [{ span: [0, 1], variant: 'ring', color: '#ddd' }],
+    });
+    const u = uses(scene);
+    expect(u[0]).toMatchObject({ fill: '#ddd', fillOpacity: 0.25 });
+    expect(u[0]).not.toHaveProperty('stroke');
+  });
+
+  it('renders ring strokes in the SVG string', () => {
+    const scene = pictogram([{ value: 2, filled: 1 }], {
+      padding: 0,
+      idPrefix: 'pictogram',
+      emptyVariant: 'ring',
+      emptyColor: '#ddd',
+    });
+    const svg = toSVG(scene);
+    expect(svg).toContain('<use class="nc-block nc-block-1 nc-empty" href="#pictogram-block" x="0" y="0" fill="none" stroke="#ddd" stroke-width="2"');
+  });
+});
+
+describe('pictogram connectors with per-block paint', () => {
+  const lines = (scene: ReturnType<typeof pictogram>) =>
+    scene.marks.filter((m) => m.type === 'line');
+
+  it('colors each gap with the earlier block’s resolved paint', () => {
+    const scene = pictogram([{ value: 4, color: 'grey' }], {
+      padding: 0,
+      blockStyles: [{ span: [2, 3], color: 'red' }],
+      connector: {},
+    });
+    // Gaps (0→1) and (1→2) leave grey blocks; (2→3) leaves a red one.
+    expect(lines(scene).map((l) => l.stroke)).toEqual(['grey', 'grey', 'red']);
+  });
+
+  it('stops default connectors at the last filled block', () => {
+    const scene = pictogram([{ value: 4, filled: 2, color: '#52e081' }], {
+      padding: 0,
+      emptyColor: '#e5e5e5',
+      emptyVariant: 'ring',
+      connector: {},
+    });
+    const conn = lines(scene);
+    // Only the gap between the two filled blocks renders — nothing extends
+    // into or through the empty region.
+    expect(conn).toHaveLength(1);
+    expect(conn[0]).toMatchObject({ stroke: '#52e081' });
+  });
+
+  it('renders explicit segments through empty regions', () => {
+    const scene = pictogram([{ value: 4, filled: 1, color: '#52e081' }], {
+      padding: 0,
+      emptyColor: '#e5e5e5',
+      connector: { segments: [{ span: [0, 3] }] },
+    });
+    // Explicit segments are literal: they render exactly as specified.
+    expect(lines(scene)).toHaveLength(3);
+  });
+
+  it('runs edge to edge with flat caps, merged into the blocks', () => {
+    const scene = pictogram([2], {
+      padding: 0,
+      gap: 1,
+      horizontal: true,
+      connector: { thickness: 4 },
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    // Block centers at x = 4 and 20, edges at 8 and 16; butt caps end flush.
+    expect(conn[0]).toMatchObject({ x1: 8, y1: 4, x2: 16, y2: 4, strokeLinecap: 'butt' });
+  });
+
+  it('honors linecap round, landing the caps flush at the edges', () => {
+    const scene = pictogram([2], {
+      padding: 0,
+      gap: 1,
+      horizontal: true,
+      connector: { thickness: 4, linecap: 'round' },
+    });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    // Endpoints sit half a thickness inside the edges so the round caps land
+    // flush at the block boundaries.
+    expect(conn[0]).toMatchObject({ x1: 10, y1: 4, x2: 14, y2: 4, strokeLinecap: 'round' });
+  });
+
+  it('lets segments override the connector-level linecap', () => {
+    const scene = pictogram([2], {
+      padding: 0,
+      connector: { segments: [{ span: [0, 1], linecap: 'round' }] },
+    });
+    expect(lines(scene)[0]).toMatchObject({ strokeLinecap: 'round' });
+  });
+
+  it("defaults dotted connectors to round caps so dots render as dots", () => {
+    const scene = pictogram([3], { padding: 0, connector: { style: 'dotted' } });
+    for (const l of lines(scene)) {
+      expect(l).toMatchObject({ strokeLinecap: 'round' });
+    }
+  });
+
+  it('keeps butt caps as the default for solid and dashed connectors', () => {
+    const solid = pictogram([3], { padding: 0, connector: {} });
+    const dashed = pictogram([3], { padding: 0, connector: { style: 'dashed' } });
+    for (const l of [...lines(solid), ...lines(dashed)]) {
+      expect(l).toMatchObject({ strokeLinecap: 'butt' });
+    }
+  });
+
+  it('resolves the linecap default from each segment\'s own style', () => {
+    const scene = pictogram([3], {
+      padding: 0,
+      connector: {
+        segments: [
+          { span: [0, 1], style: 'dotted' },
+          { span: [1, 2], style: 'solid' },
+        ],
+      },
+    });
+    const conn = lines(scene);
+    expect(conn[0]).toMatchObject({ strokeLinecap: 'round' });
+    expect(conn[1]).toMatchObject({ strokeLinecap: 'butt' });
+  });
+
+  it('lets an explicit linecap override the dotted default', () => {
+    const scene = pictogram([3], {
+      padding: 0,
+      connector: { style: 'dotted', linecap: 'butt' },
+    });
+    for (const l of lines(scene)) {
+      expect(l).toMatchObject({ strokeLinecap: 'butt' });
+    }
+  });
+
+  it('collapses to a dot when blocks touch', () => {
+    const scene = pictogram([2], { padding: 0, gap: 0, connector: {} });
+    const conn = lines(scene);
+    expect(conn).toHaveLength(1);
+    // y-centers 12 and 4, shared edge at 8.
+    expect(conn[0]).toMatchObject({ x1: 4, y1: 8, x2: 4, y2: 8 });
+  });
+
+  it('follows blockStyles recoloring across gaps', () => {
+    const scene = pictogram([{ value: 3, color: 'grey' }], {
+      padding: 0,
+      blockStyles: [{ span: [1, 2], color: 'red' }],
+      connector: {},
+    });
+    expect(lines(scene).map((l) => l.stroke)).toEqual(['grey', 'red']);
+  });
+
+  it('lets explicit connector colors win over per-block paint', () => {
+    const scene = pictogram([{ value: 3, color: '#52e081' }], {
+      padding: 0,
+      blockStyles: [{ span: [1, 2], color: 'red' }],
+      connector: { color: 'black' },
+    });
+    expect(lines(scene).map((l) => l.stroke)).toEqual(['black', 'black']);
+    const seg = pictogram([{ value: 3, filled: 1, color: '#52e081' }], {
+      padding: 0,
+      emptyColor: '#e5e5e5',
+      connector: { segments: [{ span: [0, 2], color: 'purple' }] },
+    });
+    expect(lines(seg).map((l) => l.stroke)).toEqual(['purple', 'purple']);
+  });
+
+  it('keeps the old default (series color) when nothing is styled', () => {
+    const scene = pictogram([{ value: 3, color: 'teal' }], { padding: 0, connector: {} });
+    expect(lines(scene).map((l) => l.stroke)).toEqual(['teal', 'teal']);
   });
 });

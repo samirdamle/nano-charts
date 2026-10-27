@@ -23,20 +23,20 @@ describe('highlightMarks', () => {
 
   it('spans the full plot height when only x is given', () => {
     expect(highlightMarks([{ x: [2, 5], color: 'red' }], scales, box)).toEqual([
-      { type: 'rect', x: 26, y: 5, width: 24, height: 40, fill: 'red' },
+      { type: 'rect', class: 'nc-highlight nc-highlight-0', x: 26, y: 5, width: 24, height: 40, fill: 'red' },
     ]);
   });
 
   it('spans the full plot width when only y is given', () => {
     expect(highlightMarks([{ y: [2, 5], color: 'blue' }], scales, box)).toEqual([
-      { type: 'rect', x: 10, y: 25, width: 80, height: 12, fill: 'blue' },
+      { type: 'rect', class: 'nc-highlight nc-highlight-0', x: 10, y: 25, width: 80, height: 12, fill: 'blue' },
     ]);
   });
 
   it('draws an arbitrary rectangle when both are given', () => {
     expect(
       highlightMarks([{ x: [1, 3], y: [2, 6], color: 'green' }], scales, box),
-    ).toEqual([{ type: 'rect', x: 18, y: 21, width: 16, height: 16, fill: 'green' }]);
+    ).toEqual([{ type: 'rect', class: 'nc-highlight nc-highlight-0', x: 18, y: 21, width: 16, height: 16, fill: 'green' }]);
   });
 
   it('normalizes reversed ranges', () => {
@@ -61,7 +61,7 @@ describe('highlightMarks', () => {
 
   it('clips zones that partly overlap the plot', () => {
     expect(highlightMarks([{ x: [-5, 3], color: 'red' }], scales, box)).toEqual([
-      { type: 'rect', x: 10, y: 5, width: 24, height: 40, fill: 'red' },
+      { type: 'rect', class: 'nc-highlight nc-highlight-0', x: 10, y: 5, width: 24, height: 40, fill: 'red' },
     ]);
   });
 

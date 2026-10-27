@@ -9,6 +9,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
             return (
               <polyline
                 key={i}
+                className={mark.class}
                 points={mark.points.map(([x, y]) => `${x},${y}`).join(' ')}
                 fill={mark.fill}
                 stroke={mark.stroke}
@@ -21,6 +22,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
             return (
               <path
                 key={i}
+                className={mark.class}
                 d={mark.d}
                 fill={mark.fill}
                 fillOpacity={mark.fillOpacity}
@@ -35,6 +37,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
             return (
               <rect
                 key={i}
+                className={mark.class}
                 x={mark.x}
                 y={mark.y}
                 width={mark.width}
@@ -50,6 +53,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
             return (
               <circle
                 key={i}
+                className={mark.class}
                 cx={mark.cx}
                 cy={mark.cy}
                 r={mark.r}
@@ -64,6 +68,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
             return (
               <line
                 key={i}
+                className={mark.class}
                 x1={mark.x1}
                 y1={mark.y1}
                 x2={mark.x2}
@@ -78,6 +83,7 @@ export function Marks({ marks }: { marks: Mark[] }) {
             return (
               <text
                 key={i}
+                className={mark.class}
                 x={mark.x}
                 y={mark.y}
                 fontSize={mark.fontSize}
@@ -121,12 +127,14 @@ export function Marks({ marks }: { marks: Mark[] }) {
             return (
               <use
                 key={i}
+                className={mark.class}
                 href={mark.href}
                 x={mark.x}
                 y={mark.y}
                 fill={mark.fill}
                 fillOpacity={mark.fillOpacity}
-                stroke="none"
+                stroke={mark.stroke ?? 'none'}
+                strokeWidth={mark.strokeWidth}
                 data-index={mark.index}
               />
             );

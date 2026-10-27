@@ -271,7 +271,7 @@
         border: 1px solid transparent;
         border-radius: 6px;
         background: none;
-        color: var(--faint);
+        color: var(--text);
         cursor: pointer;
       }
       .code-btn:hover {
@@ -463,6 +463,10 @@
       .chart.tall svg {
         max-height: 220px;
       }
+      /* Styled-with-CSS example: generated nc- classes do the work. */
+      .chart .css-bars .nc-bar { opacity: 0.35; }
+      .chart .css-bars .nc-bar-2,
+      .chart .css-bars .nc-bar-7 { opacity: 1; }
       .readout {
         min-height: 16px;
         padding-top: 10px;
@@ -542,13 +546,14 @@
               <a href="https://github.com/samirdamle/nano-charts">GitHub</a> ·
               <a href="https://www.npmjs.com/package/@samirdamle/nano-charts">NPM</a> ·
               <a href="https://www.npmjs.com/package/@samirdamle/nano-charts-react">React on npm</a> ·
+              <a href="https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md">API Docs</a> ·
               by Samir Damle ·
               v0.6.0
             </p>
           </div>
           <aside class="hero-features">
             <ul>
-              <li>12 kB gzipped</li>
+              <li>15.3 kB gzipped</li>
               <li>12 charts</li>
               <li>No dependencies</li>
               <li>Pure JS + SVG</li>
@@ -564,8 +569,7 @@
       <div id="root"></div>
       <footer>
         Served from <code>dist/</code> via <code>toSVG()</code> — rebuild with
-        <code>pnpm build:demo</code> to refresh. ·
-        <a href="https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md">API reference</a>
+        <code>pnpm build:demo</code> to refresh.
       </footer>
     </div>
 
@@ -740,17 +744,17 @@
       // make.toString() minus the wrapper — the literal code that rendered
       // the chart — so samples can never drift from the demo.
       const REACT_COMPONENTS = {
-        line: 'LineChart',
-        area: 'AreaChart',
-        bar: 'BarChart',
-        donut: 'DonutChart',
-        gauge: 'GaugeChart',
-        scatter: 'ScatterChart',
-        radar: 'RadarChart',
-        heatmap: 'HeatmapChart',
-        pictogram: 'PictogramChart',
-        bullet: 'BulletChart',
-        winLoss: 'WinLossChart',
+        line: 'LineNanoChart',
+        area: 'AreaNanoChart',
+        bar: 'BarNanoChart',
+        donut: 'DonutNanoChart',
+        gauge: 'GaugeNanoChart',
+        scatter: 'ScatterNanoChart',
+        radar: 'RadarNanoChart',
+        heatmap: 'HeatmapNanoChart',
+        pictogram: 'PictogramNanoChart',
+        bullet: 'BulletNanoChart',
+        winLoss: 'WinLossNanoChart',
       };
       // Dark-theme hex for the chalk palette, so samples are copy-paste ready.
       const CHALK_HEX = {
@@ -871,13 +875,13 @@
       }
 
       function buildLinesReact(d) {
-        let src = "import { LineChart } from '@samirdamle/nano-charts-react';\n\n";
+        let src = "import { LineNanoChart } from '@samirdamle/nano-charts-react';\n\n";
         src += '// lines() has no dedicated React component yet —\n';
-        src += '// render one LineChart per series:\n';
+        src += '// render one LineNanoChart per series:\n';
         if (d.demo) src += `// ${d.src.trim()} is demo data — replace with your own\n`;
         src += `const series = ${d.src};\n\n`;
         src += '{series.map(({ name, data, ...rest }) => (\n';
-        src += '  <LineChart key={name} data={data} {...rest} />\n';
+        src += '  <LineNanoChart key={name} data={data} {...rest} />\n';
         src += '))}';
         return src;
       }
@@ -1145,6 +1149,24 @@
           ])),
         },
         {
+          title: 'Annotations',
+          make: () => (lines([
+            { data: [7, 9, 6, 10, 8, 9], name: 'Revenue', color: 'var(--c1)' },
+            {
+              data: [4, 5, 4, 6, 5, 6],
+              name: 'Target',
+              color: 'var(--c2)',
+              strokeDasharray: [3, 2],
+            },
+          ], {
+            annotations: [
+              { x: 0, y: 7, shape: 'dot', color: 'var(--c4)' },
+              { x: 4, y: 8, shape: 'square', seriesIndex: 0 },
+              { x: 3, y: 6, shape: 'triangle', seriesIndex: 1 },
+            ],
+          })),
+        },
+        {
           title: 'Axes & gridlines',
           tall: true,
           make: () => (line([0, 18, 9, 26, 14, 30, 21], {
@@ -1178,6 +1200,25 @@
             highlights: [
               { x: [1, 3], color: 'color-mix(in srgb, var(--accent) 30%, transparent)' },
               { y: [20, 30], color: 'color-mix(in srgb, var(--c4) 25%, transparent)' },
+            ],
+          })),
+        },
+        {
+          title: 'Annotations',
+          make: () => (line([3, 7, 2, 9, 5, 6], {
+            annotations: [
+              { x: 3, y: 9, shape: 'dot', color: 'var(--c4)' },
+              { x: 2, y: 2, shape: 'triangle', color: 'var(--c2)' },
+              { x: 1, y: 7, shape: 'emoji', emoji: '⚠️', size: 4 },
+            ],
+          })),
+        },
+        {
+          title: 'Reference lines',
+          make: () => (line([3, 7, 2, 9, 5, 6], {
+            referenceLines: [
+              { value: 7, orientation: 'horizontal', style: 'dashed', color: 'var(--c4)' },
+              { value: 3, orientation: 'vertical', style: 'dotted', color: 'var(--c2)' },
             ],
           })),
         },
@@ -1245,6 +1286,10 @@
         'Bar',
         [
           { title: 'Basic', make: () => (bar(barValuesDense, { gap: 0.6 })) },
+          {
+            title: 'Styled with CSS',
+            make: () => (bar(barValuesDense, { gap: 0.6, class: 'css-bars' })),
+          },
           { title: 'Rounded caps', make: () => (bar(barValuesDense, { radius: 1, gap: 0.6 })) },
           {
             title: 'Grouped',
@@ -1362,6 +1407,33 @@
               },
             })),
           },
+          {
+            title: 'Annotations',
+            make: () => (bar(
+              groupedBars.map((pair) =>
+                pair.map((value, row) => ({ value, color: groupColors[row] })),
+              ),
+              {
+                mode: 'grouped',
+                annotations: [
+                  { x: 1, y: 16, shape: 'dot', color: 'var(--c4)' },
+                  { x: 0, y: 7, shape: 'square', seriesIndex: 1 },
+                  { x: 4, y: 17, shape: 'emoji', emoji: '⭐', size: 4 },
+                ],
+              },
+            )),
+          },
+          {
+            title: 'Reference lines (horizontal)',
+            make: () => (bar(barValues, {
+              horizontal: true,
+              height: 40,
+              referenceLines: [
+                { value: 2, orientation: 'horizontal', style: 'dashed', color: 'var(--c4)' },
+                { value: 6, orientation: 'vertical', style: 'dotted', color: 'var(--c2)' },
+              ],
+            })),
+          },
         ],
         3,
       );
@@ -1393,6 +1465,15 @@
           )),
         },
         { title: 'Round caps', make: () => (donut({ value: 75, max: 100 }, { strokeLinecap: 'round' })) },
+        {
+          title: 'Annotations',
+          make: () => (donut([4, 3, 2], {
+            annotations: [
+              { y: 4, shape: 'dot', color: 'var(--c4)' },
+              { y: 7, shape: 'emoji', emoji: '⭐', size: 4 },
+            ],
+          })),
+        },
         {
           title: 'Center label',
           make: () => (donut({ value: 72, max: 100 }, { centerLabel: '72%' })),
@@ -1442,6 +1523,15 @@
         {
           title: 'Line needle',
           make: () => (gauge({ value: 35, max: 100 }, { mode: 'needle', needle: 'line' })),
+        },
+        {
+          title: 'Annotations',
+          make: () => (gauge({ value: 72, max: 100 }, {
+            annotations: [
+              { y: 50, shape: 'dot', color: 'var(--c4)' },
+              { y: 90, shape: 'emoji', emoji: '🎯', size: 4 },
+            ],
+          })),
         },
       ]);
 
@@ -1512,6 +1602,17 @@
             highlights: [
               // x + y: rectangle around the blue cluster at (2, 8)
               { x: [-0.5, 4.5], y: [5, 10.5], color: 'color-mix(in srgb, var(--c1) 20%, transparent)' },
+            ],
+          })),
+        },
+        {
+          title: 'Annotations',
+          tall: true,
+          make: () => (scatter(scatterClusters, {
+            height: 60,
+            annotations: [
+              { x: 2, y: 8, shape: 'square', color: 'var(--c1)', size: 2 },
+              { x: 8, y: 7.5, shape: 'emoji', emoji: '🎯', size: 5 },
             ],
           })),
         },
@@ -1590,10 +1691,27 @@
             lossColor: 'var(--c4)',
           })),
         },
+        {
+          title: 'Annotations',
+          make: () => (winLoss([2, 4, 3, 5, 1, -2, -1, -3, 4, 2, 3, -1, -4, -2, 1, 3], {
+            winColor: 'var(--c3)',
+            lossColor: 'var(--c4)',
+            annotations: [
+              { x: 3, shape: 'emoji', emoji: '🔥', size: 4 },
+              { x: 10, shape: 'dot', color: 'var(--c4)' },
+            ],
+          })),
+        },
       ]);
 
       group('Bullet', [
         { title: 'Basic', make: () => (bullet({ value: 80, target: 90, ranges: [50, 75, 100] })) },
+        {
+          title: 'Annotations',
+          make: () => (bullet({ value: 80, target: 90, ranges: [50, 75, 100] }, {
+            annotations: [{ x: 90, shape: 'triangle', color: 'var(--c4)' }],
+          })),
+        },
       ]);
 
       group('Radar', [
@@ -1621,6 +1739,17 @@
         {
           title: 'Custom max, no grid',
           make: () => (radar([{ data: [8, 6, 9, 4, 7], fill: 0.35 }], { max: 10, grid: false, color: '#f3a8c7' })),
+        },
+        {
+          title: 'Annotations',
+          make: () => (radar([4, 9, 2, 7, 5], {
+            color: '#f3a8c7',
+            gridOpacity: 0.35,
+            annotations: [
+              { x: 1, y: 9, shape: 'dot', color: 'var(--c4)' },
+              { x: 3, y: 7, shape: 'emoji', emoji: '⭐', size: 4 },
+            ],
+          })),
         },
       ]);
 
@@ -1663,6 +1792,14 @@
             return `${days[point.col]}, Sep ${date} = ${point.value}`;
           },
         },
+        {
+          title: 'Annotations',
+          make: () => (heatmap(corrMatrix, {
+            cellSize: 20,
+            gap: 2,
+            annotations: [{ x: 2, y: 1, shape: 'square', color: 'var(--c4)', size: 3 }],
+          })),
+        },
       ]);
 
       group('Pictogram', [
@@ -1681,21 +1818,64 @@
         { title: 'Dots', make: () => (pictogram([4, 6, 3], { block: { kind: 'circle' } })) },
         { title: 'Horizontal rows', make: () => (pictogram([5, 3, 7], { horizontal: true })) },
         {
-          title: 'Connector lines',
-          make: () => (pictogram([3, 7, 5, 2], { connector: {} })),
+          title: 'Stage completion',
+          make: () => (pictogram([
+            { value: 4, filled: 2, label: 'Flow A' },
+            { value: 4, filled: 3, label: 'Flow B' },
+            { value: 4, filled: 1, label: 'Flow C' },
+          ], {
+            horizontal: true,
+            gap: 1,
+            block: { kind: 'circle' },
+            color: 'var(--c3)',
+            emptyColor: 'var(--faint)',
+            emptyVariant: 'ring',
+            connector: { thickness: 3 },
+          })),
         },
         {
-          title: 'Dashed connectors',
-          make: () => (pictogram([5, 3, 7], {
+          title: 'Stage completion — dimmed',
+          make: () => (pictogram([
+            { value: 4, filled: 2, label: 'Flow A' },
+            { value: 4, filled: 3, label: 'Flow B' },
+            { value: 4, filled: 1, label: 'Flow C' },
+          ], {
             horizontal: true,
+            gap: 1,
             block: { kind: 'circle' },
-            connector: { style: 'dashed', color: 'var(--text)' },
+            color: 'var(--c3)',
+            emptyColor: 'var(--faint)',
+            connector: { thickness: 3 },
+          })),
+        },
+        {
+          title: 'Stage completion — dotted',
+          // 3 blocks + 2 double gaps at blockSize 8 → 56 units wide; scale to
+          // 120px so the dotted connector reads clearly.
+          blockScale: 120 / 56,
+          make: () => (pictogram([{ value: 3, filled: 2, label: 'Flow' }], {
+            horizontal: true,
+            gap: 2,
+            block: { kind: 'circle' },
+            color: 'var(--c3)',
+            emptyColor: 'var(--faint)',
+            emptyVariant: 'ring',
+            connector: { thickness: 3, style: 'dotted' },
           })),
         },
         {
           title: 'Hover the blocks',
           make: () => (pictogram([3, 2.5, 4])),
           interactive: true,
+        },
+        {
+          title: 'Annotations',
+          make: () => (pictogram([3, 7, 5, 2], {
+            annotations: [
+              { x: 1, y: 7, shape: 'dot', color: 'var(--c4)' },
+              { x: 0, y: 3, shape: 'emoji', emoji: '⭐', size: 4 },
+            ],
+          })),
         },
       ], { blockScale: 1.6 });
     </script>

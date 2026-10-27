@@ -1,16 +1,31 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Mark,
+  ReferenceLineOptions,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { extent, round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
-import { categoricalColor } from '../core/palette';
+import { resolveSegmentColor } from '../core/palette';
 import {
   autoPlotPadding,
   seriesLayout,
   type ResolvedPadding,
   type SeriesLayout,
 } from '../core/plot';
-import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { lineMarkExtent, resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import {
+  annotationMarks,
+  indexAnnotationMapper,
+  indexRefLineScales,
+  referenceLineMarks,
+  seriesAwareMapper,
+} from '../core/annotations';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -24,7 +39,7 @@ export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   dotRadius?: number;
 }
 
-export interface LinesOptions extends BaseOptions {
+export interface LinesOptions extends BaseOptions, AnnotationOptions, ReferenceLineOptions {
   /** X axis (index-based). Disabled by default. */
   xAxis?: AxisOptions;
   /** Y axis (value-based). Disabled by default. */
@@ -49,7 +64,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const count = perSeries.length ? Math.max(...perSeries.map((s) => s.datums.length)) : 0;
   const title = options.title ?? 'line chart';
   const desc = options.desc ?? `${title}, ${perSeries.length} series, up to ${count} points`;
-  const base = sceneShell({ width, height }, { title, desc });
+  const base = sceneShell({ width, height }, { title, desc }, options);
 
   const allValues = perSeries.flatMap((s) => s.datums.map((d) => d.value));
   if (allValues.length === 0) return base;
@@ -59,37 +74,22 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   // Max half-size of a mark that can sit on the plot edge, across series.
   const extentPx = Math.max(
     0,
-    ...perSeries.map(({ input, datums }) => {
-      const sw = input.strokeWidth ?? 1;
-      const dr = input.dotRadius ?? 1;
-      return datums.length < 2
-        ? Math.max(dr, sw + 0.5)
-        : Math.max(sw / 2, input.dot && input.dot !== 'none' ? dr : 0);
-    }),
+    ...perSeries.map(({ input, datums }) =>
+      lineMarkExtent(datums.length, input.strokeWidth ?? 1, input.dotRadius ?? 1, input.dot),
+    ),
   );
   const layoutFor = (padding: ResolvedPadding) =>
     seriesLayout(count, valueDomain, { width, height, padding });
   const axisLayoutFor = (l: SeriesLayout, orientation: 'x' | 'y'): AxisLayout =>
-    orientation === 'x'
-      ? {
-          orientation,
-          domain: indexDomain,
-          scale: l.x,
-          crossDomain: valueDomain,
-          crossScale: l.y,
-          span: [l.left, l.right],
-          crossSpan: [l.top, l.bottom],
-          integerTicks: true,
-        }
-      : {
-          orientation,
-          domain: valueDomain,
-          scale: l.y,
-          crossDomain: indexDomain,
-          crossScale: l.x,
-          span: [l.top, l.bottom],
-          crossSpan: [l.left, l.right],
-        };
+    axisLayout(orientation, {
+      domain: indexDomain,
+      scale: l.x,
+      crossDomain: valueDomain,
+      crossScale: l.y,
+      span: [l.left, l.right],
+      crossSpan: [l.top, l.bottom],
+      integerTicks: orientation === 'x' ? true : undefined,
+    });
 
   // Automatic padding, iterated to a fixed point on the real layout
   // (autoPlotPadding re-measures until the padding stops growing).
@@ -104,11 +104,17 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+  const seriesColors: string[] = [];
 
   perSeries.forEach(({ input, datums }, seriesIndex) => {
-    const color =
-      input.color ??
-      (hasUniformColor ? defaultColor : categoricalColor(seriesIndex, perSeries.length));
+    const color = resolveSegmentColor({
+      explicit: input.color,
+      uniform: defaultColor,
+      usePalette: !hasUniformColor,
+      paletteIndex: seriesIndex,
+      paletteTotal: perSeries.length,
+    });
+    seriesColors.push(color);
     const strokeWidth = input.strokeWidth ?? 1;
     const dotRadius = input.dotRadius ?? 1;
     const strokeDasharray = toDasharray(input.strokeDasharray);
@@ -121,18 +127,19 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
       x: round(layout.x(d.index)),
       y: round(layout.y(d.value)),
       seriesIndex,
-      ...(input.name !== undefined ? { seriesLabel: input.name } : {}),
+      seriesLabel: input.name,
     }));
 
     if (seriesPoints.length >= 2) {
       marks.push({
         type: 'polyline',
+        class: markClass('line', undefined, seriesIndex),
         points: seriesPoints.map((p) => [p.x, p.y] as [number, number]),
         fill: 'none',
         stroke: color,
         strokeWidth,
-        ...(strokeDasharray !== undefined ? { strokeDasharray } : {}),
-        ...(input.strokeLinecap !== undefined ? { strokeLinecap: input.strokeLinecap } : {}),
+        strokeDasharray,
+        strokeLinecap: input.strokeLinecap,
       });
       if (input.dot && input.dot !== 'none') {
         const dottedIndices =
@@ -141,6 +148,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
           const p = seriesPoints[i]!;
           marks.push({
             type: 'circle',
+            class: markClass('point', points.length + i, seriesIndex),
             cx: p.x,
             cy: p.y,
             r: dotRadius,
@@ -155,6 +163,7 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
         singlePointDot(seriesPoints[0]!, Math.max(dotRadius, strokeWidth + 0.5), color, {
           index: points.length,
           seriesIndex,
+          class: markClass('point', points.length, seriesIndex),
         }),
       );
     }
@@ -165,6 +174,29 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const xA = axisMarks(options.xAxis, axisLayoutFor(layout, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
   const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
+  // Annotations sit on top of everything, including axis furniture. The
+  // shared domain spans all series, so series targeting (v2) colors an
+  // annotation by its series but never moves it. Reference lines sit just
+  // below the annotations.
+  const referenceLines = referenceLineMarks(
+    options.referenceLines,
+    indexRefLineScales(layout, count, valueDomain),
+    defaultColor,
+  );
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(
+      indexAnnotationMapper(count, valueDomain, layout),
+      perSeries.length,
+      (si) => seriesColors[si],
+    ),
+    defaultColor,
+  );
 
-  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return {
+    ...base,
+    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

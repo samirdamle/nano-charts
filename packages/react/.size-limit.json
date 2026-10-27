@@ -1,15 +1,15 @@
 [
   {
-    "name": "LineChart (standalone)",
+    "name": "LineNanoChart (standalone)",
     "path": "dist/line.js",
-    "import": "{ LineChart }",
-    "limit": "5 kB",
+    "import": "{ LineNanoChart }",
+    "limit": "6 kB",
     "gzip": true
   },
   {
     "name": "full barrel",
     "path": "dist/index.js",
-    "limit": "13 kB",
+    "limit": "15 kB",
     "gzip": true
   }
 ]

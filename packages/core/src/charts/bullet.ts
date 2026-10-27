@@ -1,6 +1,9 @@
-import type { BaseOptions, Mark, Scene } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene } from '../types';
 import { linearScale, round } from '../core/geometry';
-import { paddedBox, resolvePadding } from '../core/plot';
+import { paddedBox } from '../core/plot';
+import { resolveChartShell, sceneShell } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
+import { annotationMarks, bulletAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 
 export interface BulletData {
   value: number;
@@ -11,13 +14,10 @@ export interface BulletData {
   label?: string;
 }
 
-export type BulletOptions = BaseOptions;
+export type BulletOptions = BaseOptions & AnnotationOptions;
 
 export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
-  const width = options.width ?? 100;
-  const height = options.height ?? 20;
-  const color = options.color ?? 'currentColor';
-  const padding = resolvePadding(options.padding);
+  const { width, height, color, padding } = resolveChartShell(options);
   // Clamp policy: bullet geometry lives on [0, max]. Negative inputs are
   // clamped to 0 (no rect can get a negative width) and value/target are
   // clamped into [0, max] so nothing draws off-canvas. The scene reflects
@@ -29,6 +29,9 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
 
   const { left, right, top, bottom } = paddedBox({ width, height, padding });
   const xScale = linearScale([0, max], [left, right]);
+  // Centerline shared by the measure bar's scene point and the annotation
+  // mapper: one value for the bullet's vertical center.
+  const centerY = (top + bottom) / 2;
 
   const marks: Mark[] = [];
 
@@ -36,6 +39,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   for (let i = ranges.length - 1; i >= 0; i--) {
     marks.push({
       type: 'rect',
+      class: markClass('range', i),
       x: round(left),
       y: round(top),
       width: round(xScale(ranges[i]!) - left),
@@ -50,6 +54,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const barY = top + (bottom - top - barH) / 2;
   marks.push({
     type: 'rect',
+    class: markClass('bar'),
     x: round(left),
     y: round(barY),
     width: round(xScale(value) - left),
@@ -61,6 +66,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const tx = round(xScale(target));
   marks.push({
     type: 'line',
+    class: markClass('target'),
     x1: tx,
     y1: round(top),
     x2: tx,
@@ -69,10 +75,24 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     strokeWidth: 1,
   });
 
+  // Annotations sit on top of everything, at their value on the
+  // centerline; `y` is ignored.
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(bulletAnnotationMapper(xScale, max, centerY), 0),
+    color,
+  );
+  marks.push(...annMarks);
+
   return {
-    width,
-    height,
-    viewBox: `0 0 ${width} ${height}`,
+    ...sceneShell(
+      { width, height },
+      {
+        title: options.title ?? 'bullet chart',
+        desc: options.desc ?? `bullet chart, value ${value}, target ${target}, max ${max}`,
+      },
+      options,
+    ),
     marks,
     points: [
       {
@@ -81,12 +101,9 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
         value,
         index: 0,
         x: round(xScale(value)),
-        y: round((top + bottom) / 2),
+        y: round(centerY),
       },
     ],
-    a11y: {
-      title: options.title ?? 'bullet chart',
-      desc: options.desc ?? `bullet chart, value ${value}, target ${target}, max ${max}`,
-    },
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
   };
 }

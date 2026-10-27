@@ -1,4 +1,4 @@
-import type { BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
 import { extent, round } from '../core/geometry';
 import { makeColorScale, type ColorScale } from '../core/color-scale';
 import {
@@ -7,10 +7,19 @@ import {
   type PaddedBox,
   type ResolvedPadding,
 } from '../core/plot';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
+import { sceneShell } from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import { markClass } from '../core/css-classes';
+import {
+  annotationMarks,
+  inIndex,
+  isFinitePair,
+  seriesAwareMapper,
+  type AnnotationMapper,
+} from '../core/annotations';
 
-export interface HeatmapOptions<T = number> extends BaseOptions {
+export interface HeatmapOptions<T = number> extends BaseOptions, AnnotationOptions {
   value?: (cell: T, row: number, col: number) => number;
   colorScale?: [string, string] | ColorScale;
   gap?: number;
@@ -38,27 +47,15 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const axisLayoutFor = (b: PaddedBox, orientation: 'x' | 'y'): AxisLayout => {
     const colCenter = (c: number): number => b.left + c * cell + cell / 2;
     const rowCenter = (r: number): number => b.top + r * cell + cell / 2;
-    return orientation === 'x'
-      ? {
-          orientation,
-          domain: [0, cols - 1],
-          scale: colCenter,
-          crossDomain: [0, rows - 1],
-          crossScale: rowCenter,
-          span: [b.left, b.right],
-          crossSpan: [b.top, b.bottom],
-          integerTicks: true,
-        }
-      : {
-          orientation,
-          domain: [0, rows - 1],
-          scale: rowCenter,
-          crossDomain: [0, cols - 1],
-          crossScale: colCenter,
-          span: [b.top, b.bottom],
-          crossSpan: [b.left, b.right],
-          integerTicks: true,
-        };
+    return axisLayout(orientation, {
+      domain: [0, cols - 1],
+      scale: colCenter,
+      crossDomain: [0, rows - 1],
+      crossScale: rowCenter,
+      span: [b.left, b.right],
+      crossSpan: [b.top, b.bottom],
+      integerTicks: true,
+    });
   };
 
   // Automatic padding, iterated to a fixed point on the real layout. The
@@ -80,6 +77,11 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const height = rows * cell + padding.top + padding.bottom;
   const box = paddedBox({ width, height, padding });
 
+  // Cell centers shared by the highlight scales below and the annotation
+  // mapper: one formula for a cell's center.
+  const colCenter = (c: number): number => box.left + c * cell + cell / 2;
+  const rowCenter = (r: number): number => box.top + r * cell + cell / 2;
+
   const flat: number[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -89,19 +91,16 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     }
   }
 
-  const base: Scene = {
-    width,
-    height,
-    viewBox: `0 0 ${width} ${height}`,
-    marks: [],
-    points: [],
-    a11y: {
+  const base: Scene = sceneShell(
+    { width, height },
+    {
       title: options.title ?? 'heatmap',
       desc:
         options.desc ??
         (flat.length === 0 ? 'heatmap, no data' : `heatmap, ${rows} by ${cols} cells`),
     },
-  };
+    options,
+  );
   if (flat.length === 0) return base;
 
   const domain = extent(flat);
@@ -119,6 +118,7 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
       const size = round(cell - gap);
       marks.push({
         type: 'rect',
+        class: markClass('cell', points.length),
         x,
         y,
         width: size,
@@ -148,14 +148,26 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const xA = axisMarks(options.xAxis, axisLayoutFor(box, 'x'));
   const yA = axisMarks(options.yAxis, axisLayoutFor(box, 'y'));
   // Highlight zones address cell centers, like the axis ticks.
-  const hl = highlightMarks(
-    options.highlights,
-    {
-      x: (c: number) => box.left + c * cell + cell / 2,
-      y: (r: number) => box.top + r * cell + cell / 2,
-    },
-    box,
+  const hl = highlightMarks(options.highlights, { x: colCenter, y: rowCenter }, box);
+
+  // Annotations sit on top of everything, at their cell's center.
+  // Thin mapper over the shared cell centers: `x` is the column, `y` the
+  // row (integers); missing ragged cells drop.
+  const heatmapMapper: AnnotationMapper = (a) => {
+    if (!isFinitePair(a) || !inIndex(a.x, cols) || !inIndex(a.y, rows)) return null;
+    if (matrix[a.y]?.[a.x] === undefined) return null;
+    return { x: colCenter(a.x), y: rowCenter(a.y) };
+  };
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(heatmapMapper, 0),
+    options.color ?? 'currentColor',
   );
 
-  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return {
+    ...base,
+    marks: [...layerMarks(hl, xA, yA, marks), ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

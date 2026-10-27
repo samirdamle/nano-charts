@@ -1,4 +1,4 @@
-import type { BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
 import { arcPath, dialSpan, polar, round } from '../core/geometry';
 import {
   normalizeSeries,
@@ -9,7 +9,9 @@ import {
 } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
-import { gauge } from './gauge';
+import { markClass } from '../core/css-classes';
+import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import { gauge, pushCenterLabel } from './gauge';
 
 export interface DonutGauge {
   value: number;
@@ -28,7 +30,8 @@ export interface DonutTrackOptions {
 export interface DonutOptions<T = number>
   extends BaseOptions,
     Partial<SeriesAccessors<T>>,
-    Partial<SeriesColorAccessor<T>> {
+    Partial<SeriesColorAccessor<T>>,
+    AnnotationOptions {
   thickness?: number;
   startAngle?: number;
   /** End of the dial's angle domain in degrees (same convention as startAngle:
@@ -85,28 +88,6 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   const gap = Number.isFinite(gapRaw) ? Math.max(0, gapRaw) : 0.2;
   const halfGapDeg = gap === 0 ? 0 : ((gap / 2) / rMid) * (180 / Math.PI);
 
-  // Center readout: font sized to the dial's hole, baseline nudged so the
-  // text reads as vertically centered. No fill: inherits currentColor.
-  const pushCenterLabel = (ctx: CenterLabelContext) => {
-    const label =
-      typeof options.centerLabel === 'function' ? options.centerLabel(ctx) : options.centerLabel;
-    if (label === undefined) return;
-    // Half the previous label size, semibold: the readout sits inside the
-    // dial's hole and never overlaps the dial ring.
-    const fontSize = Math.max(2, Math.round(rInner * 0.425));
-    marks.push({
-      type: 'text',
-      x: round(cx),
-      y: round(cy + fontSize * 0.35),
-      text: label,
-      fontSize,
-      fontWeight: 600,
-      textAnchor: 'middle',
-    });
-  };
-
-  const strokeLinecap =
-    options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {};
 
   const trackOpt = options.track;
 
@@ -156,6 +137,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
         options.desc ??
         (datums.length === 0 ? 'donut chart, no data' : `donut chart, ${datums.length} segments`),
     },
+    options,
   );
   if (datums.length === 0 || total === 0) return base;
 
@@ -165,12 +147,13 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   if (segTrack) {
     marks.push({
       type: 'path',
+      class: markClass('track'),
       d: arcPath(cx, cy, rMid, startAngle, startAngle + span),
       fill: 'none',
       stroke: segTrack.color ?? color,
       strokeWidth: round(thickness),
       strokeOpacity: segTrack.opacity ?? 0.25,
-      ...strokeLinecap,
+      strokeLinecap: options.strokeLinecap,
     });
   }
 
@@ -196,18 +179,29 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     const segEnd = Math.max(angle + sweep - halfGapDeg, segStart);
     marks.push({
       type: 'path',
+      class: markClass('segment', i),
       d: arcPath(cx, cy, rMid, segStart, segEnd),
       fill: 'none',
       stroke: segmentColor,
       strokeWidth: round(thickness),
       strokeOpacity: useStripe ? (i % 2 === 0 ? 1 : 0.55) : 1,
-      ...strokeLinecap,
+      strokeLinecap: options.strokeLinecap,
     });
     const [px, py] = polar(cx, cy, rMid, angle + sweep / 2);
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x: round(px), y: round(py) });
     angle += sweep;
   });
-  pushCenterLabel({ value: total, min: 0, max: total, frac: 1 });
+  pushCenterLabel(marks, options.centerLabel, { value: total, min: 0, max: total, frac: 1 }, cx, cy, rInner);
+  // Annotations sit on top of everything, on the ring at mid-thickness
+  // radius; `y` is the value across [0, total] (x is ignored). Gauge mode
+  // needs nothing here: it delegates to gauge(), which applies the same
+  // mapping with [0, max] and these same startAngle/span values.
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]), 0),
+    color,
+  );
+  marks.push(...annMarks);
 
-  return { ...base, marks, points };
+  return { ...base, marks, points, ...(annotationPoints.length > 0 ? { annotationPoints } : {}) };
 }

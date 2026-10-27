@@ -1,0 +1,79 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
+import { BarNanoChart } from '../src/charts/BarNanoChart';
+import { bar } from '@samirdamle/nano-charts';
+
+describe('BarNanoChart', () => {
+  it('renders one rect per segment, matching the core bar() function', () => {
+    const data = [
+      [1, 2],
+      [3, 4],
+    ];
+    const { container } = render(<BarNanoChart data={data} />);
+    const scene = bar(data);
+    expect(container.querySelectorAll('svg > rect')).toHaveLength(
+      scene.marks.filter((m) => m.type === 'rect').length,
+    );
+  });
+
+  it('fires onPointHover with the segment point on enter and null on leave', () => {
+    const onPointHover = vi.fn();
+    const data = [
+      [1, 2],
+      [3, 4],
+    ];
+    const { container } = render(<BarNanoChart data={data} onPointHover={onPointHover} />);
+    const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
+    expect(hitTargets).toHaveLength(4);
+    fireEvent.mouseEnter(hitTargets[0]!);
+    expect(onPointHover).toHaveBeenCalledWith(expect.objectContaining({ col: 0, row: 0, value: 1 }));
+    fireEvent.mouseLeave(hitTargets[0]!);
+    expect(onPointHover).toHaveBeenCalledWith(null);
+  });
+
+  it('fires onPointClick with the segment point', () => {
+    const onPointClick = vi.fn();
+    const data = [
+      [1, 2],
+      [3, 4],
+    ];
+    const { container } = render(<BarNanoChart data={data} onPointClick={onPointClick} />);
+    const hitTargets = container.querySelectorAll('circle[fill="transparent"]');
+    fireEvent.click(hitTargets[3]!);
+    expect(onPointClick).toHaveBeenCalledWith(expect.objectContaining({ col: 1, row: 1, value: 4 }));
+  });
+});
+
+describe('BarNanoChart mode', () => {
+  it("passes mode='grouped' through to the core bar() function", () => {
+    const data = [
+      [1, 2],
+      [3, 4],
+    ];
+    const { container } = render(<BarNanoChart data={data} mode="grouped" />);
+    const scene = bar(data, { mode: 'grouped' });
+    const rendered = container.querySelectorAll('svg > rect');
+    const expected = scene.marks.filter((m) => m.type === 'rect');
+    expect(rendered).toHaveLength(expected.length);
+    // grouped bars sit side by side: first two rects share a column, differ in x
+    expect(rendered[0]!.getAttribute('x')).not.toBe(rendered[1]!.getAttribute('x'));
+  });
+
+  it("passes mode='waterfall' through to the core bar() function", () => {
+    const data = [3, 2, -1];
+    const { container } = render(
+      <BarNanoChart data={data} mode="waterfall" upColor="green" downColor="red" total connectorColor="blue" />,
+    );
+    const scene = bar(data, { mode: 'waterfall', upColor: 'green', downColor: 'red', total: true, connectorColor: 'blue' });
+    const rendered = container.querySelectorAll('svg > rect');
+    const expected = scene.marks.filter((m) => m.type === 'rect');
+    expect(rendered).toHaveLength(expected.length);
+    // 3 deltas + total column, colored by sign
+    expect(rendered).toHaveLength(4);
+    expect(rendered[0]!.getAttribute('fill')).toBe('green');
+    expect(rendered[2]!.getAttribute('fill')).toBe('red');
+    // connectors render as solid paths in the connector color
+    const connectors = container.querySelectorAll('svg > path[stroke="blue"]');
+    expect(connectors).toHaveLength(scene.marks.filter((m) => m.type === 'path').length);
+  });
+});

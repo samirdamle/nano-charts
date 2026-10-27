@@ -30,7 +30,7 @@ describe('PointHitTargets', () => {
   });
 
   it('stays invisible even when an ancestor sets a visible stroke', () => {
-    // ChartSvg's root <svg> sets stroke="currentColor" for the chart's own marks.
+    // NanoChartSvg's root <svg> sets stroke="currentColor" for the chart's own marks.
     // stroke is an inherited SVG presentation property, so a hit circle with no
     // stroke of its own would otherwise paint a visible ring at fill="transparent".
     const { container } = render(

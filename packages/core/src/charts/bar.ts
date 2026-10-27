@@ -1,4 +1,13 @@
-import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Datum,
+  Mark,
+  ReferenceLineOptions,
+  Scene,
+  ScenePoint,
+} from '../types';
+import { markClass } from '../core/css-classes';
 import { extent, linearScale, round } from '../core/geometry';
 import {
   normalizeSeries,
@@ -15,8 +24,17 @@ import {
   type SeriesLayout,
 } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from '../core/axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
+import {
+  annotationMarks,
+  inDomain,
+  inIndex,
+  isFinitePair,
+  referenceLineMarks,
+  seriesAwareMapper,
+  type AnnotationMapper,
+} from '../core/annotations';
 
 export interface BarTrackOptions {
   /** The "100%" the track represents. When larger than the data max it
@@ -37,7 +55,11 @@ export interface BarTrackOptions {
 export type BarMode = 'stacked' | 'grouped' | 'waterfall';
 
 export interface BarOptions<T = number>
-  extends BaseOptions, Partial<SeriesAccessors<T>>, Partial<SeriesColorAccessor<T>> {
+  extends BaseOptions,
+    Partial<SeriesAccessors<T>>,
+    Partial<SeriesColorAccessor<T>>,
+    AnnotationOptions,
+    ReferenceLineOptions {
   gap?: number;
   radius?: number;
   horizontal?: boolean;
@@ -120,7 +142,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
           label: first?.label ?? String(totals[col]),
           value: totals[col] ?? 0,
           index: col,
-          ...(first?.color !== undefined ? { color: first.color } : {}),
+          color: first?.color,
         },
       ];
     });
@@ -174,7 +196,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
           index: col,
         }));
   const a11y = resolveA11y('bar', flat, options);
-  const base = sceneShell({ width, height }, a11y);
+  const base = sceneShell({ width, height }, a11y, options);
   if (columns.length === 0) return base;
 
   const [minT, maxT] = extent(domainValues.length > 0 ? domainValues : [0]);
@@ -207,25 +229,15 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     // along the value scale. Which is "x" flips with `horizontal`.
     const catScale = (i: number): number => slot.x(i) + barW / 2;
     const catDomain: [number, number] = [0, columns.length - 1];
-    const axisFor = (orientation: 'x' | 'y'): AxisLayout => {
-      const v = horizontal
-        ? {
-            x: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
-            y: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
-          }
-        : {
-            x: { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale },
-            y: { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale },
-          };
-      const a = orientation === 'x' ? v.x : v.y;
-      return {
-        orientation,
-        ...a,
-        span: orientation === 'x' ? [l.left, l.right] : [l.top, l.bottom],
-        crossSpan: orientation === 'x' ? [l.top, l.bottom] : [l.left, l.right],
+    const valueSpec = { domain, scale: valueScale, crossDomain: catDomain, crossScale: catScale };
+    const catSpec = { domain: catDomain, scale: catScale, crossDomain: domain, crossScale: valueScale };
+    const axisFor = (orientation: 'x' | 'y'): AxisLayout =>
+      axisLayout(orientation, {
+        ...(horizontal ? valueSpec : catSpec),
+        span: [l.left, l.right],
+        crossSpan: [l.top, l.bottom],
         integerTicks: orientation === 'x' ? !horizontal : horizontal,
-      };
-    };
+      });
     return { layout: l, valueScale, slot, barW, subSlot, subW, catScale, axisFor };
   };
 
@@ -250,6 +262,10 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
   const { layout, valueScale, slot, barW, subSlot, subW, catScale, axisFor } = prepare(
     layoutFor(padding),
   );
+
+  // Grouped sub-bar offset shared by the track loop, the segment loop,
+  // and `seriesAt` below: one formula for a column's lead-in.
+  const leadOf = (count: number) => (subSlot ? (groupCount - count) / 2 : 0);
 
   // Highlight zones address the chart's x/y scales: the value scale on the
   // value axis, bar centers on the category axis. Drawn behind everything,
@@ -281,14 +297,15 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     const trackRx = track.radius ?? options.radius;
     columns.forEach((segs, col) => {
       const slotPos = round(slot.x(col));
-      const lead = subSlot ? (groupCount - segs.length) / 2 : 0;
+      const lead = leadOf(segs.length);
       const bars = subSlot
         ? segs.map((_, row) => round(slotPos + subSlot.x(lead + row)))
         : [slotPos];
       const tw = subSlot ? subW : barW;
-      bars.forEach((bp) => {
+      bars.forEach((bp, bi) => {
         marks.push({
           type: 'rect',
+          class: markClass('track', col, bi),
           x: horizontal ? tPos : bp,
           y: horizontal ? bp : tPos,
           width: horizontal ? tLen : tw,
@@ -303,7 +320,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
   columns.forEach((segs, col) => {
     const slotPos = round(slot.x(col));
-    const lead = subSlot ? (groupCount - segs.length) / 2 : 0;
+    const lead = leadOf(segs.length);
     const multi = segs.length > 1;
     let cursor = 0; // running stacked value
     segs.forEach((seg, row) => {
@@ -346,6 +363,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
       marks.push({
         type: 'rect',
+        class: markClass('bar', col, row),
         x,
         y,
         width: w,
@@ -384,6 +402,7 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
       const to = round(round(slot.x(col + 1)) + barW);
       marks.push({
         type: 'path',
+        class: markClass('connector', col),
         d: horizontal ? `M ${v} ${from} L ${v} ${to}` : `M ${from} ${v} L ${to} ${v}`,
         fill: 'none',
         stroke: connectorStroke,
@@ -394,6 +413,84 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
   const xA = axisMarks(options.xAxis, axisFor('x'));
   const yA = axisMarks(options.yAxis, axisFor('y'));
+  // Annotations sit on top of everything, including axis furniture. A
+  // seriesIndex moves a grouped-bar annotation onto that sub-bar and
+  // defaults its color to the segment's color; stacked/single bars keep
+  // the category center. A series absent from this column drops.
+  // Reference lines sit just below the annotations; on a horizontal bar
+  // chart the perpendicular axis is the category axis for horizontal
+  // lines and the value axis for vertical ones.
+  const seriesCount = Math.max(0, ...columns.map((segs) => segs.length));
+  const seriesAt = (col: number, si: number) => {
+    const segs = columns[col]!;
+    if (si >= segs.length) return null;
+    const seg = segs[si]!;
+    const segmentColor = resolveSegmentColor({
+      explicit: seg.color,
+      uniform: color,
+      usePalette: segs.length > 1 && !hasUniformColor,
+      paletteIndex: si,
+      paletteTotal: segs.length,
+    });
+    if (!subSlot) return { color: segmentColor };
+    const lead = leadOf(segs.length);
+    return { center: slot.x(col) + subSlot.x(lead + si) + subW / 2, color: segmentColor };
+  };
+  const referenceLines = referenceLineMarks(
+    options.referenceLines,
+    {
+      horizontal: (v) =>
+        horizontal
+          ? Number.isInteger(v) && v >= 0 && v < columns.length
+            ? catScale(v)
+            : null
+          : v >= domain[0] && v <= domain[1]
+            ? valueScale(v)
+            : null,
+      vertical: (v) =>
+        horizontal
+          ? v >= domain[0] && v <= domain[1]
+            ? valueScale(v)
+            : null
+          : Number.isInteger(v) && v >= 0 && v < columns.length
+            ? catScale(v)
+            : null,
+      box: layout,
+    },
+    color,
+  );
+  // Thin mapper: `x` is the category index (an integer), `y` the data
+  // value on the shared domain. The category position is the category
+  // center; `horizontal` swaps the axes. A `seriesIndex` resolves through
+  // `seriesAt` (grouped mode moves onto the sub-bar, other modes keep the
+  // category center); a series absent from the column drops. `seriesAt`
+  // itself stays exactly as it was: the loop rounds slot positions while
+  // the mapper centers from raw ones, so the two computations are not
+  // interchangeable and only the lead formula is shared.
+  const barMapper: AnnotationMapper = (a, seriesIndex) => {
+    if (!isFinitePair(a) || !inIndex(a.x, columns.length)) return null;
+    if (!inDomain(a.y, domain)) return null;
+    let cat = catScale(a.x);
+    let color: string | undefined;
+    if (seriesIndex !== undefined) {
+      const resolved = seriesAt(a.x, seriesIndex);
+      if (resolved === null) return null;
+      if (resolved.center !== undefined) cat = resolved.center;
+      color = resolved.color;
+    }
+    const val = valueScale(a.y);
+    return horizontal ? { x: val, y: cat, color } : { x: cat, y: val, color };
+  };
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(barMapper, seriesCount),
+    color,
+  );
 
-  return { ...base, marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis], points };
+  return {
+    ...base,
+    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+    points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
+  };
 }

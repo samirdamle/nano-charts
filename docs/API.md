@@ -12,9 +12,9 @@ const svg = toSVG(scene); // Scene → '<svg …>…</svg>'
 ```
 
 ```tsx
-import { LineChart } from '@samirdamle/nano-charts-react';
+import { LineNanoChart } from '@samirdamle/nano-charts-react';
 
-<LineChart data={[4, 9, 2, 7, 5]} dot="last" onPointClick={(p) => console.log(p)} />;
+<LineNanoChart data={[4, 9, 2, 7, 5]} dot="last" onPointClick={(p) => console.log(p)} />;
 ```
 
 ## Mental model
@@ -58,6 +58,82 @@ A single datum with no values renders an empty scene (never throws).
 | `padding` | `number \| { top?, right?, bottom?, left? }` | automatic                    | Inner padding in user units; defaults to just enough so marks and axis labels never clip |
 | `title`   | `string`                                     | per-chart default            | `<title>` for screen readers                          |
 | `desc`    | `string`                                     | per-chart default            | `<desc>` for screen readers                           |
+| `class`   | `string`                                     | —                            | CSS class(es) on the `<svg>` element, merged with the built-in `nc-chart` class — see Styling with CSS |
+
+## Styling with CSS
+
+Every chart is styleable with plain CSS — no wrapper divs or inline-style
+threading needed.
+
+**Your class on the svg.** Pass `class` in any chart's options:
+
+```ts
+line(revenue, { class: 'revenue-chart' });
+// <svg class="nc-chart revenue-chart" …>
+```
+
+It merges with the `className` opt of `toSVG` / the `className` prop of the
+React components, so all three compose: `nc-chart` + options `class` +
+render `className`.
+
+**Generated mark classes.** Every mark carries semantic classes under the
+`nc-` prefix — a kind class plus an indexed class, so you can style all of a
+kind or one specific item:
+
+```html
+<svg class="nc-chart revenue-chart" …>
+  <path class="nc-line" …/>
+  <circle class="nc-point nc-point-0" …/>
+  <circle class="nc-point nc-point-1" …/>
+</svg>
+```
+
+```css
+.revenue-chart .nc-point { fill: gold; }      /* all points in this chart */
+.revenue-chart .nc-point-1 { r: 3; }           /* the second point */
+.nc-bar { opacity: 0.9; }                      /* all bars, every chart */
+```
+
+The taxonomy (kinds are chart-agnostic — per-chart scoping comes from your
+svg-level class):
+
+| Kind           | Marks                                              | Example                    |
+| -------------- | -------------------------------------------------- | -------------------------- |
+| `point`        | line/area/scatter/radar dots                       | `nc-point nc-point-2`      |
+| `line`         | line/area/radar strokes                             | `nc-line`                  |
+| `area`         | area/radar fills                                    | `nc-area`                  |
+| `bar`          | bar, win-loss, and bullet measure bars              | `nc-bar nc-bar-0`          |
+| `segment`      | donut segments                                      | `nc-segment nc-segment-1`  |
+| `block`        | pictogram blocks                                    | `nc-block nc-block-3`      |
+| `cell`         | heatmap cells                                       | `nc-cell nc-cell-5`        |
+| `connector`    | bar waterfall links, pictogram gap lines            | `nc-connector nc-connector-0` |
+| `track`        | bar/donut/gauge background tracks                   | `nc-track`                 |
+| `gridline`     | axis gridlines                                      | `nc-gridline nc-gridline-0`|
+| `axis`         | axis lines                                          | `nc-axis nc-axis-x`        |
+| `tick`         | axis tick marks                                     | `nc-tick nc-tick-2`        |
+| `label`        | axis tick labels, donut/gauge center labels         | `nc-label`                 |
+| `highlight`    | highlight zones                                     | `nc-highlight nc-highlight-0` |
+| `annotation`   | annotation marks                                    | `nc-annotation nc-annotation-0` |
+| `reference-line` | reference lines                                   | `nc-reference-line nc-reference-line-0` |
+| `zone`         | gauge zone bands                                    | `nc-zone nc-zone-0`        |
+| `arc`          | gauge value arc                                     | `nc-arc`                   |
+| `needle`, `hub`| gauge needle and its pivot dot                      | `nc-needle`                |
+| `range`        | bullet range bands                                  | `nc-range nc-range-0`      |
+| `target`       | bullet target tick                                  | `nc-target`                |
+| `spoke`, `ring`| radar grid spokes and concentric rings              | `nc-spoke nc-spoke-1`      |
+
+Qualifiers ride along as extra classes: marks in a multi-series chart also
+get `nc-series-{i}` (mirroring the `data-series` attribute), axis parts get
+`nc-axis-x` / `nc-axis-y`, and pictogram blocks get their fill state —
+`nc-filled`, `nc-empty`, or `nc-partial`:
+
+```css
+.stages .nc-block.nc-empty { opacity: 0.35; }  /* dim unfinished blocks */
+.stages .nc-series-1 .nc-point { fill: teal; } /* one series' points */
+```
+
+Indexes mirror the `data-index` attributes the renderers already emit, so
+classes and data attributes tell the same story.
 
 ## Axes
 
@@ -108,7 +184,7 @@ Notes:
   overflow the plot and reserves exactly that much space, so labels never
   clip without hand-tuned `padding`. Pass an explicit `padding` (number or
   per-side object) to override any side; omitted sides stay automatic.
-- React components (`LineChart`, `BarChart`, …) accept the same `xAxis` /
+- React components (`LineNanoChart`, `BarNanoChart`, …) accept the same `xAxis` /
   `yAxis` props.
 
 ## Highlight zones
@@ -145,8 +221,126 @@ Notes:
   scale.
 - Reversed ranges (`[5, 2]`) are normalized; zones partly outside the plot
   are clipped to it, and zones entirely outside it are skipped.
-- React components (`LineChart`, `BarChart`, …) accept the same `highlights`
+- React components (`LineNanoChart`, `BarNanoChart`, …) accept the same `highlights`
   prop.
+
+## Annotations
+
+Every chart accepts an optional `annotations` option: an array of marks
+laid on top of the chart's own marks, in the chart's data coordinates.
+Annotations are purely visual by default — they are never added to
+`scene.points`, so they get no hover/click points, and they never affect
+the chart's scales, domains, or automatic padding (so a mark at a domain
+edge can extend up to its `size` past the plot box; set explicit `padding`
+if that clearance matters). Annotations carry the
+`nc-annotation nc-annotation-{i}` classes, where `i` is the annotation's
+position in the input array.
+
+```ts
+line([3, 7, 2, 9, 5, 6], {
+  annotations: [
+    { x: 3, y: 9, shape: 'dot', color: '#ef4444' }, // the peak
+    { x: 2, y: 2, shape: 'triangle' }, // the trough
+    { x: 1, y: 7, shape: 'emoji', emoji: '⚠️', size: 4 }, // a warning
+  ],
+});
+```
+
+| Option        | Type                                              | Default          | Description                                                        |
+| ------------- | ------------------------------------------------- | ---------------- | ------------------------------------------------------------------ |
+| `x`           | `number`                                          | (required)       | Data x — see per-chart mapping below (ignored on donut/gauge)      |
+| `y`           | `number`                                          | (required)       | Data y — see per-chart mapping below                               |
+| `shape`       | `'dot' \| 'square' \| 'triangle' \| 'line' \| 'emoji'` | (required) | Mark shape                                                         |
+| `color`       | `string`                                          | chart's `color`  | Mark color; ignored for `emoji`, whose own colours win             |
+| `size`        | `number`                                          | `2`              | Dot radius, square half-side, triangle center-to-vertex radius, line half-length, or emoji font size, in chart units |
+| `emoji`       | `string`                                          | —                | Required when `shape` is `'emoji'`: the character(s) to render     |
+| `orientation` | `'horizontal' \| 'vertical'`                      | `'horizontal'`   | Line shape only: the dash direction                                |
+| `seriesIndex` | `number`                                          | —                | Series this annotation belongs to, by position (see below)        |
+| `interactive` | `boolean`                                         | `false`          | Opt in to hover/click: the annotation appears in `scene.annotationPoints` |
+| `label`       | `string`                                          | —                | Accessible name for an interactive annotation                     |
+
+Notes:
+
+- Per-chart mapping: on `line`/`area`/`lines`, `x` is the data index
+  (fractional indices interpolate along the index axis) and `y` is the data
+  value on the chart's domain — on `lines` that domain is shared across all
+  series. On `bar`, `x` is the category index (an integer) and `y` is the
+  value on the shared value domain; on horizontal bars the logical `x`/`y`
+  stay as specified and the renderer swaps the axes. On `scatter`, `x` and
+  `y` are data values. On `donut`/`gauge`, `x` is ignored and `y` maps to
+  an angle as `startAngle + (y / domain) × span` — domain `max` in gauge
+  mode, total in segmented donut mode, `[min, max]` on `gauge` — with the
+  mark centered on the ring at mid-thickness radius. On `radar`, `x` is the
+  axis index (fractional indices interpolate the angle) and `y` is the value
+  on the shared domain ceiling. On `heatmap`, `x` is the column index and
+  `y` the row index (both integers), placed at the cell center. On
+  `pictogram`, `x` is the series index and `y` the 1-based block number
+  (matching `scene.points`' `blockNumber`), centered on that block's slot;
+  horizontal pictograms keep the logical coordinates. On `bullet`, `x` is
+  the value on `[0, max]` and `y` is ignored, placed on the centerline. On
+  `winLoss`, `x` is the data index (an integer) and `y` is ignored, placed
+  at the center of that index's block (upper half win, lower half loss,
+  centerline zero).
+- Series targeting: `seriesIndex` names a series by position, matching
+  `scene.points`' `seriesIndex`. On `lines` and `radar` it tags the
+  annotation with the series and defaults its color to that series' color;
+  position is unchanged because the scale is shared. On grouped `bar` it
+  additionally moves the annotation onto that sub-bar; stacked and single
+  bars keep the category center. On charts without series, any
+  `seriesIndex` drops the annotation, as does one naming no series on that
+  chart (including a series absent from one ragged bar column).
+- Out-of-range annotations are dropped, not clamped: an `x` outside the
+  data (or a non-integer `x` on `bar`/`heatmap`/`pictogram`/`winLoss`), or
+  a `y` outside the chart's domain, renders nothing. Unknown shapes and
+  `emoji` annotations without an `emoji` are likewise dropped, never
+  throwing.
+- The `line` shape here is a small dash at the point, not a full-span
+  reference line — see Reference lines below.
+- React components accept the same `annotations` prop; the marks render
+  through the shared `Marks` renderer. Only `interactive: true`
+  annotations get hit targets, via the `onAnnotationHover` /
+  `onAnnotationClick` props (same `hitRadius` as data points, default 4);
+  an interactive annotation's `label` becomes its accessible name. The
+  chart description is unchanged by annotations.
+
+## Reference lines
+
+`line`, `area`, `lines`, `bar`, and `scatter` accept an optional
+`referenceLines` option: full-span lines across the plot area, drawn above
+the data and axes but below the annotations. A reference line never
+rescales the chart, and an out-of-domain value is dropped like an
+annotation. Lines carry the
+`nc-reference-line nc-reference-line-{i}` classes, where `i` is the line's
+position in the input array.
+
+```ts
+line([3, 7, 2, 9, 5, 6], {
+  referenceLines: [
+    { value: 7, orientation: 'horizontal', style: 'dashed', color: '#ef4444' },
+    { value: 3, orientation: 'vertical', style: 'dotted' },
+  ],
+});
+```
+
+| Option        | Type                                  | Default         | Description                                                        |
+| ------------- | ------------------------------------- | --------------- | ------------------------------------------------------------------ |
+| `value`       | `number`                              | (required)      | Position on the perpendicular axis's scale (see below)             |
+| `orientation` | `'horizontal' \| 'vertical'`          | (required)      | `'horizontal'` draws at `y = value` spanning the plot width; `'vertical'` draws at `x = value` spanning the plot height |
+| `color`       | `string`                              | chart's `color` | Line color                                                         |
+| `thickness`   | `number`                              | `1`             | Line width                                                         |
+| `style`       | `'solid' \| 'dashed' \| 'dotted'`     | `'solid'`       | Dash style, via the shared dash mapping                            |
+
+Notes:
+
+- The coordinate is read on the perpendicular axis's scale: on a
+  horizontal bar chart, a horizontal line's position is a category index
+  (an integer) and a vertical line's is a value; on every other cartesian
+  chart, horizontal lines take values and vertical lines take indices
+  (fractional indices interpolate, as with annotations; bar categories
+  stay integer-only).
+- Lines span the plot box only, never the padding, and are not available
+  on donut, gauge, radar, heatmap, pictogram, bullet, or winLoss — a
+  radial or cell-grid reference is a different feature.
 
 ## Charts
 
@@ -427,15 +621,16 @@ pictogram([4.5], { block: { kind: 'emoji', emoji: '⭐' } }); // 4 full + 1 half
 
 Each entry is one column (vertical) or row (horizontal) of uniform blocks —
 squares, dots, or emoji — where the **count** of blocks is the value. No axes;
-the units are countable. Entries accept `{ value, label?, color? }` objects
-plus `value`/`label`/`id`/`colorAccessor` accessors for custom objects.
+the units are countable. Entries accept `{ value, label?, color?, filled?,
+blockStyles? }` objects plus `value`/`label`/`id`/`colorAccessor`/`filledAccessor`
+accessors for custom objects.
 
 The block shape is defined once in `<defs>` and stamped with `<use>`, keeping
 output small. Fractional counts render a **partial block**, review-stars
 style: the full shape at 25% opacity (the "empty slot") with the filled
 fraction clipped on top. Blocks are fixed-size, so the scene sizes itself to
 the data (like `heatmap()` with `cellSize`); one hover/click point is emitted
-per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
+per block, carrying `col`, `blockNumber`, `blocksTotal`, `partial`, and `empty`.
 
 | Option                   | Type                                              | Default      | Description                                                              |
 | ------------------------ | ------------------------------------------------- | ------------ | ------------------------------------------------------------------------ |
@@ -444,7 +639,12 @@ per block, carrying `col`, `blockNumber`, `blocksTotal`, and `partial`.
 | `gap`                    | `number`                                          | `0.25`       | Space between blocks (and columns/rows) as a fraction of `blockSize`, like `bar()` |
 | `horizontal`             | `boolean`                                         | `false`      | Rows stack left→right instead of columns bottom-up                        |
 | `unit`                   | `number`                                          | `1`          | Data value per block; count = `value / unit`                             |
-| `connector`              | `PictogramConnectorOptions`                       | —            | Draw a line joining each series' rendered blocks, from the center of the first block to the center of the last, behind the blocks; skipped for series with fewer than two blocks |
+| `filled`                 | `number`                                          | `value`      | Filled leading blocks for every series (in data units, like `value`); the rest render as empty — datum-level `filled` wins |
+| `filledAccessor`         | `(datum, index) => number`                         | —            | Per-row filled counts for custom object arrays                           |
+| `emptyColor`             | `string`                                          | block's base color | Paint for empty (unfilled) blocks                                  |
+| `emptyVariant`           | `'solid' \| 'ring'`                               | `'solid'`    | How empty blocks render: `'solid'` dims the block, `'ring'` draws only its border |
+| `blockStyles`            | `PictogramBlockStyle[]`                           | —            | Span-based per-block styling applied to every series, in order; datum-level `blockStyles` apply after these |
+| `connector`              | `PictogramConnectorOptions`                       | —            | Draw lines joining each series' rendered blocks, behind the blocks: by default one line per gap between adjacent non-empty blocks (connectors stop at the last filled block), or explicit `segments` with per-segment spans and styling; skipped for series with fewer than two blocks |
 | `idPrefix`               | `string`                                          | auto (`pictogram-N`) | Prefix for `<defs>`/clip ids — unique per chart by default so several pictograms can share a document; pass an explicit value to control the ids |
 | `value` / `label` / `id` | accessors                                         | —            | For custom object arrays                                                  |
 | `colorAccessor`          | `(datum, index) => string \| undefined`           | —            | Per-column color accessor                                                |
@@ -455,11 +655,90 @@ zero blocks; a non-positive or non-finite `unit` falls back to `1`.
 the pastel block palette (`#8fe6c4`, `#7fd8e6`, `#f3a8c7`, `#c6a6e8`, `#f0dd82`,
 cycling), from the same precedence rule `bar()`/`donut()` use.
 
-`connector` takes `{ color?, thickness?, style? }`: `color` defaults to the
-series' resolved block color, `thickness` defaults to `2` (px; non-positive or
-non-finite values fall back to `2`), and `style` is `'solid' | 'dashed' |
+`connector` takes `{ color?, thickness?, style?, linecap?, segments? }`: `color` defaults to
+the earlier block's resolved color (so each gap continues the block it leaves),
+`thickness` defaults to `2` (px; non-positive or non-finite values fall back to
+`2`), and `style` is `'solid' | 'dashed' |
 'dotted'` (defaults to `'solid'`, sharing the axis gridline dash vocabulary).
-Lines use round caps.
+`linecap` is `'butt'` or `'round'`: butt caps end flush at the block
+edges so connectors look merged into the blocks, and is the default —
+except for `'dotted'` connectors, which default to `'round'` so the dots
+render as dots instead of thin slivers. An explicit `linecap` always wins. Each gap between adjacent
+blocks gets its own line, running edge to edge between the blocks — never through
+a block's interior, so hollow rings stay clean — with the dash pattern restarting
+at every block so `dashed`/`dotted` render as uniform connectors. By default only
+gaps between filled (or partial) blocks render, so connectors stop at the last
+filled block instead of running through empty ones; explicit `segments` render
+exactly as specified.
+
+Pass `segments` for explicit spans with per-segment styling:
+
+```ts
+pictogram([6, 6], {
+  connector: {
+    thickness: 3,
+    segments: [
+      { span: [0, 2], color: '#f76e6e' },
+      { span: [2, 5], color: '#52e081', style: 'dashed' },
+    ],
+  },
+});
+```
+
+Each segment's `span` holds the block indices at its two ends, inclusive —
+the line runs from the center of `span[0]` to the center of `span[1]`
+(direction does not matter). Out-of-range indices are clamped to the rendered
+blocks and zero-length spans are skipped. Long spans are subdivided per gap so
+dash patterns stay uniform. When `segments` is present, only those render, in
+order (later entries draw over earlier ones); omitted `color`/`thickness`/`style`
+fields fall back to the connector-level values.
+
+**Per-block styling.** `value` sets the block count (capacity); `filled` sets how
+many leading blocks are filled, and the rest render as empty — the stage-completion
+primitive:
+
+```ts
+pictogram(
+  [
+    { value: 4, filled: 2, label: 'Flow A' },
+    { value: 4, filled: 3, label: 'Flow B' },
+  ],
+  {
+    color: '#52e081',
+    emptyColor: '#e5e5e5',
+    emptyVariant: 'ring', // or 'solid' (dimmed, the default)
+    connector: { thickness: 3 },
+  },
+);
+```
+
+`filled` is in data units like `value` (so it honors `unit`), clamps to
+`[0, value]`, and accepts fractions — `filled: 2.5` renders the transitional
+block with the partial-block treatment. Empty blocks emit points with `value: 0`
+and `empty: true`.
+
+For arbitrary paint, `blockStyles` takes span rules — `{ span, color?, stroke?,
+strokeWidth?, variant?, block? }` — sharing the `span` vocabulary with connector
+`segments` (inclusive, clamped, direction-free). Rules apply in order, later
+rules winning per field; options-level rules apply first, then datum-level ones:
+
+```ts
+pictogram([{ value: 8, color: 'grey' }], {
+  blockStyles: [
+    { span: [0, 1], color: '#f76e6e' },
+    { span: [2, 3], block: { kind: 'emoji', emoji: '⭐' } },
+    { span: [4, 5], variant: 'ring' },
+    { span: [6, 6], color: '#52e081', stroke: '#1a7a3c', strokeWidth: 2 },
+  ],
+});
+```
+
+`variant: 'ring'` draws only the border (fill `none`, stroke in the color);
+`stroke`/`strokeWidth` add a border to solid blocks. A rule's `block` overrides
+the shape for its span (each distinct shape gets one shared `<defs>` entry).
+Per-block resolution order: series base color → `filled`/empty treatment →
+`blockStyles` rules. Rings on emoji fall back to the dimmed treatment, since
+stroked text renders poorly.
 
 ## Rendering
 
@@ -474,7 +753,7 @@ toSVG(scene, { className: 'spark', attrs: { role: 'img' } });
 
 | Opt         | Type                               | Description                                   |
 | ----------- | ---------------------------------- | --------------------------------------------- |
-| `className` | `string`                           | Added as the `class` attribute on `<svg>`     |
+| `className` | `string`                           | Merged into the `<svg>` class with `nc-chart` and the scene's `class` option |
 | `style`     | `string`                           | Added as the `style` attribute on `<svg>`     |
 | `attrs`     | `Record<string, string \| number>` | Extra attributes on `<svg>` (names validated) |
 
@@ -484,8 +763,8 @@ its own point index.
 
 ### React components
 
-`LineChart`, `AreaChart`, `BarChart`, `WinLossChart`, `BulletChart`,
-`DonutChart`, `ScatterChart`, `HeatmapChart`, `RadarChart`, `PictogramChart` — each takes the same `data` (`series` for `RadarChart`) and
+`LineNanoChart`, `AreaNanoChart`, `BarNanoChart`, `WinLossNanoChart`, `BulletNanoChart`,
+`DonutNanoChart`, `ScatterNanoChart`, `HeatmapNanoChart`, `RadarNanoChart`, `PictogramNanoChart` — each takes the same `data` (`series` for `RadarNanoChart`) and
 options as its core function, plus interactivity props:
 
 | Prop                  | Type                                  | Description                                                           |
@@ -513,36 +792,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-09-29):**
+**Enforced budgets (measured 2026-10-26):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 4 kB    | **3.77 kB** |
-| `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.00 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 12.5 kB | **11.95 kB** |
-| `@samirdamle/nano-charts-react` — `LineChart` standalone | 5 kB    | **4.61 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 13 kB   | **11.85 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 5 kB    | **4.84 kB** |
+| `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.25 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.80 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.91 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 4.73 kB |
-| `area`     | 4.51 kB |
-| `lines`    | 4.64 kB |
-| `bar`      | 5.59 kB |
-| `win-loss` | 2.06 kB |
-| `bullet`   | 1.71 kB |
-| `donut`    | 3.10 kB |
-| `gauge`    | 2.31 kB |
-| `scatter`  | 4.06 kB |
-| `heatmap`  | 4.25 kB |
-| `radar`    | 2.60 kB |
-| `pictogram`| 2.80 kB |
+| `line`     | 5.79 kB |
+| `area`     | 5.54 kB |
+| `lines`    | 5.77 kB |
+| `bar`      | 6.83 kB |
+| `win-loss` | 2.83 kB |
+| `bullet`   | 2.48 kB |
+| `donut`    | 3.85 kB |
+| `gauge`    | 3.05 kB |
+| `scatter`  | 5.18 kB |
+| `heatmap`  | 5.10 kB |
+| `radar`    | 3.45 kB |
+| `pictogram`| 4.70 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2–6 kB; the whole core library (all twelve charts plus `toSVG`) is 12 kB gzipped,
+2.5–6.8 kB; the whole core library (all twelve charts plus `toSVG`) is 15.3 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

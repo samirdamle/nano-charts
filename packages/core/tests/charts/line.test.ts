@@ -8,6 +8,7 @@ describe('line', () => {
     const poly = scene.marks.find((m) => m.type === 'polyline');
     expect(poly).toEqual({
       type: 'polyline',
+      class: 'nc-line',
       points: [
         [0.5, 19.5],
         [50, 0.5],

@@ -1,4 +1,12 @@
-import type { BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Datum,
+  Mark,
+  ReferenceLineOptions,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { extent, round } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
 import {
@@ -9,8 +17,15 @@ import {
   type SeriesLayout,
 } from './plot';
 import { seriesSummary } from './a11y';
-import { axisMarks, axisSpace, type AxisLayout, type AxisOptions } from './axis';
+import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from './axis';
 import { highlightMarks, type HighlightZones } from './highlight';
+import {
+  annotationMarks,
+  indexAnnotationMapper,
+  indexRefLineScales,
+  referenceLineMarks,
+  seriesAwareMapper,
+} from './annotations';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -31,6 +46,22 @@ export function resolveChartShell(options: BaseOptions): ChartShell {
   };
 }
 
+/**
+ * Max half-size of a line-chart mark that can sit on the plot edge: a lone
+ * point renders as a dot, otherwise the stroke (or dots) set the extent.
+ * Shared by line() and lines() for their auto-padding probe.
+ */
+export function lineMarkExtent(
+  pointCount: number,
+  strokeWidth: number,
+  dotRadius: number,
+  dot?: 'none' | 'last' | 'all',
+): number {
+  return pointCount < 2
+    ? Math.max(dotRadius, strokeWidth + 0.5)
+    : Math.max(strokeWidth / 2, dot && dot !== 'none' ? dotRadius : 0);
+}
+
 /** Resolves the a11y title/desc, falling back to the series summary. */
 export function resolveA11y(
   kind: string,
@@ -45,6 +76,7 @@ export function resolveA11y(
 export function sceneShell(
   shell: { width: number; height: number },
   a11y: { title: string; desc: string },
+  options?: Pick<BaseOptions, 'class'>,
 ): Scene {
   return {
     width: shell.width,
@@ -53,10 +85,15 @@ export function sceneShell(
     marks: [],
     points: [],
     a11y,
+    svgClass: options?.class,
   };
 }
 
-export interface SeriesChartOptions<T> extends BaseOptions, Partial<SeriesAccessors<T>> {
+export interface SeriesChartOptions<T>
+  extends BaseOptions,
+    Partial<SeriesAccessors<T>>,
+    AnnotationOptions,
+    ReferenceLineOptions {
   /** X axis (index-based). Disabled by default. */
   xAxis?: AxisOptions;
   /** Y axis (value-based). Disabled by default. */
@@ -89,7 +126,7 @@ export function renderSeriesChart<T>(
   const datums = normalizeSeries(data, accessors);
 
   const a11y = resolveA11y(kind, datums, options);
-  const base = sceneShell({ width, height }, a11y);
+  const base = sceneShell({ width, height }, a11y, options);
   if (datums.length === 0) return base;
 
   const extentPx = markExtent(datums.length);
@@ -98,26 +135,15 @@ export function renderSeriesChart<T>(
   const layoutFor = (padding: ResolvedPadding) =>
     seriesLayout(datums.length, valueDomain, { width, height, padding });
   const axisLayoutFor = (l: SeriesLayout, orientation: 'x' | 'y'): AxisLayout =>
-    orientation === 'x'
-      ? {
-          orientation,
-          domain: indexDomain,
-          scale: l.x,
-          crossDomain: valueDomain,
-          crossScale: l.y,
-          span: [l.left, l.right],
-          crossSpan: [l.top, l.bottom],
-          integerTicks: true,
-        }
-      : {
-          orientation,
-          domain: valueDomain,
-          scale: l.y,
-          crossDomain: indexDomain,
-          crossScale: l.x,
-          span: [l.top, l.bottom],
-          crossSpan: [l.left, l.right],
-        };
+    axisLayout(orientation, {
+      domain: indexDomain,
+      scale: l.x,
+      crossDomain: valueDomain,
+      crossScale: l.y,
+      span: [l.left, l.right],
+      crossSpan: [l.top, l.bottom],
+      integerTicks: orientation === 'x' ? true : undefined,
+    });
 
   // Automatic padding, iterated to a fixed point on the real layout
   // (autoPlotPadding re-measures until the padding stops growing).
@@ -143,11 +169,24 @@ export function renderSeriesChart<T>(
   const yA = axisMarks(options.yAxis, axisLayoutFor(layout, 'y'));
   // Highlight zones sit behind everything, clipped to the plot.
   const hl = highlightMarks(options.highlights, { x: layout.x, y: layout.y }, layout);
+  // Reference lines sit above the data and axes; annotations sit on top
+  // of everything, including axis furniture.
+  const referenceLines = referenceLineMarks(
+    options.referenceLines,
+    indexRefLineScales(layout, datums.length, valueDomain),
+    color,
+  );
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(indexAnnotationMapper(datums.length, valueDomain, layout), 1),
+    color,
+  );
 
   return {
     ...base,
-    marks: [...hl, ...xA.grid, ...yA.grid, ...marks, ...xA.axis, ...yA.axis],
+    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
     points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
   };
 }
 

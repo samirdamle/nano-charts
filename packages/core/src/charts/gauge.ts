@@ -1,7 +1,9 @@
-import type { BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
+import type { AnnotationOptions, BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
 import { arcPath, dialSpan, linearScale, polar, round } from '../core/geometry';
 import { toFiniteNumber } from '../core/normalize';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
+import { markClass } from '../core/css-classes';
+import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
 import type { DonutTrackOptions } from './donut';
 
 export interface GaugeInput {
@@ -19,7 +21,7 @@ export interface GaugeZone {
   opacity?: number;
 }
 
-export interface GaugeOptions extends BaseOptions {
+export interface GaugeOptions extends BaseOptions, AnnotationOptions {
   /** Domain minimum. Defaults to 0. */
   min?: number;
   /** 'arc': a foreground arc sweeps to the value. 'needle': a needle points
@@ -53,6 +55,39 @@ export interface GaugeOptions extends BaseOptions {
   strokeLinecap?: 'butt' | 'round' | 'square';
 }
 
+/**
+ * Center readout for dial charts: resolves a string|formatter label and
+ * pushes a text mark sized to the dial's hole. `dy` shifts the baseline —
+ * gauge needle mode reads out just below center, clear of the hub (the
+ * classic digital-readout position). Shared by gauge() and donut().
+ */
+export function pushCenterLabel(
+  marks: Mark[],
+  label: string | ((ctx: CenterLabelContext) => string) | undefined,
+  ctx: CenterLabelContext,
+  cx: number,
+  cy: number,
+  rInner: number,
+  dy = 0,
+): void {
+  const text = typeof label === 'function' ? label(ctx) : label;
+  if (text === undefined) return;
+  // Half the previous label size, semibold: the readout sits inside the
+  // dial's hole and never overlaps the dial ring. No fill: inherits
+  // currentColor. Baseline nudged so the text reads as vertically centered.
+  const fontSize = Math.max(2, Math.round(rInner * 0.425));
+  marks.push({
+    type: 'text',
+    class: markClass('label'),
+    x: round(cx),
+    y: round(cy + fontSize * 0.35 + dy),
+    text,
+    fontSize,
+    fontWeight: 600,
+    textAnchor: 'middle',
+  });
+}
+
 export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
   // Gauge defaults to a square 20x20 canvas; otherwise it shares the standard
   // chart shell (width/height/color/padding resolution).
@@ -70,8 +105,6 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
 
-  const strokeLinecap =
-    options.strokeLinecap !== undefined ? { strokeLinecap: options.strokeLinecap } : {};
 
   // Clamp policy: a bad domain pins the value at the bottom of the dial.
   const min = Number.isFinite(options.min) ? (options.min as number) : 0;
@@ -88,19 +121,20 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
   const zones = options.zones ?? [];
   if (zones.length > 0) {
     let prevTo = min;
-    for (const zone of zones) {
+    for (const [zi, zone] of zones.entries()) {
       const z0 = Math.max(min, prevTo);
       const z1 = Math.min(max, toFiniteNumber(zone.to));
       prevTo = z1;
       if (z1 > z0) {
         marks.push({
           type: 'path',
+          class: markClass('zone', zi),
           d: arcPath(cx, cy, rMid, valueToAngle(z0), valueToAngle(z1)),
           fill: 'none',
           stroke: zone.color,
           strokeWidth: round(thickness),
-          ...(zone.opacity !== undefined ? { strokeOpacity: zone.opacity } : {}),
-          ...strokeLinecap,
+          strokeOpacity: zone.opacity,
+          strokeLinecap: options.strokeLinecap,
         });
       }
     }
@@ -109,12 +143,13 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       options.track === true || options.track === undefined ? {} : options.track;
     marks.push({
       type: 'path',
+      class: markClass('track'),
       d: arcPath(cx, cy, rMid, startAngle, startAngle + span),
       fill: 'none',
       stroke: t.color ?? color,
       strokeWidth: round(thickness),
       strokeOpacity: t.opacity ?? 0.25,
-      ...strokeLinecap,
+      strokeLinecap: options.strokeLinecap,
     });
   }
 
@@ -124,11 +159,12 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     if (frac > 0) {
       marks.push({
         type: 'path',
+        class: markClass('arc'),
         d: arcPath(cx, cy, rMid, startAngle, valueAngle),
         fill: 'none',
         stroke: color,
         strokeWidth: round(thickness),
-        ...strokeLinecap,
+        strokeLinecap: options.strokeLinecap,
       });
     }
   } else {
@@ -138,6 +174,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       // below covers the joint, so nothing juts out the other side.
       marks.push({
         type: 'line',
+        class: markClass('needle'),
         x1: round(cx),
         y1: round(cy),
         x2: round(tipX),
@@ -152,6 +189,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       const [b2x, b2y] = polar(cx, cy, hw, valueAngle - 90);
       marks.push({
         type: 'path',
+        class: markClass('needle'),
         d: `M${round(tipX)},${round(tipY)}L${round(b1x)},${round(b1y)}L${round(b2x)},${round(b2y)}Z`,
         fill: needleColor,
         stroke: 'none',
@@ -160,6 +198,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     // Hub dot covering the needle's pivot.
     marks.push({
       type: 'circle',
+      class: markClass('hub'),
       cx: round(cx),
       cy: round(cy),
       r: Math.max(1, round(thickness * 0.3)),
@@ -167,27 +206,25 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     });
   }
 
-  if (options.centerLabel !== undefined) {
-    const label =
-      typeof options.centerLabel === 'function'
-        ? options.centerLabel({ value, min, max, frac })
-        : options.centerLabel;
-    // Half the previous label size: the text stays inside the dial's hole
-    // and can never overlap the dial ring, in either mode.
-    const fontSize = Math.max(2, Math.round(rInner * 0.425));
-    // Arc mode: dead center. Needle mode: just below center, clear of the hub
-    // (the classic digital-readout position).
-    const ly = mode === 'needle' ? cy + rOuter * 0.45 + fontSize * 0.35 : cy + fontSize * 0.35;
-    marks.push({
-      type: 'text',
-      x: round(cx),
-      y: round(ly),
-      text: label,
-      fontSize,
-      fontWeight: 600,
-      textAnchor: 'middle',
-    });
-  }
+  // Arc mode: dead center. Needle mode: just below center, clear of the hub.
+  pushCenterLabel(
+    marks,
+    options.centerLabel,
+    { value, min, max, frac },
+    cx,
+    cy,
+    rInner,
+    mode === 'needle' ? rOuter * 0.45 : 0,
+  );
+
+  // Annotations sit on top of everything, on the ring at mid-thickness
+  // radius; `y` is the value across [min, max] (x is ignored).
+  const { marks: annMarks, annotationPoints } = annotationMarks(
+    options.annotations,
+    seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [min, max]), 0),
+    color,
+  );
+  marks.push(...annMarks);
 
   points.push({
     id: 0,
@@ -205,8 +242,10 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
         title: options.title ?? 'gauge chart',
         desc: options.desc ?? `gauge, ${round(frac * 100)} percent of ${min} to ${max}`,
       },
+      options,
     ),
     marks,
     points,
+    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
   };
 }
