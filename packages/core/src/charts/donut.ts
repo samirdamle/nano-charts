@@ -11,6 +11,7 @@ import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import { finishScene } from '../core/scene';
 import { gauge, pushCenterLabel } from './gauge';
 
 export interface DonutGauge {
@@ -212,7 +213,5 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     ),
     color,
   );
-  marks.push(...annMarks);
-
-  return { ...base, marks, points, ...(annotationPoints.length > 0 ? { annotationPoints } : {}) };
+  return finishScene(base, marks, points, annMarks, annotationPoints);
 }

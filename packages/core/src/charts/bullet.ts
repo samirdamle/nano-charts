@@ -4,6 +4,7 @@ import { paddedBox } from '../core/plot';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 import { annotationMarks, bulletAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 export interface BulletData {
   value: number;
@@ -82,10 +83,8 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     seriesAwareMapper(bulletAnnotationMapper(xScale, max, centerY), 0),
     color,
   );
-  marks.push(...annMarks);
-
-  return {
-    ...sceneShell(
+  return finishScene(
+    sceneShell(
       { width, height },
       {
         title: options.title ?? 'bullet chart',
@@ -94,7 +93,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
       options,
     ),
     marks,
-    points: [
+    [
       {
         id: data.id ?? 0,
         label: data.label ?? String(value),
@@ -104,6 +103,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
         y: round(centerY),
       },
     ],
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+  );
 }

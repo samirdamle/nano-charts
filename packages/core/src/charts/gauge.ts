@@ -4,6 +4,7 @@ import { toFiniteNumber } from '../core/normalize';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import { finishScene } from '../core/scene';
 import type { DonutTrackOptions } from './donut';
 
 export interface GaugeInput {
@@ -224,8 +225,6 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [min, max]), 0),
     color,
   );
-  marks.push(...annMarks);
-
   points.push({
     id: 0,
     label: `${round(frac * 100)}%`,
@@ -235,8 +234,8 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     y: round(cy),
   });
 
-  return {
-    ...sceneShell(
+  return finishScene(
+    sceneShell(
       { width, height },
       {
         title: options.title ?? 'gauge chart',
@@ -246,6 +245,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     ),
     marks,
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+  );
 }
