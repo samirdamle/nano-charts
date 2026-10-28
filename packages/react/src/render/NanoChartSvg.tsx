@@ -3,8 +3,7 @@
 import type { Scene } from '@samirdamle/nano-charts';
 import { svgClass } from '@samirdamle/nano-charts';
 import { Marks } from './Marks';
-import { PointHitTargets } from './PointHitTargets';
-import { AnnotationHitTargets } from './AnnotationHitTargets';
+import { HitTargets } from './HitTargets';
 import type { InteractionProps } from '../types';
 
 export interface NanoChartSvgProps extends InteractionProps {
@@ -33,17 +32,18 @@ export function NanoChartSvg({
     >
       <desc>{scene.a11y.desc}</desc>
       <Marks marks={scene.marks} />
-      <PointHitTargets
+      <HitTargets
         points={scene.points}
         hitRadius={hitRadius}
-        onPointHover={onPointHover}
-        onPointClick={onPointClick}
+        onHover={onPointHover}
+        onClick={onPointClick}
       />
-      <AnnotationHitTargets
+      <HitTargets
         points={scene.annotationPoints ?? []}
         hitRadius={hitRadius}
-        onAnnotationHover={onAnnotationHover}
-        onAnnotationClick={onAnnotationClick}
+        onHover={onAnnotationHover}
+        onClick={onAnnotationClick}
+        getAriaLabel={(point) => point.label}
       />
     </svg>
   );
