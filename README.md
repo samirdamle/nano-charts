@@ -91,11 +91,11 @@ measured 2026-10-28:
 
 | Entry                                        | Budget  | Measured    |
 | -------------------------------------------- | ------- | ----------- |
-| Core — `line` standalone                     | 5 kB    | **4.86 kB** |
+| Core — `line` standalone                     | 5 kB    | **4.87 kB** |
 | Core — `toSVG` standalone                    | 1.25 kB | **1.05 kB** |
-| Core — full barrel (all 12 charts + `toSVG`) | 15.5 kB | **15.21 kB** |
-| React — `LineNanoChart` standalone            | 6 kB    | **5.82 kB** |
-| React — full barrel                          | 15 kB   | **14.88 kB** |
+| Core — full barrel (all 12 charts + `toSVG`) | 15.5 kB | **15.17 kB** |
+| React — `LineNanoChart` standalone            | 6 kB    | **5.83 kB** |
+| React — full barrel                          | 15 kB   | **14.84 kB** |
 
 See [docs/API.md](docs/API.md#bundle-size) for per-chart sizes.
 
