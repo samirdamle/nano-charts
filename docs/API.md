@@ -814,7 +814,7 @@ size-limit); all figures below are minified + gzip.
 | `bar`      | 6.83 kB |
 | `win-loss` | 2.83 kB |
 | `bullet`   | 2.48 kB |
-| `donut`    | 3.85 kB |
+| `donut`    | 3.88 kB |
 | `gauge`    | 3.05 kB |
 | `scatter`  | 5.18 kB |
 | `heatmap`  | 5.10 kB |
