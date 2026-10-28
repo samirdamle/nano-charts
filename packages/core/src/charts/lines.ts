@@ -26,6 +26,7 @@ import {
   referenceLineMarks,
   seriesAwareMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -193,10 +194,11 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
     defaultColor,
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+  );
 }

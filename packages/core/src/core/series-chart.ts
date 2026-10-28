@@ -26,6 +26,7 @@ import {
   referenceLineMarks,
   seriesAwareMapper,
 } from './annotations';
+import { finishScene } from './scene';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -182,12 +183,13 @@ export function renderSeriesChart<T>(
     color,
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+  );
 }
 
 /**

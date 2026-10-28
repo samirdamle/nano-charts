@@ -19,6 +19,7 @@ import {
   seriesAwareMapper,
   type AnnotationMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
 export type PictogramBlock =
@@ -626,10 +627,5 @@ export function pictogram<T = number>(
     options.color ?? 'currentColor',
   );
 
-  return {
-    ...base,
-    marks: [...marks, ...annMarks],
-    points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+  return finishScene(base, marks, points, annMarks, annotationPoints);
 }

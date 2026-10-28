@@ -22,6 +22,7 @@ import {
   seriesAwareMapper,
   xyAnnotationMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 import { markClass } from '../core/css-classes';
 
 export interface ScatterPoint {
@@ -185,10 +186,11 @@ export function scatter<T = ScatterPoint>(
     color,
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+  );
 }

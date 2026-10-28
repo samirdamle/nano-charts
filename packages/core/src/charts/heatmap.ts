@@ -18,6 +18,7 @@ import {
   seriesAwareMapper,
   type AnnotationMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 export interface HeatmapOptions<T = number> extends BaseOptions, AnnotationOptions {
   value?: (cell: T, row: number, col: number) => number;
@@ -164,10 +165,11 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     options.color ?? 'currentColor',
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...annMarks],
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks)],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+  );
 }
