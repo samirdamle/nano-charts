@@ -798,28 +798,28 @@ size-limit); all figures below are minified + gzip.
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 5 kB    | **4.86 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 5 kB    | **4.87 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.21 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.82 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.88 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.17 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.83 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.84 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 5.81 kB |
-| `area`     | 5.56 kB |
-| `lines`    | 5.79 kB |
-| `bar`      | 6.85 kB |
-| `win-loss` | 2.84 kB |
+| `line`     | 5.82 kB |
+| `area`     | 5.57 kB |
+| `lines`    | 5.81 kB |
+| `bar`      | 6.86 kB |
+| `win-loss` | 2.87 kB |
 | `bullet`   | 2.50 kB |
-| `donut`    | 3.88 kB |
+| `donut`    | 3.90 kB |
 | `gauge`    | 3.07 kB |
 | `scatter`  | 5.21 kB |
 | `heatmap`  | 5.12 kB |
-| `radar`    | 3.47 kB |
-| `pictogram`| 4.72 kB |
+| `radar`    | 3.49 kB |
+| `pictogram`| 4.71 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where

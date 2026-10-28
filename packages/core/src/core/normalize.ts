@@ -37,6 +37,28 @@ export function toFiniteNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+/**
+ * Single-datum form of the accessors branch below, shared by
+ * `normalizeSeries` and pictogram's per-datum path (which normalizes each
+ * datum independently so plain numbers and objects can mix in one array).
+ * The value is read once so a label fallback and the value itself can never
+ * disagree.
+ */
+export function normalizeDatum<T>(
+  row: T,
+  index: number,
+  accessors: SeriesAccessors<T> & Partial<SeriesColorAccessor<T>>,
+): Datum {
+  const value = accessors.value(row, index);
+  return {
+    id: accessors.id ? accessors.id(row, index) : index,
+    label: accessors.label ? accessors.label(row, index) : String(value),
+    value: toFiniteNumber(value),
+    index,
+    ...(accessors.colorAccessor ? { color: accessors.colorAccessor(row, index) } : {}),
+  };
+}
+
 export function normalizeSeries<T>(
   data: SeriesInput<T>,
   accessors?: SeriesAccessors<T> & Partial<SeriesColorAccessor<T>>,
@@ -44,13 +66,7 @@ export function normalizeSeries<T>(
   if (data.length === 0) return [];
 
   if (accessors) {
-    return (data as T[]).map((row, index) => ({
-      id: accessors.id ? accessors.id(row, index) : index,
-      label: accessors.label ? accessors.label(row, index) : String(accessors.value(row, index)),
-      value: toFiniteNumber(accessors.value(row, index)),
-      index,
-      ...(accessors.colorAccessor ? { color: accessors.colorAccessor(row, index) } : {}),
-    }));
+    return (data as T[]).map((row, index) => normalizeDatum(row, index, accessors));
   }
 
   if (typeof data[0] === 'number') {

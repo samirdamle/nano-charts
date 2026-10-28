@@ -1,8 +1,8 @@
 import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
 import { round } from '../core/geometry';
 import {
+  normalizeDatum,
   normalizeSeries,
-  toFiniteNumber,
   type SeriesAccessors,
   type SeriesColorAccessor,
   type SeriesInput,
@@ -246,17 +246,12 @@ export function pictogram<T = number>(
   // in one array (normalizeSeries branches on the first element's type).
   // Unlike the single-call form, this keeps the real category index for
   // accessor callbacks.
-  const normalizeDatum = (d: SeriesInput<T>, j: number): ResolvedDatum => {
+  const resolveDatum = (d: SeriesInput<T>, j: number): ResolvedDatum => {
     if (accessors) {
       const row = d as T;
-      const value = accessors.value(row, j);
       const f = accessors.filledAccessor ? accessors.filledAccessor(row, j) : undefined;
       return {
-        id: accessors.id ? accessors.id(row, j) : j,
-        label: accessors.label ? accessors.label(row, j) : String(value),
-        value: toFiniteNumber(value),
-        index: j,
-        ...(accessors.colorAccessor ? { color: accessors.colorAccessor(row, j) } : {}),
+        ...normalizeDatum(row, j, accessors),
         filledRaw: typeof f === 'number' ? f : undefined,
       };
     }
@@ -274,7 +269,7 @@ export function pictogram<T = number>(
       blockStyles: Array.isArray(obj?.blockStyles) ? obj.blockStyles : undefined,
     };
   };
-  const datums: ResolvedDatum[] = (data as SeriesInput<T>[]).map((d, j) => normalizeDatum(d, j));
+  const datums: ResolvedDatum[] = (data as SeriesInput<T>[]).map((d, j) => resolveDatum(d, j));
 
   const n = datums.length;
   const pitch = s + g;
