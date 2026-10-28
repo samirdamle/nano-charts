@@ -801,8 +801,8 @@ size-limit); all figures below are minified + gzip.
 | `@samirdamle/nano-charts` — `line` standalone            | 5 kB    | **4.84 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
 | `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.28 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.80 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.95 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.79 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.94 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
