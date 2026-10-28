@@ -239,6 +239,49 @@ describe('annotations', () => {
     );
   });
 
+  it('tags donut annotations with their segment, angle still purely from y', () => {
+    // donut([3, 1]): total 4, centre (10, 10), mid-ring 8.25, start −90°.
+    // y=1 → 0° (east), y=2 → 90° (south); seriesIndex only picks the
+    // segment colour, never the angle.
+    const scene = donut([3, 1], {
+      annotations: [
+        { x: 0, y: 1, shape: 'dot', seriesIndex: 0 },
+        { x: 0, y: 2, shape: 'dot', seriesIndex: 1 },
+        { x: 0, y: 2, shape: 'dot', seriesIndex: 2 },
+      ],
+    });
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(2);
+    const segments = scene.marks.filter((m) => cls(m).startsWith('nc-segment'));
+    expect(ann[0]).toMatchObject({ cx: 18.25, cy: 10 });
+    expect(ann[0]).toMatchObject({ fill: (segments[0] as { stroke?: string }).stroke });
+    expect(ann[1]).toMatchObject({ cx: 10, cy: 18.25 });
+    expect(ann[1]).toMatchObject({ fill: (segments[1] as { stroke?: string }).stroke });
+  });
+
+  it('places one annotation per series per x index on grouped bars', () => {
+    // The user's example: one red dot for the 3rd bar of the blue series.
+    const scene = bar(
+      [
+        [12, 9],
+        [18, 14],
+        [15, 12],
+      ],
+      {
+        mode: 'grouped',
+        annotations: [{ x: 2, y: 15, shape: 'dot', color: 'red', seriesIndex: 0 }],
+      },
+    );
+    const ann = annotationsOf(scene);
+    expect(ann).toHaveLength(1);
+    const blueThird = scene.points.find((p) => p.col === 2 && p.row === 0)!;
+    expect((ann[0] as { cx: number }).cx).toBeCloseTo(
+      blueThird.x + (blueThird.w ?? 0) / 2,
+      1,
+    );
+    expect(ann[0]).toMatchObject({ fill: 'red' });
+  });
+
   it('maps gauge annotations across [min, max] at the dial start/span', () => {
     // Gauge defaults: center (10, 10), mid-ring 8.25, start 135°, span 270°.
     const scene = gauge(
@@ -460,9 +503,18 @@ describe('annotations v2: series targeting', () => {
     });
     expect(annotationsOf(single)).toHaveLength(1);
 
-    const noSeries = donut([1, 2], {
-      annotations: [{ x: 0, y: 1, shape: 'dot', seriesIndex: 0 }],
-    });
+    // Heatmap is series-less (x is the column, y the row), so seriesIndex
+    // drops. Donut is no longer the series-less example: segmented donut
+    // now honours seriesIndex (see the test above).
+    const noSeries = heatmap(
+      [
+        [1, 2],
+        [3, 4],
+      ],
+      {
+        annotations: [{ x: 0, y: 0, shape: 'dot', seriesIndex: 0 }],
+      },
+    );
     expect(annotationsOf(noSeries)).toHaveLength(0);
   });
 });

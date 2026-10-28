@@ -286,7 +286,9 @@ Notes:
   annotation with the series and defaults its color to that series' color;
   position is unchanged because the scale is shared. On grouped `bar` it
   additionally moves the annotation onto that sub-bar; stacked and single
-  bars keep the category center. On charts without series, any
+  bars keep the category center. On segmented `donut` it tags the
+  annotation with that segment's color and identity; the angle still comes
+  purely from `y`. On charts without series, any
   `seriesIndex` drops the annotation, as does one naming no series on that
   chart (including a series absent from one ragged bar column).
 - Out-of-range annotations are dropped, not clamped: an `x` outside the
@@ -792,15 +794,15 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-10-26):**
+**Enforced budgets (measured 2026-10-27):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
 | `@samirdamle/nano-charts` — `line` standalone            | 5 kB    | **4.84 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.25 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.28 kB** |
 | `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.80 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.91 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.95 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 

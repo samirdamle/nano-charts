@@ -161,17 +161,22 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   // color (field/accessor) > options.colors[i] > uniform options.color (only
   // if the caller passed it) > categorical palette.
   const hasUniformColor = options.color !== undefined;
-  let angle = startAngle;
-  datums.forEach((d, i) => {
-    const sweep = (swept[i]! / total) * span;
-    const explicitColor = d.color ?? options.colors?.[i];
-    const segmentColor = resolveSegmentColor({
-      explicit: explicitColor,
+  // Shared by the segment loop below and the annotation mapper: one
+  // definition of a segment's colour, so a series-targeted annotation
+  // always matches the segment it names.
+  const segmentColor = (i: number) =>
+    resolveSegmentColor({
+      explicit: datums[i]!.color ?? options.colors?.[i],
       uniform: color,
       usePalette: !hasUniformColor,
       paletteIndex: i,
       paletteTotal: datums.length,
     });
+  let angle = startAngle;
+  datums.forEach((d, i) => {
+    const sweep = (swept[i]! / total) * span;
+    const explicitColor = d.color ?? options.colors?.[i];
+    const segColor = segmentColor(i);
     const useStripe = explicitColor === undefined && hasUniformColor;
     // Inset both ends by half the gap; a segment narrower than the full gap
     // collapses to a zero-length arc rather than inverting.
@@ -182,7 +187,7 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       class: markClass('segment', i),
       d: arcPath(cx, cy, rMid, segStart, segEnd),
       fill: 'none',
-      stroke: segmentColor,
+      stroke: segColor,
       strokeWidth: round(thickness),
       strokeOpacity: useStripe ? (i % 2 === 0 ? 1 : 0.55) : 1,
       strokeLinecap: options.strokeLinecap,
@@ -193,12 +198,18 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   });
   pushCenterLabel(marks, options.centerLabel, { value: total, min: 0, max: total, frac: 1 }, cx, cy, rInner);
   // Annotations sit on top of everything, on the ring at mid-thickness
-  // radius; `y` is the value across [0, total] (x is ignored). Gauge mode
-  // needs nothing here: it delegates to gauge(), which applies the same
-  // mapping with [0, max] and these same startAngle/span values.
+  // radius; `y` is the value across [0, total] (x is ignored). A
+  // `seriesIndex` tags the annotation with that segment — its colour and
+  // identity — but never moves it: the angle still comes purely from `y`.
+  // Gauge mode needs nothing here: it delegates to gauge(), which applies
+  // the same mapping with [0, max] and these same startAngle/span values.
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]), 0),
+    seriesAwareMapper(
+      dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]),
+      datums.length,
+      (si) => segmentColor(si),
+    ),
     color,
   );
   marks.push(...annMarks);
