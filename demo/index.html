@@ -42,6 +42,8 @@
         --c3: hsl(140, 70%, 60%);
         --c4: hsl(0, 90%, 70%);
         --c5: hsl(250, 95%, 85%);
+        --c6: hsl(335, 90%, 72%); /* pink */
+        --c7: hsl(174, 70%, 55%); /* teal */
 
         --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas,
           monospace;
@@ -63,6 +65,8 @@
         --c3: hsl(140, 55%, 40%);
         --c4: hsl(0, 65%, 55%);
         --c5: hsl(260, 45%, 60%);
+        --c6: hsl(335, 65%, 48%); /* pink */
+        --c7: hsl(174, 75%, 30%); /* teal */
       }
 
       * {
@@ -1187,7 +1191,7 @@
           signups: [12, 15, 14, 18, 20],
           share: 38,
           score: 82,
-          spend: [[2, 9], [4, 14], [5, 17], [7, 22]],
+          clusters: [[2.5, 10], [4.5, 15], [6.5, 21]],
           spendLabel: 'very strong ↗',
         },
         {
@@ -1198,29 +1202,29 @@
           signups: [20, 19, 22, 18, 17],
           share: 27,
           score: 61,
-          spend: [[8, 20], [10, 24], [12, 23], [14, 26]],
+          clusters: [[9, 21], [11, 23.5], [13.5, 25.5]],
           spendLabel: 'moderate ↗',
         },
         {
           name: 'Social',
-          color: 'var(--c2)',
+          color: 'var(--c6)',
           trend: [18, 24, 21, 30, 28, 35],
           trendLabel: '18 → 35 · +94%',
           signups: [6, 9, 7, 12, 11],
           share: 16,
           score: 74,
-          spend: [[1, 4], [3, 8], [4, 9], [6, 13]],
+          clusters: [[1.5, 5], [3.5, 8.5], [5.5, 12]],
           spendLabel: 'very strong ↗',
         },
         {
           name: 'Email',
-          color: 'var(--c3)',
+          color: 'var(--c7)',
           trend: [25, 23, 26, 24, 27, 26],
           trendLabel: '25 → 26 · +4%',
           signups: [9, 8, 11, 9, 10],
           share: 12,
           score: 88,
-          spend: [[1, 7], [2, 9], [3, 10], [3, 12]],
+          clusters: [[1.2, 7.5], [2, 9.5], [2.8, 11.5]],
           spendLabel: 'strong ↗',
         },
         {
@@ -1231,10 +1235,33 @@
           signups: [4, 5, 5, 7, 6],
           share: 7,
           score: 79,
-          spend: [[0, 3], [1, 5], [2, 6], [2, 8]],
+          clusters: [[0.3, 3.8], [1, 5.5], [1.8, 7.5]],
           spendLabel: 'strong ↗',
         },
       ];
+
+      // ~40 scatter points per channel in three spend-tier clusters along
+      // the channel's trend (issue #209). Seeded, so the demo renders
+      // identically on every load.
+      function spendPoints(ch, rowIndex) {
+        let seed = 209 + rowIndex * 97;
+        const rand = () => {
+          seed = (seed * 1103515245 + 12345) % 2147483648;
+          return seed / 2147483648;
+        };
+        const jitter = (spread) => (rand() + rand() - 1) * spread;
+        const points = [];
+        ch.clusters.forEach(([cx, cy], i) => {
+          const count = i === 1 ? 14 : 13;
+          for (let k = 0; k < count; k++) {
+            points.push([
+              Math.round((cx + jitter(0.45)) * 10) / 10,
+              Math.round((cy + jitter(0.8)) * 10) / 10,
+            ]);
+          }
+        });
+        return points;
+      }
 
       function dataTableSection() {
         const section = document.createElement('section');
@@ -1243,7 +1270,7 @@
         const heading = document.createElement('div');
         heading.className = 'group-label';
         const h2 = document.createElement('h2');
-        h2.textContent = 'Data table — marketing channels, last quarter';
+        h2.textContent = 'Sample Data Table - Marketing Channels, Last Quarter';
         heading.append(h2);
         section.append(heading);
 
@@ -1286,7 +1313,7 @@
         table.append(thead);
 
         const tbody = document.createElement('tbody');
-        for (const ch of channels) {
+        for (const [rowIndex, ch] of channels.entries()) {
           const tr = document.createElement('tr');
           const name = document.createElement('td');
           name.className = 'dt-channel';
@@ -1310,11 +1337,26 @@
               `${ch.share}%`,
             ),
             chartCell(
-              gauge({ value: ch.score, max: 100 }, { color: ch.color, width: 52, height: 36 }),
+              gauge(
+                { value: ch.score, max: 100 },
+                {
+                  color: ch.color,
+                  width: 56,
+                  height: 32,
+                  mode: 'needle',
+                  startAngle: 180,
+                  endAngle: 360,
+                  zones: [
+                    { to: 50, color: 'var(--c3)' },
+                    { to: 80, color: 'var(--accent)' },
+                    { to: 100, color: 'var(--c4)' },
+                  ],
+                },
+              ),
               `${ch.score} / 100`,
             ),
             chartCell(
-              scatter(ch.spend, { color: ch.color, width: 110, height: 32 }),
+              scatter(spendPoints(ch, rowIndex), { color: ch.color, width: 110, height: 32 }),
               ch.spendLabel,
             ),
           );
