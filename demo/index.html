@@ -194,6 +194,46 @@
         color: var(--accent);
         border-color: var(--accent);
       }
+      .install {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0 0;
+      }
+      .install-cmd {
+        padding: 6px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font-family: var(--mono);
+        font-size: 13.5px;
+        color: var(--text);
+      }
+      .install-copy {
+        display: inline-flex;
+        padding: 6px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .install-copy:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .install-copy .icon-check {
+        display: none;
+      }
+      .install-copy.copied {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .install-copy.copied .icon-copy {
+        display: none;
+      }
+      .install-copy.copied .icon-check {
+        display: block;
+      }
 
       /* chart groups */
       .group {
@@ -601,6 +641,13 @@
               <a href="https://github.com/samirdamle/nano-charts/blob/develop/docs/API.md">API Docs</a> ·
               by Samir Damle ·
               v0.7.0
+            </p>
+            <p class="install">
+              <code class="install-cmd">npm install @samirdamle/nano-charts</code>
+              <button class="install-copy" type="button" aria-label="Copy install command" title="Copy install command">
+                <svg class="icon-copy" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg class="icon-check" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              </button>
             </p>
           </div>
           <aside class="hero-features">
@@ -1177,6 +1224,24 @@
         btn.textContent = 'Copied';
         setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
       }
+
+      // Hero install line: copy the npm install command.
+      const installCopy = document.querySelector('.install-copy');
+      installCopy?.addEventListener('click', async () => {
+        const text = 'npm install @samirdamle/nano-charts';
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.append(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch { /* clipboard unavailable */ }
+          ta.remove();
+        }
+        installCopy.classList.add('copied');
+        setTimeout(() => installCopy.classList.remove('copied'), 1400);
+      });
 
       // Data table (issue #207): one chart per cell, above its value, so the
       // five channels compare at a glance — trend, volume, share, score, and
