@@ -158,7 +158,28 @@
         "types": "./dist/to-svg.d.cts",
         "default": "./dist/to-svg.cjs"
       }
-    }
+    },
+    "./radar": {
+      "import": {
+        "types": "./dist/radar.d.ts",
+        "default": "./dist/radar.js"
+      },
+      "require": {
+        "types": "./dist/radar.d.cts",
+        "default": "./dist/radar.cjs"
+      }
+    },
+    "./pictogram": {
+      "import": {
+        "types": "./dist/pictogram.d.ts",
+        "default": "./dist/pictogram.js"
+      },
+      "require": {
+        "types": "./dist/pictogram.d.cts",
+        "default": "./dist/pictogram.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {

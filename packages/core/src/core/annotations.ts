@@ -54,7 +54,7 @@ export function seriesAwareMapper(
   };
 }
 
-export function isFinitePair(a: Annotation): boolean {
+export function isFinitePair(a: Annotation): a is Annotation & { x: number; y: number } {
   return Number.isFinite(a.x) && Number.isFinite(a.y);
 }
 
@@ -63,8 +63,8 @@ export function inDomain(v: number, domain: [number, number]): boolean {
 }
 
 /** Integer index inside [0, count): one check for the mappers' index rules. */
-export function inIndex(v: number, count: number): boolean {
-  return Number.isInteger(v) && v >= 0 && v < count;
+export function inIndex(v: number | undefined, count: number): boolean {
+  return Number.isInteger(v) && (v as number) >= 0 && (v as number) < count;
 }
 
 /**
@@ -128,8 +128,10 @@ export function bulletAnnotationMapper(
   centerY: number,
 ): AnnotationMapper {
   return (a) => {
-    if (!Number.isFinite(a.x) || a.x < 0 || a.x > max) return null;
-    return { x: xScale(a.x), y: centerY };
+    if (!Number.isFinite(a.x)) return null;
+    const x = a.x as number;
+    if (x < 0 || x > max) return null;
+    return { x: xScale(x), y: centerY };
   };
 }
 
@@ -148,9 +150,9 @@ export function dialAnnotationMapper(
   domain: [number, number],
 ): AnnotationMapper {
   return (a) => {
-    if (!Number.isFinite(a.y) || !inDomain(a.y, domain)) return null;
+    if (!Number.isFinite(a.y) || !inDomain(a.y as number, domain)) return null;
     const [d0, d1] = domain;
-    const frac = d1 === d0 ? 0 : (a.y - d0) / (d1 - d0);
+    const frac = d1 === d0 ? 0 : ((a.y as number) - d0) / (d1 - d0);
     const [x, y] = polar(cx, cy, rMid, startAngle + frac * span);
     return { x, y };
   };

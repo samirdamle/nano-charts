@@ -94,7 +94,7 @@ export function winLoss<T = number>(
   // (integer), `y` ignored — the mark centers on that index's block.
   const winLossMapper: AnnotationMapper = (a) => {
     if (!inIndex(a.x, datums.length)) return null;
-    const r = blockRect(a.x);
+    const r = blockRect(a.x as number);
     return { x: round(r.x) + round(r.w) / 2, y: r.y + r.h / 2 };
   };
   const { marks: annMarks, annotationPoints } = annotationMarks(
