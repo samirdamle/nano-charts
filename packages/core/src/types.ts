@@ -145,8 +145,12 @@ export type AnnotationShape = 'dot' | 'square' | 'triangle' | 'line' | 'emoji';
  * chart's color; it is ignored for `emoji`, whose own colours win.
  */
 export interface Annotation {
-  x: number;
-  y: number;
+  /** Per-chart coordinates. A chart that ignores a coordinate (donut
+   * ignores `x`; bullet and win-loss ignore `y`) accepts its omission; an
+   * annotation missing a coordinate its chart needs is dropped, never
+   * throwing. */
+  x?: number;
+  y?: number;
   shape: AnnotationShape;
   color?: string;
   size?: number;

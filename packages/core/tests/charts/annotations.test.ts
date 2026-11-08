@@ -640,3 +640,35 @@ describe('annotations v2: interactive annotations', () => {
     ]);
   });
 });
+
+describe('annotations: omitted coordinates (F6)', () => {
+  it('renders donut and gauge annotations without x (the ignored coordinate)', () => {
+    const d = donut([45, 30, 25], {
+      annotations: [{ y: 45, seriesIndex: 0, shape: 'dot' }],
+    });
+    expect(annotationsOf(d)).toHaveLength(1);
+    const g = gauge({ value: 78, max: 100 }, {
+      annotations: [{ y: 50, shape: 'dot' }],
+    });
+    expect(annotationsOf(g)).toHaveLength(1);
+  });
+
+  it('renders bullet and win-loss annotations without y (the ignored coordinate)', () => {
+    const b = bullet(
+      { value: 42, target: 50, ranges: [25, 40, 60] },
+      { annotations: [{ x: 50, shape: 'triangle' }] },
+    );
+    expect(annotationsOf(b)).toHaveLength(1);
+    const w = winLoss([1, -1, 1], {
+      annotations: [{ x: 1, shape: 'dot' }],
+    });
+    expect(annotationsOf(w)).toHaveLength(1);
+  });
+
+  it('drops an annotation missing a coordinate its chart needs, without throwing', () => {
+    const scene = line([1, 2, 3], {
+      annotations: [{ x: 1, shape: 'dot' }, { y: 2, shape: 'square' }],
+    });
+    expect(annotationsOf(scene)).toHaveLength(0);
+  });
+});

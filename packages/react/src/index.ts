@@ -1,4 +1,5 @@
 export { LineNanoChart, type LineNanoChartProps } from './charts/LineNanoChart';
+export { LinesNanoChart, type LinesNanoChartProps } from './charts/LinesNanoChart';
 export { AreaNanoChart, type AreaNanoChartProps } from './charts/AreaNanoChart';
 export { BarNanoChart, type BarNanoChartProps } from './charts/BarNanoChart';
 export { WinLossNanoChart, type WinLossNanoChartProps } from './charts/WinLossNanoChart';

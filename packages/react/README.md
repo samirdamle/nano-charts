@@ -3,7 +3,7 @@
 React components for [`@samirdamle/nano-charts`](https://www.npmjs.com/package/@samirdamle/nano-charts) —
 tiny SVG charts, with hover/click interactivity built in.
 
-- **14.8 kB** gzipped for all chart components — React itself is a peer dependency.
+- **15.5 kB** gzipped for all chart components — React itself is a peer dependency.
 
 ## Install
 
@@ -40,7 +40,7 @@ other React 17+ setup.
 
 ## Components
 
-`LineNanoChart`, `AreaNanoChart`, `BarNanoChart`, `DonutNanoChart`, `GaugeNanoChart`, `ScatterNanoChart`,
+`LineNanoChart`, `LinesNanoChart`, `AreaNanoChart`, `BarNanoChart`, `DonutNanoChart`, `GaugeNanoChart`, `ScatterNanoChart`,
 `WinLossNanoChart`, `BulletNanoChart`, `RadarNanoChart`, `HeatmapNanoChart`, `PictogramNanoChart` —
 also available as subpath imports for the smallest bundle, e.g.
 `import { BarNanoChart } from '@samirdamle/nano-charts-react/bar'`.
