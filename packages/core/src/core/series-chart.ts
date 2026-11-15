@@ -18,6 +18,7 @@ import {
   paddedBox,
   resolvePadding,
   seriesLayout,
+  type PaddedBox,
   type ResolvedPadding,
   type SeriesLayout,
 } from './plot';
@@ -129,11 +130,14 @@ export function seriesPlotsPoints(
   }));
 }
 
-/** The frame for a plots payload: chart size, plot box, and data domains. */
+/** The frame for a plots payload: chart size, plot box, and data domains.
+ * Takes the plot box, not the full layout — `SeriesLayout` extends
+ * `PaddedBox`, so series charts pass their layout and other charts (e.g.
+ * scatter) pass their box. */
 export function seriesPlotsFrame(
   width: number,
   height: number,
-  layout: SeriesLayout,
+  box: PaddedBox,
   xDomain: [number, number],
   yDomain: [number, number],
 ): PlotFrame {
@@ -141,10 +145,10 @@ export function seriesPlotsFrame(
     width,
     height,
     plot: {
-      x: layout.left,
-      y: layout.top,
-      width: layout.right - layout.left,
-      height: layout.bottom - layout.top,
+      x: box.left,
+      y: box.top,
+      width: box.right - box.left,
+      height: box.bottom - box.top,
     },
     xDomain,
     yDomain,
