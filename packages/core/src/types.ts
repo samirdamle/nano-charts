@@ -186,8 +186,8 @@ export interface AreaPlots {
   readonly kind: 'area';
   readonly frame: PlotFrame;
   readonly series: readonly PlotsSeries[];
-  /** Pixel y of the baseline the fill sits on. */
-  readonly baselineY: number;
+  /** Pixel y of the baseline the fill sits on. Absent when the series has no data. */
+  readonly baselineY?: number;
 }
 
 /** One plotted scatter point: pixel `x`/`y` plus both data coordinates. */

@@ -800,19 +800,19 @@ size-limit); all figures below are minified + gzip.
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 5 kB    | **4.88 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 5.5 kB  | **5.12 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.22 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.91 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15.5 kB | **15.50 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 16 kB   | **15.48 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6.5 kB  | **6.15 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 16 kB   | **15.76 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 5.81 kB |
-| `area`     | 5.57 kB |
-| `lines`    | 5.80 kB |
+| `line`     | 6.06 kB |
+| `area`     | 5.81 kB |
+| `lines`    | 6.05 kB |
 | `bar`      | 6.87 kB |
 | `win-loss` | 2.86 kB |
 | `bullet`   | 2.51 kB |
@@ -826,6 +826,6 @@ size-limit); all figures below are minified + gzip.
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2.5–6.9 kB; the whole core library (all twelve charts plus `toSVG`) is 15.2 kB gzipped,
+2.5–6.9 kB; the whole core library (all twelve charts plus `toSVG`) is 15.5 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.
