@@ -9,5 +9,7 @@ export interface ScatterNanoChartProps<T = ScatterPoint> extends ScatterOptions<
 }
 
 export function ScatterNanoChart<T = ScatterPoint>({ data, ...rest }: ScatterNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(scatter, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<ScatterInput<T>, ScatterOptions<T>>(scatter, data, rest);
 }
