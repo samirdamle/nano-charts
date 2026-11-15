@@ -9,5 +9,7 @@ export interface LineNanoChartProps<T = number> extends LineOptions<T>, Interact
 }
 
 export function LineNanoChart<T = number>({ data, ...rest }: LineNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(line, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<SeriesInput<T>, LineOptions<T>>(line, data, rest);
 }

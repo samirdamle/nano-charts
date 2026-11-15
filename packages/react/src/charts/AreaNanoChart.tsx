@@ -9,5 +9,7 @@ export interface AreaNanoChartProps<T = number> extends AreaOptions<T>, Interact
 }
 
 export function AreaNanoChart<T = number>({ data, ...rest }: AreaNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(area, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<SeriesInput<T>, AreaOptions<T>>(area, data, rest);
 }

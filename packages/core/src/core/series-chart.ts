@@ -1,8 +1,12 @@
 import type {
   AnnotationOptions,
+  AreaPlots,
   BaseOptions,
   Datum,
+  LinePlots,
   Mark,
+  PlotFrame,
+  PlotsPoint,
   ReferenceLineOptions,
   Scene,
   ScenePoint,
@@ -11,6 +15,7 @@ import { extent, round } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
 import {
   autoPlotPadding,
+  paddedBox,
   resolvePadding,
   seriesLayout,
   type ResolvedPadding,
@@ -105,6 +110,65 @@ export interface SeriesChartOptions<T>
   highlights?: HighlightZones;
 }
 
+/** Builds one series' plots points at full float precision — unlike the
+ * rounded ScenePoints the marks are drawn from. `color` is the series
+ * color the marks render with. */
+export function seriesPlotsPoints(
+  datums: Datum[],
+  layout: SeriesLayout,
+  color: string,
+  seriesIndex: number,
+): PlotsPoint[] {
+  return datums.map((d) => ({
+    x: layout.x(d.index),
+    y: layout.y(d.value),
+    value: d.value,
+    index: d.index,
+    seriesIndex,
+    color,
+  }));
+}
+
+/** The frame for a plots payload: chart size, plot box, and data domains. */
+export function seriesPlotsFrame(
+  width: number,
+  height: number,
+  layout: SeriesLayout,
+  xDomain: [number, number],
+  yDomain: [number, number],
+): PlotFrame {
+  return {
+    width,
+    height,
+    plot: {
+      x: layout.left,
+      y: layout.top,
+      width: layout.right - layout.left,
+      height: layout.bottom - layout.top,
+    },
+    xDomain,
+    yDomain,
+  };
+}
+
+/**
+ * The frame for an empty plots payload: the plot box from the resolved
+ * padding, no domains (there is no data to domain over). Used when a chart
+ * short-circuits on empty data.
+ */
+export function emptySeriesPlotsFrame(
+  width: number,
+  height: number,
+  padding: ResolvedPadding,
+): PlotFrame {
+  const box = paddedBox({ width, height, padding });
+  return {
+    width,
+    height,
+    plot: { x: box.left, y: box.top, width: box.right - box.left, height: box.bottom - box.top },
+  };
+}
+
 /**
  * Shared scaffold for single-series, index-based charts (line, area):
  * resolves defaults, normalizes input, builds the a11y summary, early-returns
@@ -128,7 +192,15 @@ export function renderSeriesChart<T>(
 
   const a11y = resolveA11y(kind, datums, options);
   const base = sceneShell({ width, height }, a11y, options);
-  if (datums.length === 0) return base;
+  if (datums.length === 0) {
+    if (options.plots !== true) return base;
+    const frame = emptySeriesPlotsFrame(width, height, resolvePadding(options.padding));
+    const plots: LinePlots | AreaPlots =
+      kind === 'area'
+        ? { kind: 'area', frame, series: [{ seriesIndex: 0, points: [] }] }
+        : { kind: 'line', frame, series: [{ seriesIndex: 0, points: [] }] };
+    return { ...base, plots };
+  }
 
   const extentPx = markExtent(datums.length);
   const valueDomain = extent(datums.map((d) => d.value));
@@ -183,12 +255,29 @@ export function renderSeriesChart<T>(
     color,
   );
 
+  const plots: LinePlots | AreaPlots | undefined =
+    options.plots === true
+      ? kind === 'area'
+        ? {
+            kind: 'area',
+            frame: seriesPlotsFrame(width, height, layout, indexDomain, valueDomain),
+            series: [{ seriesIndex: 0, points: seriesPlotsPoints(datums, layout, color, 0) }],
+            baselineY: layout.bottom,
+          }
+        : {
+            kind: 'line',
+            frame: seriesPlotsFrame(width, height, layout, indexDomain, valueDomain),
+            series: [{ seriesIndex: 0, points: seriesPlotsPoints(datums, layout, color, 0) }],
+          }
+      : undefined;
+
   return finishScene(
     base,
     [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
     annMarks,
     annotationPoints,
+    plots,
   );
 }
 

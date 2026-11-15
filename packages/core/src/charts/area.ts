@@ -1,4 +1,4 @@
-import type { Mark, Scene } from '../types';
+import type { AreaPlots, Mark, Scene } from '../types';
 import { round } from '../core/geometry';
 import { type SeriesInput } from '../core/normalize';
 import { renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
@@ -10,6 +10,11 @@ export interface AreaOptions<T = number> extends SeriesChartOptions<T> {
   fillColor?: string;
 }
 
+export function area<T = number>(
+  data: SeriesInput<T>,
+  options: AreaOptions<T> & { plots: true },
+): Scene & { plots: AreaPlots };
+export function area<T = number>(data: SeriesInput<T>, options?: AreaOptions<T>): Scene;
 export function area<T = number>(data: SeriesInput<T>, options: AreaOptions<T> = {}): Scene {
   const strokeWidth = options.strokeWidth ?? 1;
   const fillOpacity = options.fillOpacity ?? 0.2;
