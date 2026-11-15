@@ -28,6 +28,12 @@ type (all 12).
 5. **Ship as a 0.8 minor** (core minor + React minor changesets), not held
    for 1.0. The plots schema becomes part of the frozen API at 1.0, so it is
    designed carefully now.
+6. **Amendment (Samir, 2026-11-15): plots elements also carry their
+   resolved color.** Every plots element carries the `color` its mark
+   renders with — series color, segment color, the color-scale output for
+   heatmap cells, the resolved main color for pictogram blocks. Colors are
+   styling, but they belong in the payload because custom tooltips and
+   legends built from plots need them.
 
 ## Why no breaking change is needed
 
@@ -111,31 +117,40 @@ Payload rules:
 - Built from the same normalized, filtered data as the marks, so dropped
   elements match exactly: ragged heatmap cells absent, out-of-domain values
   absent, bullet clamping reflected.
+- Every plots element carries its resolved `color` — the color its mark
+  renders with (series color for line/scatter/radar points, segment color
+  for bars and donut segments, the color-scale output for heatmap cells,
+  the resolved main color for pictogram blocks, the up/down color for
+  winLoss blocks, the zone color for gauge zones). `currentColor` stays
+  `currentColor`: it is resolved by the consumer's context, not by the
+  library.
 - Annotations and reference lines are *not* in plots (decision 4 above).
 
 Per-chart payloads:
 
 - **line / lines / area**: per-series `points: { x, y, value, index,
-  seriesIndex? }[]`; area adds the `baselineY` the fill sits on.
-- **bar**: `bars: { x, y, width, height, value, index, seriesIndex? }[]`,
-  one entry per sub-bar when grouped; horizontal charts keep the same shape
-  with axes swapped.
-- **scatter**: `points: { x, y, valueX, valueY, index }[]` — both data
-  coordinates and pixels, since scatter input is (x, y) pairs.
+  seriesIndex?, color }[]`; area adds the `baselineY` the fill sits on.
+- **bar**: `bars: { x, y, width, height, value, index, seriesIndex?,
+  color }[]`, one entry per sub-bar when grouped; horizontal charts keep the
+  same shape with axes swapped.
+- **scatter**: `points: { x, y, valueX, valueY, index, seriesIndex?,
+  color }[]` — both data coordinates and pixels, since scatter input is
+  (x, y) pairs.
 - **donut**: `segments: { value, fraction, startAngle, endAngle, index,
-  label? }[]` plus `center`, `innerRadius`, `outerRadius`. Angles in
+  label?, color }[]` plus `center`, `innerRadius`, `outerRadius`. Angles in
   degrees, one documented zero/direction convention shared with gauge.
-- **gauge**: `value, min, max, frac, needleAngle`, the zone boundaries,
-  `center`, `radius`.
-- **bullet**: `ranges` (pixel extents + values), `value` bar rect, `target`
-  marker position.
-- **heatmap**: `cells: { row, col, value, x, y, width, height }[]`.
-- **radar**: per-series `vertices: { axis, value, x, y }[]` plus `center`,
-  `radius`.
+- **gauge**: `value, min, max, frac, needleAngle`, the zones (boundaries +
+  color), `center`, `radius`.
+- **bullet**: `ranges` (pixel extents + values + color), `value` bar rect,
+  `target` marker position.
+- **heatmap**: `cells: { row, col, value, x, y, width, height, color }[]`.
+- **radar**: per-series `vertices: { axis, value, x, y, seriesIndex?,
+  color }[]` plus `center`, `radius`.
 - **pictogram**: `blocks: { series, blockNumber, x, y, size, filled, empty,
-  partial }[]`, plus `connectors: { x1, y1, x2, y2 }[]` when connector lines
-  are on.
-- **winLoss**: `blocks: { index, value, sign, x, y, width, height }[]`.
+  partial, color }[]`, plus `connectors: { x1, y1, x2, y2 }[]` when
+  connector lines are on.
+- **winLoss**: `blocks: { index, value, sign, x, y, width, height,
+  color }[]`.
 
 ### `scene.points` vs `plots`
 
