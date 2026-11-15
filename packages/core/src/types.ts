@@ -129,10 +129,291 @@ export interface Scene {
   points: ScenePoint[];
   /** Hit entries for interactive annotations only; absent when none exist. */
   annotationPoints?: SceneAnnotationPoint[];
+  /** The plots payload, when `BaseOptions.plots` is true; absent otherwise. */
+  plots?: Plots;
   a11y: { title: string; desc: string };
   /** Developer CSS class(es) for the `<svg>` element, from `BaseOptions.class`. */
   svgClass?: string;
 }
+
+/** Coordinate metadata that makes a plots payload self-contained: the chart
+ * size, the data area (plot box) in pixels, and the data domains where the
+ * chart has them. */
+export interface PlotFrame {
+  readonly width: number;
+  readonly height: number;
+  readonly plot: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+  /** Data domain on the x axis: a numeric range, or the category labels for
+   * categorical charts. Absent where the chart has no x domain (dial charts,
+   * pictogram, radar). */
+  readonly xDomain?: readonly [number, number] | readonly string[];
+  /** Data domain on the y axis. Absent where the chart has no y domain. */
+  readonly yDomain?: readonly [number, number];
+}
+
+/** One plotted point on a series chart (line, lines, area). `x`/`y` are
+ * pixels; `value` is the datum; `color` is the series color its mark
+ * renders with. */
+export interface PlotsPoint {
+  readonly x: number;
+  readonly y: number;
+  readonly value: number;
+  readonly index: number;
+  readonly seriesIndex?: number;
+  readonly color: string;
+}
+
+/** One series' worth of plotted points. */
+export interface PlotsSeries {
+  readonly seriesIndex: number;
+  readonly label?: string;
+  readonly points: readonly PlotsPoint[];
+}
+
+export interface LinePlots {
+  readonly kind: 'line';
+  readonly frame: PlotFrame;
+  readonly series: readonly PlotsSeries[];
+}
+
+export interface LinesPlots {
+  readonly kind: 'lines';
+  readonly frame: PlotFrame;
+  readonly series: readonly PlotsSeries[];
+}
+
+export interface AreaPlots {
+  readonly kind: 'area';
+  readonly frame: PlotFrame;
+  readonly series: readonly PlotsSeries[];
+  /** Pixel y of the baseline the fill sits on. */
+  readonly baselineY: number;
+}
+
+/** One plotted scatter point: pixel `x`/`y` plus both data coordinates. */
+export interface ScatterPlotsPoint {
+  readonly x: number;
+  readonly y: number;
+  readonly valueX: number;
+  readonly valueY: number;
+  readonly index: number;
+  readonly seriesIndex?: number;
+  readonly color: string;
+}
+
+export interface ScatterPlotsSeries {
+  readonly seriesIndex: number;
+  readonly label?: string;
+  readonly points: readonly ScatterPlotsPoint[];
+}
+
+export interface ScatterPlots {
+  readonly kind: 'scatter';
+  readonly frame: PlotFrame;
+  readonly series: readonly ScatterPlotsSeries[];
+}
+
+/** One bar: its rect in pixels, its value, and the series it belongs to.
+ * `from` is present for waterfall segments only: the segment's start value
+ * (its `value` is the end). */
+export interface BarPlotsBar {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly value: number;
+  readonly from?: number;
+  readonly index: number;
+  readonly seriesIndex?: number;
+  readonly color: string;
+}
+
+export interface BarPlots {
+  readonly kind: 'bar';
+  readonly frame: PlotFrame;
+  readonly bars: readonly BarPlotsBar[];
+}
+
+/** One donut segment. Angles are degrees, 0° = east, clockwise positive
+ * (the gauge's convention). */
+export interface DonutPlotsSegment {
+  readonly value: number;
+  readonly fraction: number;
+  readonly startAngle: number;
+  readonly endAngle: number;
+  readonly index: number;
+  readonly label?: string;
+  readonly color: string;
+}
+
+export interface DonutPlots {
+  readonly kind: 'donut';
+  readonly frame: PlotFrame;
+  readonly segments: readonly DonutPlotsSegment[];
+  readonly center: { readonly x: number; readonly y: number };
+  readonly innerRadius: number;
+  readonly outerRadius: number;
+}
+
+/** One gauge zone, with both ends explicit (`from` is the previous zone's
+ * `to`, or `min` for the first). */
+export interface GaugePlotsZone {
+  readonly from: number;
+  readonly to: number;
+  readonly color: string;
+}
+
+export interface GaugePlots {
+  readonly kind: 'gauge';
+  readonly frame: PlotFrame;
+  readonly value: number;
+  readonly min: number;
+  readonly max: number;
+  readonly frac: number;
+  /** Dial start in degrees, 0° = east, clockwise positive. */
+  readonly startAngle: number;
+  /** Dial end in degrees. */
+  readonly endAngle: number;
+  /** Needle angle in degrees. Present in needle mode only. */
+  readonly needleAngle?: number;
+  readonly zones: readonly GaugePlotsZone[];
+  readonly center: { readonly x: number; readonly y: number };
+  readonly radius: number;
+}
+
+/** One bullet range band: its data span and its pixel extent. */
+export interface BulletPlotsRange {
+  readonly from: number;
+  readonly to: number;
+  readonly x: number;
+  readonly width: number;
+  readonly color: string;
+}
+
+export interface BulletPlots {
+  readonly kind: 'bullet';
+  readonly frame: PlotFrame;
+  readonly ranges: readonly BulletPlotsRange[];
+  readonly value: { readonly value: number; readonly x: number; readonly width: number; readonly color: string };
+  readonly target: { readonly value: number; readonly x: number; readonly color: string };
+  readonly max: number;
+}
+
+/** One heatmap cell: its grid position, its value, and its rect in pixels.
+ * `color` is the color-scale output for the value. */
+export interface HeatmapPlotsCell {
+  readonly row: number;
+  readonly col: number;
+  readonly value: number;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly color: string;
+}
+
+export interface HeatmapPlots {
+  readonly kind: 'heatmap';
+  readonly frame: PlotFrame;
+  readonly cells: readonly HeatmapPlotsCell[];
+}
+
+/** One radar vertex: the axis it sits on, its value, and its pixel
+ * position. */
+export interface RadarPlotsVertex {
+  readonly axis: number;
+  readonly value: number;
+  readonly x: number;
+  readonly y: number;
+  readonly seriesIndex?: number;
+  readonly color: string;
+}
+
+export interface RadarPlotsSeries {
+  readonly seriesIndex: number;
+  readonly label?: string;
+  readonly vertices: readonly RadarPlotsVertex[];
+}
+
+export interface RadarPlots {
+  readonly kind: 'radar';
+  readonly frame: PlotFrame;
+  readonly series: readonly RadarPlotsSeries[];
+  readonly center: { readonly x: number; readonly y: number };
+  readonly radius: number;
+}
+
+/** One pictogram block: its series, its 1-based position within the
+ * series, and its pixel position and size. `color` is the resolved main
+ * color (before variant mapping). */
+export interface PictogramPlotsBlock {
+  readonly series: number;
+  readonly blockNumber: number;
+  readonly x: number;
+  readonly y: number;
+  readonly size: number;
+  readonly filled: boolean;
+  readonly empty: boolean;
+  readonly partial: boolean;
+  readonly color: string;
+}
+
+/** One connector line between pictogram block centers, in pixels. */
+export interface PictogramPlotsConnector {
+  readonly x1: number;
+  readonly y1: number;
+  readonly x2: number;
+  readonly y2: number;
+}
+
+export interface PictogramPlots {
+  readonly kind: 'pictogram';
+  readonly frame: PlotFrame;
+  readonly blocks: readonly PictogramPlotsBlock[];
+  readonly connectors?: readonly PictogramPlotsConnector[];
+}
+
+/** One win/loss block. `sign` is `'up'` for a positive value, `'down'` for
+ * a negative one, `'flat'` for zero. */
+export interface WinLossPlotsBlock {
+  readonly index: number;
+  readonly value: number;
+  readonly sign: 'up' | 'down' | 'flat';
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly color: string;
+}
+
+export interface WinLossPlots {
+  readonly kind: 'winLoss';
+  readonly frame: PlotFrame;
+  readonly blocks: readonly WinLossPlotsBlock[];
+}
+
+/**
+ * The plots payload: a chart's computed geometry in data form (#216).
+ * Present on `Scene.plots` only when `BaseOptions.plots` is true; absent
+ * otherwise, so scenes with the option off are byte-identical to before.
+ * Geometry is in pixels, each element carrying its datum identity and its
+ * resolved `color` (the color its mark renders with); `frame` carries the
+ * coordinate metadata. Plain JSON-serializable values only; treat as
+ * read-only — mutating it has no effect on the rendered SVG.
+ */
+export type Plots =
+  | LinePlots
+  | LinesPlots
+  | AreaPlots
+  | ScatterPlots
+  | BarPlots
+  | DonutPlots
+  | GaugePlots
+  | BulletPlots
+  | HeatmapPlots
+  | RadarPlots
+  | PictogramPlots
+  | WinLossPlots;
 
 /** Shape of one annotation mark, laid on top of the chart's own marks. */
 export type AnnotationShape = 'dot' | 'square' | 'triangle' | 'line' | 'emoji';
@@ -231,4 +512,8 @@ export interface BaseOptions {
    * built-in `nc-chart` class. Combine with the generated `nc-` mark classes
    * to style the chart and its components. */
   class?: string;
+  /** Return the plots — the chart's computed geometry in data form — on
+   * `Scene.plots` (#216). Off by default; when off the key is absent and
+   * the scene is byte-identical to before. */
+  plots?: boolean;
 }
