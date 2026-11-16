@@ -1,4 +1,14 @@
-import type { AnnotationOptions, BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  CenterLabelContext,
+  DonutPlots,
+  DonutPlotsSegment,
+  GaugePlots,
+  Mark,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { arcPath, dialSpan, polar, round } from '../core/geometry';
 import {
   normalizeSeries,
@@ -63,6 +73,15 @@ function isGauge(data: unknown): data is DonutGauge {
   return !Array.isArray(data) && typeof data === 'object' && data !== null && 'max' in data;
 }
 
+export function donut<T = number>(
+  data: DonutGauge,
+  options: DonutOptions<T> & { plots: true },
+): Scene & { plots: GaugePlots };
+export function donut<T = number>(
+  data: SeriesInput<T>,
+  options: DonutOptions<T> & { plots: true },
+): Scene & { plots: DonutPlots };
+export function donut<T = number>(data: DonutInput<T>, options?: DonutOptions<T>): Scene;
 export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> = {}): Scene {
   // Donut defaults to a square 20x20 canvas; otherwise it shares the standard
   // chart shell (width/height/color/padding resolution).
@@ -140,7 +159,22 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     },
     options,
   );
-  if (datums.length === 0 || total === 0) return base;
+  if (datums.length === 0 || total === 0) {
+    if (options.plots !== true) return base;
+    const emptyPlots: DonutPlots = {
+      kind: 'donut',
+      frame: {
+        width,
+        height,
+        plot: { x: cx - rOuter, y: cy - rOuter, width: 2 * rOuter, height: 2 * rOuter },
+      },
+      segments: [],
+      center: { x: cx, y: cy },
+      innerRadius: rInner,
+      outerRadius: rOuter,
+    };
+    return { ...base, plots: emptyPlots };
+  }
 
   // Opt-in track ring behind the segments: same radii and thickness as the
   // segments, so it reads as the "100%" reference. Decorative: no points.
@@ -174,6 +208,10 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       paletteTotal: datums.length,
     });
   let angle = startAngle;
+  // Plots are built only when requested; the segment loop below fills
+  // `segments` from the same geometry as the marks.
+  const plotsOn = options.plots === true;
+  const segments: DonutPlotsSegment[] = [];
   datums.forEach((d, i) => {
     const sweep = (swept[i]! / total) * span;
     const explicitColor = d.color ?? options.colors?.[i];
@@ -195,6 +233,20 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     });
     const [px, py] = polar(cx, cy, rMid, angle + sweep / 2);
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x: round(px), y: round(py) });
+    if (plotsOn) {
+      segments.push({
+        // The raw datum value (datum identity); the sweep uses the clamped
+        // value, so a negative segment's fraction is 0 and its arc collapses.
+        value: d.value,
+        fraction: swept[i]! / total,
+        // The rendered, gap-inset angles — not the logical sweep bounds.
+        startAngle: segStart,
+        endAngle: segEnd,
+        index: i,
+        ...(d.label !== undefined ? { label: d.label } : {}),
+        color: segColor,
+      });
+    }
     angle += sweep;
   });
   pushCenterLabel(marks, options.centerLabel, { value: total, min: 0, max: total, frac: 1 }, cx, cy, rInner);
@@ -213,5 +265,19 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     ),
     color,
   );
-  return finishScene(base, marks, points, annMarks, annotationPoints);
+  const plots: DonutPlots | undefined = plotsOn
+    ? {
+        kind: 'donut',
+        frame: {
+          width,
+          height,
+          plot: { x: cx - rOuter, y: cy - rOuter, width: 2 * rOuter, height: 2 * rOuter },
+        },
+        segments,
+        center: { x: cx, y: cy },
+        innerRadius: rInner,
+        outerRadius: rOuter,
+      }
+    : undefined;
+  return finishScene(base, marks, points, annMarks, annotationPoints, plots);
 }

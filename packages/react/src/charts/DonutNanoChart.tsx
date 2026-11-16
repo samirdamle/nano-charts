@@ -9,5 +9,7 @@ export interface DonutNanoChartProps<T = number> extends DonutOptions<T>, Intera
 }
 
 export function DonutNanoChart<T = number>({ data, ...rest }: DonutNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(donut, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<DonutInput<T>, DonutOptions<T>>(donut, data, rest);
 }

@@ -9,5 +9,7 @@ export interface GaugeNanoChartProps extends GaugeOptions, InteractionProps {
 }
 
 export function GaugeNanoChart({ data, ...rest }: GaugeNanoChartProps): JSX.Element {
-  return renderNanoChart(gauge, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry the options
+  // type through inference, so pin D and O here.
+  return renderNanoChart<GaugeInput, GaugeOptions>(gauge, data, rest);
 }
