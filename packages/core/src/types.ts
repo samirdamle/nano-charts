@@ -239,6 +239,7 @@ export interface BarPlots {
 export interface DonutPlotsSegment {
   readonly value: number;
   readonly fraction: number;
+  /** Segment angles in degrees, 0° = east, clockwise positive — the shared dial convention. */
   readonly startAngle: number;
   readonly endAngle: number;
   readonly index: number;
