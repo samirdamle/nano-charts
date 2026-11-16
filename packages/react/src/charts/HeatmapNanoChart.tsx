@@ -9,5 +9,7 @@ export interface HeatmapNanoChartProps<T = number> extends HeatmapOptions<T>, In
 }
 
 export function HeatmapNanoChart<T = number>({ data, ...rest }: HeatmapNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(heatmap, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<T[][], HeatmapOptions<T>>(heatmap, data, rest);
 }
