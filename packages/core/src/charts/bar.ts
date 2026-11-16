@@ -1,6 +1,8 @@
 import type {
   AnnotationOptions,
   BaseOptions,
+  BarPlots,
+  BarPlotsBar,
   Datum,
   Mark,
   ReferenceLineOptions,
@@ -18,12 +20,19 @@ import {
 import { resolveSegmentColor } from '../core/palette';
 import {
   autoPlotPadding,
+  resolvePadding,
   seriesLayout,
   slotLayout,
   type ResolvedPadding,
   type SeriesLayout,
 } from '../core/plot';
-import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
+import {
+  emptySeriesPlotsFrame,
+  resolveA11y,
+  resolveChartShell,
+  sceneShell,
+  seriesPlotsFrame,
+} from '../core/series-chart';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import {
@@ -104,6 +113,11 @@ type BarSegment<T> =
   number | { id?: string | number; label?: string; value: number; color?: string } | T;
 export type BarInput<T = number> = Array<BarSegment<T> | BarSegment<T>[]>;
 
+export function bar<T = number>(
+  data: BarInput<T>,
+  options: BarOptions<T> & { plots: true },
+): Scene & { plots: BarPlots };
+export function bar<T = number>(data: BarInput<T>, options?: BarOptions<T>): Scene;
 export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}): Scene {
   const { width, height, color } = resolveChartShell(options);
   const gap = options.gap ?? 0.2;
@@ -198,7 +212,15 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         }));
   const a11y = resolveA11y('bar', flat, options);
   const base = sceneShell({ width, height }, a11y, options);
-  if (columns.length === 0) return base;
+  if (columns.length === 0) {
+    if (options.plots !== true) return base;
+    const emptyPlots: BarPlots = {
+      kind: 'bar',
+      frame: emptySeriesPlotsFrame(width, height, resolvePadding(options.padding)),
+      bars: [],
+    };
+    return { ...base, plots: emptyPlots };
+  }
 
   const [minT, maxT] = extent(domainValues.length > 0 ? domainValues : [0]);
   const track = options.track === true ? {} : options.track || undefined;
@@ -284,6 +306,10 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+  // Plots are built only when requested; the segment loop below fills
+  // `plotsBars` from the same raw geometry as the marks.
+  const plotsOn = options.plots === true;
+  const plotsBars: BarPlotsBar[] = [];
 
   // One track rect per bar, drawn first (behind the segments), spanning the
   // full value domain. In stacked mode a column is one bar; in grouped mode
@@ -385,6 +411,25 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         w,
         h,
       });
+      if (plotsOn) {
+        // Full-precision geometry: the raw scale outputs and slot
+        // positions, before the rounding the marks carry.
+        const rawBarPos = subSlot ? slot.x(col) + subSlot.x(lead + row) : slot.x(col);
+        const rawBw = subSlot ? subSlot.barWidth : slot.barWidth;
+        const rawLen = Math.max(vStart, vEnd) - posRaw;
+        plotsBars.push({
+          x: horizontal ? posRaw : rawBarPos,
+          y: horizontal ? rawBarPos : posRaw,
+          width: horizontal ? rawLen : rawBw,
+          height: horizontal ? rawBw : rawLen,
+          value: seg.value,
+          // Waterfall bars float: the start value is part of the geometry.
+          ...(waterfall ? { from: startValue } : {}),
+          index: col,
+          seriesIndex: row,
+          color: segmentColor,
+        });
+      }
     });
   });
 
@@ -488,11 +533,29 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
     color,
   );
 
+  // The frame's domains follow the rendered axes: horizontal bars put the
+  // value domain on x and the category domain on y.
+  const indexDomain: [number, number] = [0, columns.length - 1];
+  const plots: BarPlots | undefined = plotsOn
+    ? {
+        kind: 'bar',
+        frame: seriesPlotsFrame(
+          width,
+          height,
+          layout,
+          horizontal ? domain : indexDomain,
+          horizontal ? indexDomain : domain,
+        ),
+        bars: plotsBars,
+      }
+    : undefined;
+
   return finishScene(
     base,
     [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
     annMarks,
     annotationPoints,
+    plots,
   );
 }
