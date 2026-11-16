@@ -12,7 +12,9 @@ export interface RadarNanoChartProps<T = number> extends RadarOptions, Interacti
 }
 
 export function RadarNanoChart<T = number>({ series, data, ...rest }: RadarNanoChartProps<T>): JSX.Element {
-  // The cast keeps the props honest at the boundary; renderNanoChart's
-  // null/undefined guard renders the empty scene when both are absent.
-  return renderNanoChart(radar, (series ?? data) as RadarInput<T>, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  // SeriesAccessors isn't exported from the core barrel, so O is RadarOptions
+  // (the accessors are all optional, so the core signature still accepts it).
+  return renderNanoChart<RadarInput<T>, RadarOptions>(radar, (series ?? data) as RadarInput<T>, rest);
 }
