@@ -8,7 +8,9 @@ Status: planning (2026-10-27). Core 0.7.0 / React 0.2.0 published to npm 2026-10
 feature-complete for its mission (12 charts, axes, highlights, annotations on
 every chart, CSS classes, the pictogram system). What 1.0 needs is proof the
 public API is settled: the annotations v2 API and the renamed React
-components have survived real use with no breaking fix needed.
+components have survived real use with no breaking fix needed. The plots
+schema (issue #216) is part of the frozen 1.0 surface: `plots: true` returns
+typed geometry alongside the SVG, and the per-chart payloads are stable API.
 
 1.0 promises a stable public API. Internals stay free to improve in 1.x.
 
