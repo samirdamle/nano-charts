@@ -1,6 +1,6 @@
 'use client';
 
-import type { Scene } from '@samirdamle/nano-charts';
+import type { Plots, Scene } from '@samirdamle/nano-charts';
 import { NanoChartSvg } from './NanoChartSvg';
 import type { InteractionProps } from '../types';
 
@@ -33,16 +33,17 @@ function emptyScene(options: {
   };
 }
 
-export function renderNanoChart<D, O>(
+export function renderNanoChart<D, O, P = Plots>(
   render: (data: D, options?: O) => Scene,
   data: D,
-  props: O & InteractionProps,
+  props: O & InteractionProps<P>,
 ): JSX.Element {
   const {
     onPointHover,
     onPointClick,
     onAnnotationHover,
     onAnnotationClick,
+    onPlots,
     className,
     style,
     hitRadius,
@@ -59,6 +60,7 @@ export function renderNanoChart<D, O>(
       onPointClick={onPointClick}
       onAnnotationHover={onAnnotationHover}
       onAnnotationClick={onAnnotationClick}
+      onPlots={onPlots}
       className={className}
       style={style}
       hitRadius={hitRadius}
