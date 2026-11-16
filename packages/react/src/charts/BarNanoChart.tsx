@@ -9,5 +9,7 @@ export interface BarNanoChartProps<T = number> extends BarOptions<T>, Interactio
 }
 
 export function BarNanoChart<T = number>({ data, ...rest }: BarNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(bar, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<BarInput<T>, BarOptions<T>>(bar, data, rest);
 }
