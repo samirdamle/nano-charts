@@ -1,4 +1,14 @@
-import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Datum,
+  Mark,
+  PictogramPlots,
+  PictogramPlotsBlock,
+  PictogramPlotsConnector,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { round } from '../core/geometry';
 import {
   normalizeDatum,
@@ -211,6 +221,11 @@ function resolveBlockShape(b: PictogramBlock | undefined): BlockShapeParts | nul
 
 export function pictogram<T = number>(
   data: PictogramInput<T>,
+  options: PictogramOptions<T> & { plots: true },
+): Scene & { plots: PictogramPlots };
+export function pictogram<T = number>(data: PictogramInput<T>, options?: PictogramOptions<T>): Scene;
+export function pictogram<T = number>(
+  data: PictogramInput<T>,
   options: PictogramOptions<T> = {},
 ): Scene {
   const padding = resolvePadding(options.padding, 0);
@@ -318,12 +333,32 @@ export function pictogram<T = number>(
     { title, desc },
     options,
   );
-  if (n === 0) return base;
+  // The frame is the padded plot box. Domains are the logical grid in the
+  // chart's own orientation: series on x (vertical) or on y (horizontal).
+  const plotsFrame = {
+    width: round(width + padding.left + padding.right),
+    height: round(height + padding.top + padding.bottom),
+    plot: { x: padding.left, y: padding.top, width, height },
+    ...(n > 0
+      ? horizontal
+        ? { xDomain: [0, maxSlots - 1] as const, yDomain: [0, n - 1] as const }
+        : { xDomain: [0, n - 1] as const, yDomain: [0, maxSlots - 1] as const }
+      : {}),
+  };
+  if (n === 0) {
+    if (options.plots !== true) return base;
+    return { ...base, plots: { kind: 'pictogram', frame: plotsFrame, blocks: [] } };
+  }
 
   const marks: Mark[] = [
     { type: 'defs', id: blockId, shape: chartShape.shape, size: s, radius: chartShape.radius, emoji: chartShape.emoji },
   ];
   const points: ScenePoint[] = [];
+  // Plots are built only when requested; the loops below fill `blocks` and
+  // `connectors` from the same geometry as the marks.
+  const plotsOn = options.plots === true;
+  const plotsBlocks: PictogramPlotsBlock[] = [];
+  const plotsConnectors: PictogramPlotsConnector[] = [];
   let clipCounter = 0;
   let pointIndex = 0;
 
@@ -523,10 +558,14 @@ export function pictogram<T = number>(
           strokeLinecap: d.linecap,
         };
         const connectorCls = markClass('connector', d.from);
+        const line = horizontal
+          ? { x1: round(p1), y1: fixed, x2: round(p2), y2: fixed }
+          : { x1: fixed, y1: round(p1), x2: fixed, y2: round(p2) };
+        if (plotsOn) plotsConnectors.push(line);
         marks.push(
           horizontal
-            ? { type: 'line', class: connectorCls, x1: round(p1), y1: fixed, x2: round(p2), y2: fixed, ...attrs }
-            : { type: 'line', class: connectorCls, x1: fixed, y1: round(p1), x2: fixed, y2: round(p2), ...attrs },
+            ? { type: 'line', class: connectorCls, ...line, ...attrs }
+            : { type: 'line', class: connectorCls, ...line, ...attrs },
         );
       }
     }
@@ -601,6 +640,23 @@ export function pictogram<T = number>(
         partial: isPartial ? true : undefined,
         empty: b.state === 'empty' ? true : undefined,
       });
+      if (plotsOn) {
+        plotsBlocks.push({
+          series: j,
+          blockNumber: k + 1,
+          // Full-precision origin; the marks above round the same values.
+          x: bx,
+          y: by,
+          size: s,
+          filled: b.state === 'filled',
+          empty: b.state === 'empty',
+          partial: isPartial,
+          // The block's resolved main color (what connectors continue);
+          // a ring block's stroke and a solid empty block's dimmed fill
+          // both carry this same paint.
+          color: b.paint,
+        });
+      }
       pointIndex++;
     }
   });
@@ -622,5 +678,15 @@ export function pictogram<T = number>(
     options.color ?? 'currentColor',
   );
 
-  return finishScene(base, marks, points, annMarks, annotationPoints);
+  const plots: PictogramPlots | undefined = plotsOn
+    ? {
+        kind: 'pictogram',
+        frame: plotsFrame,
+        blocks: plotsBlocks,
+        // Present whenever connectors are on (even when nothing renders),
+        // absent when they are off.
+        ...(options.connector !== undefined ? { connectors: plotsConnectors } : {}),
+      }
+    : undefined;
+  return finishScene(base, marks, points, annMarks, annotationPoints, plots);
 }
