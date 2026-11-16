@@ -10,5 +10,7 @@ export interface PictogramNanoChartProps<T = number> extends PictogramOptions<T>
 }
 
 export function PictogramNanoChart<T = number>({ data, ...rest }: PictogramNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(pictogram, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<PictogramInput<T>, PictogramOptions<T>>(pictogram, data, rest);
 }
