@@ -1,4 +1,13 @@
-import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Mark,
+  RadarPlots,
+  RadarPlotsSeries,
+  RadarPlotsVertex,
+  Scene,
+  ScenePoint,
+} from '../types';
 import { round, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
@@ -60,6 +69,14 @@ function polarRad(cx: number, cy: number, radius: number, angle: number): [numbe
 
 export function radar<T = number>(
   input: RadarInput<T>,
+  options: (RadarOptions & Partial<SeriesAccessors<T>>) & { plots: true },
+): Scene & { plots: RadarPlots };
+export function radar<T = number>(
+  input: RadarInput<T>,
+  options?: RadarOptions & Partial<SeriesAccessors<T>>,
+): Scene;
+export function radar<T = number>(
+  input: RadarInput<T>,
   options: RadarOptions & Partial<SeriesAccessors<T>> = {},
 ): Scene {
   const {
@@ -90,14 +107,28 @@ export function radar<T = number>(
       ? 'radar chart, no data'
       : `radar chart, ${perSeries.length} series, ${axisCount} axes`);
   const base = sceneShell({ width, height }, { title, desc }, options);
-  if (axisCount === 0) return base;
-
   const cx = width / 2;
   const cy = height / 2;
   const radius = Math.max(
     0,
     Math.min(width - padding.left - padding.right, height - padding.top - padding.bottom) / 2,
   );
+  // The frame is the polygon's bounding circle; index/value domains only
+  // exist on a non-empty grid.
+  const plotsFrame = {
+    width,
+    height,
+    plot: { x: cx - radius, y: cy - radius, width: 2 * radius, height: 2 * radius },
+    ...(axisCount > 0 ? { xDomain: [0, axisCount - 1] as const } : {}),
+  };
+  if (axisCount === 0) {
+    if (options.plots !== true) return base;
+    return {
+      ...base,
+      plots: { kind: 'radar', frame: plotsFrame, series: [], center: { x: cx, y: cy }, radius },
+    };
+  }
+
   const startAngle = -Math.PI / 2;
   const angleAt = (i: number) => startAngle + (i * TAU) / axisCount;
 
@@ -106,6 +137,11 @@ export function radar<T = number>(
   // and radius in pixels.
   const pointAt = (axis: number, radiusPx: number): [number, number] =>
     polarRad(cx, cy, radiusPx, angleAt(axis));
+  // Full-precision polar point for plots; polarRad (above) rounds to 2dp.
+  const polarRaw = (radiusPx: number, angle: number): [number, number] => [
+    cx + radiusPx * Math.cos(angle),
+    cy + radiusPx * Math.sin(angle),
+  ];
 
   // Clamp policy: non-finite values become 0 and negatives can't produce a
   // negative radius — both are treated as zero for the layout math. Points
@@ -165,6 +201,10 @@ export function radar<T = number>(
   }
 
   const seriesColors: string[] = [];
+  // Plots are built only when requested; the series loop below fills
+  // `plotsSeries` from the same geometry as the marks.
+  const plotsOn = options.plots === true;
+  const plotsSeries: RadarPlotsSeries[] = [];
 
   perSeries.forEach(({ input: s, datums }, seriesIndex) => {
     // Precedence: explicit per-series color > uniform options.color (only if
@@ -197,6 +237,22 @@ export function radar<T = number>(
         y,
         seriesIndex,
         seriesLabel: s.name,
+      });
+    }
+    if (plotsOn) {
+      const vertices: RadarPlotsVertex[] = [];
+      for (let i = 0; i < axisCount; i++) {
+        const d = datums[i];
+        // Raw datum value (datum identity); a shorter series' missing
+        // vertex is value 0 at the center, like the rendered polygon.
+        const value = d?.value ?? 0;
+        const [x, y] = polarRaw(scale(value), angleAt(i));
+        vertices.push({ axis: i, value, x, y, seriesIndex, color });
+      }
+      plotsSeries.push({
+        seriesIndex,
+        ...(s.name !== undefined ? { label: s.name } : {}),
+        vertices,
       });
     }
 
@@ -275,5 +331,14 @@ export function radar<T = number>(
     defaultColor,
   );
 
-  return finishScene(base, marks, points, annMarks, annotationPoints);
+  const plots: RadarPlots | undefined = plotsOn
+    ? {
+        kind: 'radar',
+        frame: { ...plotsFrame, yDomain: [0, domainMax] as const },
+        series: plotsSeries,
+        center: { x: cx, y: cy },
+        radius,
+      }
+    : undefined;
+  return finishScene(base, marks, points, annMarks, annotationPoints, plots);
 }
