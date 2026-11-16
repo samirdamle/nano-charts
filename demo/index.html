@@ -308,6 +308,32 @@
         white-space: nowrap;
       }
 
+      /* plots showcase: the chart beside its plots payload as JSON */
+      .group-note {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0 0 16px;
+      }
+      .plots-showcase {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .plots-json {
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--muted);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 0;
+        max-height: 260px;
+        overflow: auto;
+        white-space: pre;
+      }
+
       /* thin border grid: outer frame on the grid, shared hairlines on cells */
       .grid {
         display: grid;
@@ -1436,6 +1462,39 @@
         root.append(section);
       }
       dataTableSection();
+
+      function plotsShowcaseSection() {
+        const section = document.createElement('section');
+        section.className = 'group';
+
+        const heading = document.createElement('div');
+        heading.className = 'group-label';
+        const h2 = document.createElement('h2');
+        h2.textContent = 'Plots — geometry in data form';
+        heading.append(h2);
+        section.append(heading);
+
+        const note = document.createElement('p');
+        note.className = 'group-note';
+        note.textContent =
+          'Pass plots: true and the scene carries its geometry as data — the same chart, printed as JSON.';
+        section.append(note);
+
+        // One line chart, shown twice: as the SVG and as its plots payload.
+        const scene = line([0, 10, 5], { plots: true });
+        const showcase = document.createElement('div');
+        showcase.className = 'plots-showcase';
+        const holder = document.createElement('div');
+        holder.innerHTML = toSVG(scene);
+        if (holder.firstElementChild) showcase.append(holder.firstElementChild);
+        const pre = document.createElement('pre');
+        pre.className = 'plots-json';
+        pre.textContent = JSON.stringify(scene.plots, null, 2);
+        showcase.append(pre);
+        section.append(showcase);
+        root.append(section);
+      }
+      plotsShowcaseSection();
 
       group('Line', [
         { title: 'Basic', make: () => (line([3, 7, 2, 9, 5, 6])) },

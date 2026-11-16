@@ -6,6 +6,7 @@ cards.
 
 - **16.7 kB** gzipped for all 12 charts — zero runtime dependencies, pure JS + SVG.
 - Framework-agnostic core (`data → Scene`) + a `toSVG` serializer; SSR-safe and deterministic.
+- Plots: pass `plots: true` to any chart and read its geometry back as data — see [Plots](docs/API.md#plots--geometry-in-data-form).
 - Hover and click events, accessible by default, themeable via `currentColor` and CSS variables.
 - React wrapper in [`@samirdamle/nano-charts-react`](https://www.npmjs.com/package/@samirdamle/nano-charts-react).
 - MIT licensed.

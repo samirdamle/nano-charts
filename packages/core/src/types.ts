@@ -144,8 +144,8 @@ export interface PlotFrame {
   readonly height: number;
   readonly plot: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
   /** Data domain on the x axis: a numeric range, or the category labels for
-   * categorical charts. Absent where the chart has no x domain (dial charts,
-   * pictogram, radar). */
+   * categorical charts. Absent where the chart has no x domain (dial charts:
+   * donut, gauge). */
   readonly xDomain?: readonly [number, number] | readonly string[];
   /** Data domain on the y axis. Absent where the chart has no y domain. */
   readonly yDomain?: readonly [number, number];
