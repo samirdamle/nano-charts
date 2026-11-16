@@ -1,4 +1,12 @@
-import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Mark,
+  Scene,
+  ScenePoint,
+  WinLossPlots,
+  WinLossPlotsBlock,
+} from '../types';
 import { round } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { paddedBox, slotLayout } from '../core/plot';
@@ -23,6 +31,11 @@ export interface WinLossOptions<T = number>
 
 export function winLoss<T = number>(
   data: SeriesInput<T>,
+  options: WinLossOptions<T> & { plots: true },
+): Scene & { plots: WinLossPlots };
+export function winLoss<T = number>(data: SeriesInput<T>, options?: WinLossOptions<T>): Scene;
+export function winLoss<T = number>(
+  data: SeriesInput<T>,
   options: WinLossOptions<T> = {},
 ): Scene {
   const { width, height, padding } = resolveChartShell(options);
@@ -36,9 +49,21 @@ export function winLoss<T = number>(
 
   const a11y = resolveA11y('win/loss', datums, options);
   const base = sceneShell({ width, height }, a11y, options);
-  if (datums.length === 0) return base;
-
   const box = paddedBox({ width, height, padding });
+  // The frame is the padded plot box. The x domain is the data index;
+  // there is no value domain — block height is fixed by the sign, not
+  // by the value's magnitude.
+  const plotsFrame = {
+    width,
+    height,
+    plot: { x: box.left, y: box.top, width: box.right - box.left, height: box.bottom - box.top },
+    ...(datums.length > 0 ? { xDomain: [0, datums.length - 1] as const } : {}),
+  };
+  if (datums.length === 0) {
+    if (options.plots !== true) return base;
+    return { ...base, plots: { kind: 'winLoss', frame: plotsFrame, blocks: [] } };
+  }
+
   const center = (box.top + box.bottom) / 2;
   const barHeight = center - box.top;
   const { barWidth: barW, x: slotX } = slotLayout(datums.length, box.left, box.right, gap);
@@ -55,6 +80,10 @@ export function winLoss<T = number>(
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+  // Plots are built only when requested, from the same block rects as
+  // the marks.
+  const plotsOn = options.plots === true;
+  const plotsBlocks: WinLossPlotsBlock[] = [];
 
   datums.forEach((d, i) => {
     const r = blockRect(i);
@@ -84,6 +113,21 @@ export function winLoss<T = number>(
       fillOpacity,
     });
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x, y, w, h });
+    if (plotsOn) {
+      plotsBlocks.push({
+        index: i,
+        value: d.value,
+        sign: d.value > 0 ? 'up' : d.value < 0 ? 'down' : 'flat',
+        // Full-precision rect; the marks above round the same values.
+        x: r.x,
+        y: r.y,
+        width: r.w,
+        height: r.h,
+        // The rect's fill (the 0.4 dimming on flat blocks is an opacity,
+        // not a different color).
+        color: fill,
+      });
+    }
   });
 
   // Annotations sit on top of everything, centered on their index's
@@ -103,5 +147,8 @@ export function winLoss<T = number>(
     options.color ?? 'currentColor',
   );
 
-  return finishScene(base, marks, points, annMarks, annotationPoints);
+  const plots: WinLossPlots | undefined = plotsOn
+    ? { kind: 'winLoss', frame: plotsFrame, blocks: plotsBlocks }
+    : undefined;
+  return finishScene(base, marks, points, annMarks, annotationPoints, plots);
 }

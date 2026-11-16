@@ -9,5 +9,7 @@ export interface WinLossNanoChartProps<T = number> extends WinLossOptions<T>, In
 }
 
 export function WinLossNanoChart<T = number>({ data, ...rest }: WinLossNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(winLoss, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<SeriesInput<T>, WinLossOptions<T>>(winLoss, data, rest);
 }
