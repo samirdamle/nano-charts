@@ -1,4 +1,4 @@
-import type { AnnotationOptions, BaseOptions, Mark, Scene } from '../types';
+import type { AnnotationOptions, BaseOptions, BulletPlots, Mark, Scene } from '../types';
 import { linearScale, round } from '../core/geometry';
 import { paddedBox } from '../core/plot';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
@@ -17,6 +17,11 @@ export interface BulletData {
 
 export type BulletOptions = BaseOptions & AnnotationOptions;
 
+export function bullet(
+  data: BulletData,
+  options: BulletOptions & { plots: true },
+): Scene & { plots: BulletPlots };
+export function bullet(data: BulletData, options?: BulletOptions): Scene;
 export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const { width, height, color, padding } = resolveChartShell(options);
   // Clamp policy: bullet geometry lives on [0, max]. Negative inputs are
@@ -83,6 +88,30 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     seriesAwareMapper(bulletAnnotationMapper(xScale, max, centerY), 0),
     color,
   );
+  const plots: BulletPlots | undefined =
+    options.plots === true
+      ? {
+          kind: 'bullet',
+          frame: {
+            width,
+            height,
+            plot: { x: left, y: top, width: right - left, height: bottom - top },
+            xDomain: [0, max],
+          },
+          // Bands are nested: each spans [0, to] from the left edge, so
+          // `from` is 0 for every band and the plots mirror the rects.
+          ranges: ranges.map((r) => ({
+            from: 0,
+            to: r,
+            x: left,
+            width: xScale(r) - left,
+            color,
+          })),
+          value: { value, x: left, width: xScale(value) - left, color },
+          target: { value: target, x: xScale(target), color },
+          max,
+        }
+      : undefined;
   return finishScene(
     sceneShell(
       { width, height },
@@ -105,5 +134,6 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     ],
     annMarks,
     annotationPoints,
+    plots,
   );
 }
