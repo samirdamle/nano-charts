@@ -9,5 +9,7 @@ export interface BulletNanoChartProps extends BulletOptions, InteractionProps {
 }
 
 export function BulletNanoChart({ data, ...rest }: BulletNanoChartProps): JSX.Element {
-  return renderNanoChart(bullet, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry the options
+  // type through inference, so pin D and O here.
+  return renderNanoChart<BulletData, BulletOptions>(bullet, data, rest);
 }
