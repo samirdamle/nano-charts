@@ -11,7 +11,7 @@ import type {
   Scene,
   ScenePoint,
 } from '../types';
-import { extent, round } from './geometry';
+import { extent, round, round3 } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
 import {
   autoPlotPadding,
@@ -111,9 +111,10 @@ export interface SeriesChartOptions<T>
   highlights?: HighlightZones;
 }
 
-/** Builds one series' plots points at full float precision — unlike the
- * rounded ScenePoints the marks are drawn from. `color` is the series
- * color the marks render with. */
+/** Builds one series' plots points with geometry rounded to 3 decimals —
+ * unlike the 2dp-rounded ScenePoints the marks are drawn from. `value` is
+ * the raw datum and stays exact. `color` is the series color the marks
+ * render with. */
 export function seriesPlotsPoints(
   datums: Datum[],
   layout: SeriesLayout,
@@ -121,8 +122,8 @@ export function seriesPlotsPoints(
   seriesIndex: number,
 ): PlotsPoint[] {
   return datums.map((d) => ({
-    x: layout.x(d.index),
-    y: layout.y(d.value),
+    x: round3(layout.x(d.index)),
+    y: round3(layout.y(d.value)),
     value: d.value,
     index: d.index,
     seriesIndex,
@@ -145,10 +146,10 @@ export function seriesPlotsFrame(
     width,
     height,
     plot: {
-      x: box.left,
-      y: box.top,
-      width: box.right - box.left,
-      height: box.bottom - box.top,
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
     },
     xDomain,
     yDomain,
@@ -169,7 +170,12 @@ export function emptySeriesPlotsFrame(
   return {
     width,
     height,
-    plot: { x: box.left, y: box.top, width: box.right - box.left, height: box.bottom - box.top },
+    plot: {
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
+    },
   };
 }
 
@@ -266,7 +272,7 @@ export function renderSeriesChart<T>(
             kind: 'area',
             frame: seriesPlotsFrame(width, height, layout, indexDomain, valueDomain),
             series: [{ seriesIndex: 0, points: seriesPlotsPoints(datums, layout, color, 0) }],
-            baselineY: layout.bottom,
+            baselineY: round3(layout.bottom),
           }
         : {
             kind: 'line',

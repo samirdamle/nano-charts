@@ -9,7 +9,7 @@ import type {
   Scene,
   ScenePoint,
 } from '../types';
-import { round } from '../core/geometry';
+import { round, round3 } from '../core/geometry';
 import {
   normalizeDatum,
   normalizeSeries,
@@ -338,7 +338,12 @@ export function pictogram<T = number>(
   const plotsFrame = {
     width: round(width + padding.left + padding.right),
     height: round(height + padding.top + padding.bottom),
-    plot: { x: padding.left, y: padding.top, width, height },
+    plot: {
+      x: round3(padding.left),
+      y: round3(padding.top),
+      width: round3(width),
+      height: round3(height),
+    },
     ...(n > 0
       ? horizontal
         ? { xDomain: [0, maxSlots - 1] as const, yDomain: [0, n - 1] as const }
@@ -561,7 +566,15 @@ export function pictogram<T = number>(
         const line = horizontal
           ? { x1: round(p1), y1: fixed, x2: round(p2), y2: fixed }
           : { x1: fixed, y1: round(p1), x2: fixed, y2: round(p2) };
-        if (plotsOn) plotsConnectors.push(line);
+        // The plots carry their own connector object at 3 decimals; the
+        // marks above share `line` at 2dp, so the plots never reuse it.
+        if (plotsOn) {
+          plotsConnectors.push(
+            horizontal
+              ? { x1: round3(p1), y1: round3(fixed), x2: round3(p2), y2: round3(fixed) }
+              : { x1: round3(fixed), y1: round3(p1), x2: round3(fixed), y2: round3(p2) },
+          );
+        }
         marks.push(
           horizontal
             ? { type: 'line', class: connectorCls, ...line, ...attrs }
@@ -644,10 +657,11 @@ export function pictogram<T = number>(
         plotsBlocks.push({
           series: j,
           blockNumber: k + 1,
-          // Full-precision origin; the marks above round the same values.
-          x: bx,
-          y: by,
-          size: s,
+          // Geometry rounded to 3 decimals; the marks above round the same
+          // values to 2dp. `partial` is a boolean flag, not a number.
+          x: round3(bx),
+          y: round3(by),
+          size: round3(s),
           filled: b.state === 'filled',
           empty: b.state === 'empty',
           partial: isPartial,

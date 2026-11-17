@@ -8,7 +8,7 @@ import type {
   Scene,
   ScenePoint,
 } from '../types';
-import { arcPath, dialSpan, linearScale, polar, round } from '../core/geometry';
+import { arcPath, dialSpan, linearScale, polar, round, round3 } from '../core/geometry';
 import { toFiniteNumber } from '../core/normalize';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
@@ -261,19 +261,24 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
         frame: {
           width,
           height,
-          plot: { x: cx - rOuter, y: cy - rOuter, width: 2 * rOuter, height: 2 * rOuter },
+          plot: {
+            x: round3(cx - rOuter),
+            y: round3(cy - rOuter),
+            width: round3(2 * rOuter),
+            height: round3(2 * rOuter),
+          },
         },
         value,
         min,
         max,
-        frac,
-        startAngle,
-        endAngle: startAngle + span,
+        frac: round3(frac),
+        startAngle: round3(startAngle),
+        endAngle: round3(startAngle + span),
         // Needle angle exists only in needle mode, like the needle itself.
-        ...(mode === 'needle' ? { needleAngle: valueAngle } : {}),
+        ...(mode === 'needle' ? { needleAngle: round3(valueAngle) } : {}),
         zones: zonesPlots,
-        center: { x: cx, y: cy },
-        radius: rOuter,
+        center: { x: round3(cx), y: round3(cy) },
+        radius: round3(rOuter),
       }
     : undefined;
 

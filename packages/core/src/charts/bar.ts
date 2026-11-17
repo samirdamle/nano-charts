@@ -10,7 +10,7 @@ import type {
   ScenePoint,
 } from '../types';
 import { markClass } from '../core/css-classes';
-import { extent, linearScale, round } from '../core/geometry';
+import { extent, linearScale, round, round3 } from '../core/geometry';
 import {
   normalizeSeries,
   type SeriesAccessors,
@@ -412,16 +412,17 @@ export function bar<T = number>(data: BarInput<T>, options: BarOptions<T> = {}):
         h,
       });
       if (plotsOn) {
-        // Full-precision geometry: the raw scale outputs and slot
-        // positions, before the rounding the marks carry.
+        // Geometry rounded to 3 decimals; the marks above round the same
+        // values to 2dp. `value` and waterfall `from` are datum values and
+        // stay exact.
         const rawBarPos = subSlot ? slot.x(col) + subSlot.x(lead + row) : slot.x(col);
         const rawBw = subSlot ? subSlot.barWidth : slot.barWidth;
         const rawLen = Math.max(vStart, vEnd) - posRaw;
         plotsBars.push({
-          x: horizontal ? posRaw : rawBarPos,
-          y: horizontal ? rawBarPos : posRaw,
-          width: horizontal ? rawLen : rawBw,
-          height: horizontal ? rawBw : rawLen,
+          x: round3(horizontal ? posRaw : rawBarPos),
+          y: round3(horizontal ? rawBarPos : posRaw),
+          width: round3(horizontal ? rawLen : rawBw),
+          height: round3(horizontal ? rawBw : rawLen),
           value: seg.value,
           // Waterfall bars float: the start value is part of the geometry.
           ...(waterfall ? { from: startValue } : {}),

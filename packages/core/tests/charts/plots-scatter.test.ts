@@ -38,7 +38,7 @@ describe('scatter plots', () => {
     });
   });
 
-  it('keeps full float precision where the scene rounds', () => {
+  it('rounds geometry to 3 decimals where the scene rounds to 2', () => {
     const scene = scatter(
       [
         [0, 0],
@@ -50,7 +50,8 @@ describe('scatter plots', () => {
     const plots = scene.plots as ScatterPlots;
     const p = plots.series[0]!.points[2]!;
     expect(p.x).toBe(43);
-    expect(p.y).toBe(19 - (3 * 18) / 7);
+    // y(3) = 19 - 3*18/7 = 11.285…; plots round to 3 decimals, the scene to 2.
+    expect(p.y).toBe(11.286);
     expect(scene.points[2]).toMatchObject({ x: 43, y: 11.29 });
   });
 

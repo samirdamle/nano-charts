@@ -1,5 +1,5 @@
 import type { AnnotationOptions, BaseOptions, BulletPlots, Mark, Scene } from '../types';
-import { linearScale, round } from '../core/geometry';
+import { linearScale, round, round3 } from '../core/geometry';
 import { paddedBox } from '../core/plot';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
@@ -95,7 +95,12 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
           frame: {
             width,
             height,
-            plot: { x: left, y: top, width: right - left, height: bottom - top },
+            plot: {
+              x: round3(left),
+              y: round3(top),
+              width: round3(right - left),
+              height: round3(bottom - top),
+            },
             xDomain: [0, max],
           },
           // Bands are nested: each spans [0, to] from the left edge, so
@@ -103,12 +108,12 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
           ranges: ranges.map((r) => ({
             from: 0,
             to: r,
-            x: left,
-            width: xScale(r) - left,
+            x: round3(left),
+            width: round3(xScale(r) - left),
             color,
           })),
-          value: { value, x: left, width: xScale(value) - left, color },
-          target: { value: target, x: xScale(target), color },
+          value: { value, x: round3(left), width: round3(xScale(value) - left), color },
+          target: { value: target, x: round3(xScale(target)), color },
           max,
         }
       : undefined;

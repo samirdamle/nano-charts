@@ -7,7 +7,7 @@ import type {
   Scene,
   ScenePoint,
 } from '../types';
-import { extent, round } from '../core/geometry';
+import { extent, round, round3 } from '../core/geometry';
 import { makeColorScale, type ColorScale } from '../core/color-scale';
 import {
   autoPlotPadding,
@@ -120,7 +120,12 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
   const plotsFrame = {
     width,
     height,
-    plot: { x: box.left, y: box.top, width: box.right - box.left, height: box.bottom - box.top },
+    plot: {
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
+    },
     ...(cols > 0 && rows > 0 ? { xDomain: [0, cols - 1] as const, yDomain: [0, rows - 1] as const } : {}),
   };
   if (flat.length === 0) {
@@ -176,11 +181,12 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
           row: r,
           col: c,
           value,
-          // Full-precision geometry; the marks above round the same values.
-          x: box.left + c * cell + gap / 2,
-          y: box.top + r * cell + gap / 2,
-          width: cell - gap,
-          height: cell - gap,
+          // Geometry rounded to 3 decimals; the marks above round the same
+          // values to 2dp. `value` is the raw datum and stays exact.
+          x: round3(box.left + c * cell + gap / 2),
+          y: round3(box.top + r * cell + gap / 2),
+          width: round3(cell - gap),
+          height: round3(cell - gap),
           color: fill,
         });
       }

@@ -111,7 +111,7 @@ primitives, not every derivable scalar.
 Payload rules:
 
 - Plain JSON-serializable numbers only, no functions, no circular refs,
-  full float precision (no rounding — consumers round).
+  geometry rounded to 3 decimal places (datum values never rounded).
 - Fresh plain objects, never references to internal marks, typed `readonly`
   and documented read-only; no deep-freeze (perf cost for no benefit).
 - Built from the same normalized, filtered data as the marks, so dropped
