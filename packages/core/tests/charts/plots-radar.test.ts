@@ -29,14 +29,14 @@ describe('radar plots', () => {
     // Axis 0 (value 3): straight up, r = 49*3/9.
     expect(vs[0]!.axis).toBe(0);
     expect(vs[0]!.value).toBe(3);
-    expect(vs[0]!.x).toBeCloseTo(50, 12);
-    expect(vs[0]!.y).toBeCloseTo(50 - 49 / 3, 12);
+    expect(vs[0]!.x).toBe(50);
+    expect(vs[0]!.y).toBe(33.667);
     // Axis 1 (value 6): 30°, r = 49*6/9.
-    expect(vs[1]!.x).toBeCloseTo(50 + (49 * (6 / 9) * Math.cos(Math.PI / 6)), 12);
-    expect(vs[1]!.y).toBeCloseTo(50 + (49 * (6 / 9) * Math.sin(Math.PI / 6)), 12);
+    expect(vs[1]!.x).toBe(78.29);
+    expect(vs[1]!.y).toBe(66.333);
     // Axis 2 (value 9): 150°, r = 49 (the rim).
-    expect(vs[2]!.x).toBeCloseTo(50 + 49 * Math.cos((5 * Math.PI) / 6), 12);
-    expect(vs[2]!.y).toBeCloseTo(50 + 49 * Math.sin((5 * Math.PI) / 6), 12);
+    expect(vs[2]!.x).toBe(7.565);
+    expect(vs[2]!.y).toBe(74.5);
     // The vertex color is the polygon's stroke color.
     const line = scene.marks.find((m) => m.type === 'polyline')!;
     for (const v of vs) expect(v.color).toBe(line.stroke);
@@ -73,16 +73,16 @@ describe('radar plots', () => {
     const vs = plots!.series[0]!.vertices;
     // 12 clamps to the rim (straight up, r = 49).
     expect(vs[0]!.value).toBe(12);
-    expect(vs[0]!.x).toBeCloseTo(50, 12);
-    expect(vs[0]!.y).toBeCloseTo(1, 12);
+    expect(vs[0]!.x).toBe(50);
+    expect(vs[0]!.y).toBe(1);
     // -2 clamps to the center.
     expect(vs[1]!.value).toBe(-2);
     expect(vs[1]!.x).toBe(50);
     expect(vs[1]!.y).toBe(50);
     // 5 sits at half radius on the 150° axis.
     expect(vs[2]!.value).toBe(5);
-    expect(vs[2]!.x).toBeCloseTo(50 + 24.5 * Math.cos((5 * Math.PI) / 6), 12);
-    expect(vs[2]!.y).toBeCloseTo(50 + 24.5 * Math.sin((5 * Math.PI) / 6), 12);
+    expect(vs[2]!.x).toBe(28.782);
+    expect(vs[2]!.y).toBe(62.25);
   });
 
   it('returns one vertex for a single axis', () => {
@@ -103,10 +103,10 @@ describe('radar plots', () => {
     });
   });
 
-  it('keeps full float precision where the scene rounds', () => {
+  it('rounds geometry to 3 decimals where the scene rounds to 2', () => {
     const scene = radar([3, 6, 9], { plots: true });
-    // Axis 0: y = 50 - 49/3; the scene rounds to 33.67.
-    expect(scene.plots!.series[0]!.vertices[0]!.y).toBeCloseTo(50 - 49 / 3, 12);
+    // Axis 0: y = 50 - 49/3 = 33.666…; plots round to 3 decimals, the scene to 2.
+    expect(scene.plots!.series[0]!.vertices[0]!.y).toBe(33.667);
     expect(scene.points[0]!.y).toBe(33.67);
   });
 

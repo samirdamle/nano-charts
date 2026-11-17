@@ -7,7 +7,7 @@ import { round } from '../../src/core/geometry';
 import type { AreaPlots, LinePlots, LinesPlots, Plots } from '../../src/types';
 
 describe('line plots (#219)', () => {
-  it('returns per-series points at full precision', () => {
+  it('returns per-series points with geometry rounded to 3 decimals', () => {
     const scene = line([0, 10, 5], { plots: true });
     expect(scene.plots).toEqual({
       kind: 'line',
@@ -31,10 +31,11 @@ describe('line plots (#219)', () => {
     });
   });
 
-  it('keeps full float precision where scene points are rounded', () => {
+  it('rounds geometry to 3 decimals where scene points are rounded to 2', () => {
     const scene = line([0, 7, 3], { plots: true });
     const plotsPoint = scene.plots!.series[0]!.points[2]!;
-    expect(plotsPoint.y).toBe(19.5 - (3 * 19) / 7);
+    // y(3) = 19.5 - 3*19/7 = 11.357…; plots round to 3 decimals, the scene to 2.
+    expect(plotsPoint.y).toBe(11.357);
     expect(scene.points[2]!.y).toBe(11.36);
     expect(plotsPoint.y).not.toBe(scene.points[2]!.y);
   });

@@ -72,13 +72,11 @@ describe('winLoss plots', () => {
     });
   });
 
-  it('keeps full float precision where the scene rounds', () => {
+  it('rounds geometry to 3 decimals where the scene rounds to 2', () => {
     const scene = winLoss([1, -1, 1], { gap: 1 / 3, plots: true });
     // Slot is 98/3; bar width is (98/3)*(2/3); the second bar's left edge
-    // is 1 + 98/3 + (98/3 - 196/9)/2 = 39.111...
-    const slot = 98 / 3;
-    const barW = slot * (2 / 3);
-    expect(scene.plots!.blocks[1]!.x).toBeCloseTo(1 + slot + (slot - barW) / 2, 12);
+    // is 1 + 98/3 + (98/3 - 196/9)/2 = 39.111…; plots round to 3 decimals.
+    expect(scene.plots!.blocks[1]!.x).toBe(39.111);
     const rects = scene.marks.filter((m) => m.type === 'rect');
     expect(rects[1]!.x).toBe(39.11);
   });

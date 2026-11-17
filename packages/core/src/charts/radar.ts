@@ -8,7 +8,7 @@ import type {
   Scene,
   ScenePoint,
 } from '../types';
-import { round, toDasharray } from '../core/geometry';
+import { round, round3, toDasharray } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
@@ -118,14 +118,25 @@ export function radar<T = number>(
   const plotsFrame = {
     width,
     height,
-    plot: { x: cx - radius, y: cy - radius, width: 2 * radius, height: 2 * radius },
+    plot: {
+      x: round3(cx - radius),
+      y: round3(cy - radius),
+      width: round3(2 * radius),
+      height: round3(2 * radius),
+    },
     ...(axisCount > 0 ? { xDomain: [0, axisCount - 1] as const } : {}),
   };
   if (axisCount === 0) {
     if (options.plots !== true) return base;
     return {
       ...base,
-      plots: { kind: 'radar', frame: plotsFrame, series: [], center: { x: cx, y: cy }, radius },
+      plots: {
+        kind: 'radar',
+        frame: plotsFrame,
+        series: [],
+        center: { x: round3(cx), y: round3(cy) },
+        radius: round3(radius),
+      },
     };
   }
 
@@ -137,7 +148,8 @@ export function radar<T = number>(
   // and radius in pixels.
   const pointAt = (axis: number, radiusPx: number): [number, number] =>
     polarRad(cx, cy, radiusPx, angleAt(axis));
-  // Full-precision polar point for plots; polarRad (above) rounds to 2dp.
+  // Unrounded polar point for plots (the vertex push rounds the plots
+  // coordinates to 3 decimals); polarRad (above) rounds to 2dp.
   const polarRaw = (radiusPx: number, angle: number): [number, number] => [
     cx + radiusPx * Math.cos(angle),
     cy + radiusPx * Math.sin(angle),
@@ -246,8 +258,8 @@ export function radar<T = number>(
         // Raw datum value (datum identity); a shorter series' missing
         // vertex is value 0 at the center, like the rendered polygon.
         const value = d?.value ?? 0;
-        const [x, y] = polarRaw(scale(value), angleAt(i));
-        vertices.push({ axis: i, value, x, y, seriesIndex, color });
+        const [rx, ry] = polarRaw(scale(value), angleAt(i));
+        vertices.push({ axis: i, value, x: round3(rx), y: round3(ry), seriesIndex, color });
       }
       plotsSeries.push({
         seriesIndex,
@@ -336,8 +348,8 @@ export function radar<T = number>(
         kind: 'radar',
         frame: { ...plotsFrame, yDomain: [0, domainMax] as const },
         series: plotsSeries,
-        center: { x: cx, y: cy },
-        radius,
+        center: { x: round3(cx), y: round3(cy) },
+        radius: round3(radius),
       }
     : undefined;
   return finishScene(base, marks, points, annMarks, annotationPoints, plots);

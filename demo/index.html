@@ -678,7 +678,7 @@
           </div>
           <aside class="hero-features">
             <ul>
-              <li>16.7 kB gzipped</li>
+              <li>16.8 kB gzipped</li>
               <li>12 charts</li>
               <li>No dependencies</li>
               <li>Pure JS + SVG</li>
@@ -1012,14 +1012,13 @@
       }
 
       function buildSamples(parsed) {
-        const fallback = { js: '// sample unavailable', react: '// sample unavailable', plots: '// plots unavailable' };
-        if (!parsed) return { js: { text: fallback.js }, react: { text: fallback.react }, plots: { text: fallback.plots } };
+        const fallback = { js: '// sample unavailable', react: '// sample unavailable' };
+        if (!parsed) return { js: { text: fallback.js }, react: { text: fallback.react } };
         const { name, data, options } = parsed;
         const d = dataForSample(data);
 
         let js = `import { ${name}, toSVG } from '@samirdamle/nano-charts';\n\n`;
         if (d.demo) js += `// ${d.src.trim()} is demo data — replace with your own\n`;
-        if (!options.includes('plots')) js += '// Add plots: true to also get the geometry back as scene.plots\n';
         js += options
           ? `const scene = ${name}(${d.src}, ${options});\n`
           : `const scene = ${name}(${d.src});\n`;
@@ -1028,7 +1027,6 @@
         let react;
         if (name === 'lines') {
           react = buildLinesReact(d);
-          if (!options.includes('plots')) react += '\n// Add plots and onPlots={(plots) => ...} to each LineNanoChart to also receive the geometry';
         } else {
           const comp = REACT_COMPONENTS[name] || 'Chart';
           react = `import { ${comp} } from '@samirdamle/nano-charts-react';\n\n`;
@@ -1036,7 +1034,6 @@
           react += `const data = ${d.src};\n`;
           if (options) react += `const options = ${options};\n`;
           react += `\n<${comp} data={data}${options ? ' {...options}' : ''} />`;
-          if (!options.includes('plots')) react += '\n// Add plots and onPlots={(plots) => ...} to also receive the geometry';
         }
 
         const jsPal = withPalette(js);
@@ -1044,36 +1041,7 @@
         return {
           js: { text: addPaletteNote(jsPal.src, jsPal.changed) },
           react: { text: addPaletteNote(reactPal.src, reactPal.changed) },
-          plots: buildPlotsSample(parsed),
         };
-      }
-
-      // Re-run the cell's chart call with plots: true, so the Plots tab
-      // shows the plots object for exactly the chart on screen. Uses the
-      // same eval pattern dataForSample uses for bare-identifier data.
-      function buildPlotsSample(parsed) {
-        const fallback = { text: '// plots unavailable' };
-        if (!parsed) return fallback;
-        const { name, data, options } = parsed;
-        let fn, dataValue, opts;
-        try {
-          fn = eval(name);
-          // Parenthesised: object-literal data (donut/gauge gauge-mode
-          // input) would otherwise parse as a block.
-          dataValue = eval(`(${data.trim()})`);
-          opts = options ? eval(`(${options})`) : {};
-        } catch {
-          return fallback;
-        }
-        if (typeof fn !== 'function') return fallback;
-        let scene;
-        try {
-          scene = fn(dataValue, { ...opts, plots: true });
-        } catch {
-          return fallback;
-        }
-        if (!scene || !scene.plots) return fallback;
-        return { text: JSON.stringify(scene.plots, null, 2) };
       }
 
       // ---------- syntax highlighting ----------
@@ -1204,7 +1172,6 @@
           '<div class="usage-tabs" role="tablist">' +
           '<button class="usage-tab active" type="button" data-tab="js" role="tab">JavaScript</button>' +
           '<button class="usage-tab" type="button" data-tab="react" role="tab">React</button>' +
-          '<button class="usage-tab" type="button" data-tab="plots" role="tab">Plots</button>' +
           '</div>' +
           '<div class="usage-body">' +
           '<pre class="usage-code"><button class="usage-copy" type="button">Copy</button><code></code></pre>' +

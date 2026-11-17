@@ -8,7 +8,7 @@ import type {
   ScatterPlots,
   ScatterPlotsPoint,
 } from '../types';
-import { extent, linearScale, round } from '../core/geometry';
+import { extent, linearScale, round, round3 } from '../core/geometry';
 import {
   autoPlotPadding,
   paddedBox,
@@ -108,7 +108,7 @@ function toXY<T>(data: ScatterInput<T>, options: ScatterOptions<T>): XY[] {
 }
 
 /** The plots payload for a scatter chart: one point per datum, in the same
- * order as the input, with full-precision pixel coordinates. A scatter has
+ * order as the input, with pixel coordinates rounded to 3 decimals. A scatter has
  * no multi-series input, so there is exactly one series entry
  * (`seriesIndex: 0`). Each point's color is the fill its circle renders
  * with — the per-point color when one is set, the chart color otherwise. */
@@ -119,8 +119,8 @@ function scatterPlotsPoints(
   color: string,
 ): ScatterPlotsPoint[] {
   return pts.map((p) => ({
-    x: xScale(p.x),
-    y: yScale(p.y),
+    x: round3(xScale(p.x)),
+    y: round3(yScale(p.y)),
     valueX: p.x,
     valueY: p.y,
     index: p.index,

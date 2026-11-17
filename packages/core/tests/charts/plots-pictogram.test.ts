@@ -137,10 +137,10 @@ describe('pictogram plots', () => {
     expect('connectors' in plots!).toBe(false);
   });
 
-  it('keeps full float precision where the scene rounds', () => {
+  it('rounds geometry to 3 decimals where the scene rounds to 2', () => {
     const scene = pictogram([1, 1], { blockSize: 7, gap: 0.333, plots: true });
-    // Pitch is 7 + 0.333*7 = 9.331; the scene rounds the mark to 9.33.
-    expect(scene.plots!.blocks[1]!.x).toBeCloseTo(9.331, 12);
+    // Pitch is 7 + 0.333*7 = 9.331; plots keep 3 decimals, the scene rounds to 2.
+    expect(scene.plots!.blocks[1]!.x).toBe(9.331);
     const uses = scene.marks.filter((m) => m.type === 'use');
     expect(uses[1]!.x).toBe(9.33);
   });

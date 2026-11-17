@@ -5,14 +5,13 @@ import { gauge, type GaugeOptions } from '../../src/charts/gauge';
 import { toSVG } from '../../src/render/to-svg';
 import type { DonutPlots, DonutPlotsSegment, GaugePlots, Plots } from '../../src/types';
 
-// Segment angles are full-precision floats: the same real number spelled
-// through a different operation order can differ in the last ULP, so
-// angles are compared with toBeCloseTo and discrete fields exactly.
+// Segment angles and fractions are rounded to 3 decimals, so they are
+// compared exactly; discrete fields exactly.
 function expectSegmentCloseTo(actual: DonutPlotsSegment, expected: DonutPlotsSegment): void {
   expect(actual.value).toBe(expected.value);
-  expect(actual.fraction).toBeCloseTo(expected.fraction, 12);
-  expect(actual.startAngle).toBeCloseTo(expected.startAngle, 10);
-  expect(actual.endAngle).toBeCloseTo(expected.endAngle, 10);
+  expect(actual.fraction).toBe(expected.fraction);
+  expect(actual.startAngle).toBe(expected.startAngle);
+  expect(actual.endAngle).toBe(expected.endAngle);
   expect(actual.index).toBe(expected.index);
   expect(actual.label).toBe(expected.label);
   expect(actual.color).toBe(expected.color);
@@ -157,15 +156,15 @@ describe('donut plots (segmented)', () => {
 
   it('insets segments by half the gap on both ends', () => {
     const { plots } = donut([30, 50, 20], { plots: true });
-    // Default gap 0.2 at rMid 8.25: half-gap angle = (0.1/8.25) * (180/pi).
-    const h = (0.1 / 8.25) * (180 / Math.PI);
+    // Default gap 0.2 at rMid 8.25: half-gap angle h = (0.1/8.25) * (180/pi)
+    // = 0.694…; segment bounds are inset by h, then rounded to 3 decimals.
     const segs = plots!.segments;
     expect(segs).toHaveLength(3);
     expectSegmentCloseTo(segs[0]!, {
       value: 30,
       fraction: 0.3,
-      startAngle: -90 + h,
-      endAngle: 18 - h,
+      startAngle: -89.306,
+      endAngle: 17.306,
       index: 0,
       label: segs[0]!.label,
       color: segs[0]!.color,
@@ -173,8 +172,8 @@ describe('donut plots (segmented)', () => {
     expectSegmentCloseTo(segs[1]!, {
       value: 50,
       fraction: 0.5,
-      startAngle: 18 + h,
-      endAngle: 198 - h,
+      startAngle: 18.694,
+      endAngle: 197.306,
       index: 1,
       label: segs[1]!.label,
       color: segs[1]!.color,
@@ -182,8 +181,8 @@ describe('donut plots (segmented)', () => {
     expectSegmentCloseTo(segs[2]!, {
       value: 20,
       fraction: 0.2,
-      startAngle: 198 + h,
-      endAngle: 270 - h,
+      startAngle: 198.694,
+      endAngle: 269.306,
       index: 2,
       label: segs[2]!.label,
       color: segs[2]!.color,

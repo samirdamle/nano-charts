@@ -4,14 +4,13 @@ import { bar, type BarOptions } from '../../src/charts/bar';
 import { toSVG } from '../../src/render/to-svg';
 import type { BarPlots, BarPlotsBar, Plots } from '../../src/types';
 
-// Geometry is full-precision floats: the same real number spelled through
-// a different operation order can differ in the last ULP, so fractional
-// fields are compared with toBeCloseTo and discrete fields exactly.
+// Geometry is rounded to 3 decimals: fractional fields are exact 3dp
+// literals, compared with toBe; discrete fields exactly.
 function expectBarCloseTo(actual: BarPlotsBar, expected: BarPlotsBar): void {
-  expect(actual.x).toBeCloseTo(expected.x, 12);
-  expect(actual.y).toBeCloseTo(expected.y, 12);
-  expect(actual.width).toBeCloseTo(expected.width, 12);
-  expect(actual.height).toBeCloseTo(expected.height, 12);
+  expect(actual.x).toBe(expected.x);
+  expect(actual.y).toBe(expected.y);
+  expect(actual.width).toBe(expected.width);
+  expect(actual.height).toBe(expected.height);
   expect(actual.value).toBe(expected.value);
   expect(actual.from).toBe(expected.from);
   expect(actual.index).toBe(expected.index);
@@ -22,7 +21,7 @@ function expectBarCloseTo(actual: BarPlotsBar, expected: BarPlotsBar): void {
 // bar() at the default 100x20, no axes: the auto-padding shrinks to 0
 // (bare bars need no clearance), so the plot box is the full 100x20.
 describe('bar plots (simple)', () => {
-  it('returns one bar per column with full-precision geometry', () => {
+  it('returns one bar per column with geometry rounded to 3 decimals', () => {
     const { plots } = bar([4, 9, 2, 7], { plots: true });
     expect(plots).toBeDefined();
     expect(plots!.kind).toBe('bar');
@@ -38,9 +37,9 @@ describe('bar plots (simple)', () => {
     expect(bars).toHaveLength(4);
     expectBarCloseTo(bars[0]!, {
       x: 2.5,
-      y: 100 / 9,
+      y: 11.111,
       width: 20,
-      height: 80 / 9,
+      height: 8.889,
       value: 4,
       index: 0,
       seriesIndex: 0,
@@ -58,9 +57,9 @@ describe('bar plots (simple)', () => {
     });
     expectBarCloseTo(bars[2]!, {
       x: 52.5,
-      y: 140 / 9,
+      y: 15.556,
       width: 20,
-      height: 40 / 9,
+      height: 4.444,
       value: 2,
       index: 2,
       seriesIndex: 0,
@@ -68,9 +67,9 @@ describe('bar plots (simple)', () => {
     });
     expectBarCloseTo(bars[3]!, {
       x: 77.5,
-      y: 40 / 9,
+      y: 4.444,
       width: 20,
-      height: 140 / 9,
+      height: 15.556,
       value: 7,
       index: 3,
       seriesIndex: 0,
@@ -80,12 +79,12 @@ describe('bar plots (simple)', () => {
     for (const b of bars) expect('from' in b).toBe(false);
   });
 
-  it('keeps full float precision where the scene rounds', () => {
+  it('rounds geometry to 3 decimals where the scene rounds to 2', () => {
     const scene = bar([3, 7], { plots: true });
-    // y(3) = 20 - 3*20/7 = 80/7; the scene rounds to 11.43.
-    expect(scene.plots!.bars[0]!.y).toBeCloseTo(80 / 7, 12);
+    // y(3) = 20 - 3*20/7 = 80/7 = 11.428…; plots round to 3 decimals, the scene to 2.
+    expect(scene.plots!.bars[0]!.y).toBe(11.429);
     expect(scene.points[0]!.y).toBe(11.43);
-    expect(scene.plots!.bars[0]!.height).toBeCloseTo(60 / 7, 12);
+    expect(scene.plots!.bars[0]!.height).toBe(8.571);
     expect(scene.points[0]!.h).toBe(8.57);
   });
 
@@ -113,9 +112,9 @@ describe('bar plots (stacked)', () => {
     // Totals 5 and 9 -> domain [0,9]; slots: slot 50, barW 40, x0 5, x1 55.
     expectBarCloseTo(bars[0]!, {
       x: 5,
-      y: 40 / 3,
+      y: 13.333,
       width: 40,
-      height: 20 / 3,
+      height: 6.667,
       value: 3,
       index: 0,
       seriesIndex: 0,
@@ -123,9 +122,9 @@ describe('bar plots (stacked)', () => {
     });
     expectBarCloseTo(bars[1]!, {
       x: 5,
-      y: 80 / 9,
+      y: 8.889,
       width: 40,
-      height: 40 / 9,
+      height: 4.444,
       value: 2,
       index: 0,
       seriesIndex: 1,
@@ -133,9 +132,9 @@ describe('bar plots (stacked)', () => {
     });
     expectBarCloseTo(bars[2]!, {
       x: 55,
-      y: 80 / 9,
+      y: 8.889,
       width: 40,
-      height: 100 / 9,
+      height: 11.111,
       value: 5,
       index: 1,
       seriesIndex: 0,
@@ -145,7 +144,7 @@ describe('bar plots (stacked)', () => {
       x: 55,
       y: 0,
       width: 40,
-      height: 80 / 9,
+      height: 8.889,
       value: 4,
       index: 1,
       seriesIndex: 1,
@@ -230,9 +229,9 @@ describe('bar plots (waterfall)', () => {
     expect(bars).toHaveLength(3);
     // Bases [0, 3, 2]; domain [0,4]; slots: slot 100/3, barW 80/3, x0 10/3.
     expectBarCloseTo(bars[0]!, {
-      x: 10 / 3,
+      x: 3.333,
       y: 5,
-      width: 80 / 3,
+      width: 26.667,
       height: 15,
       value: 3,
       from: 0,
@@ -241,9 +240,9 @@ describe('bar plots (waterfall)', () => {
       color: 'currentColor',
     });
     expectBarCloseTo(bars[1]!, {
-      x: 110 / 3,
+      x: 36.667,
       y: 5,
-      width: 80 / 3,
+      width: 26.667,
       height: 5,
       value: -1,
       from: 3,
@@ -254,7 +253,7 @@ describe('bar plots (waterfall)', () => {
     expectBarCloseTo(bars[2]!, {
       x: 70,
       y: 0,
-      width: 80 / 3,
+      width: 26.667,
       height: 10,
       value: 2,
       from: 2,
@@ -307,7 +306,7 @@ describe('bar plots (horizontal)', () => {
     expect(bars[0]).toEqual({
       x: 0,
       y: 1,
-      width: 400 / 9,
+      width: 44.444,
       height: 8,
       value: 4,
       index: 0,
@@ -336,7 +335,7 @@ describe('bar plots (horizontal)', () => {
     expect(bars[0]).toEqual({
       x: 0,
       y: 1,
-      width: 400 / 13,
+      width: 30.769,
       height: 8,
       value: -4,
       index: 0,
@@ -344,9 +343,9 @@ describe('bar plots (horizontal)', () => {
       color: 'currentColor',
     });
     expect(bars[1]).toEqual({
-      x: 400 / 13,
+      x: 30.769,
       y: 11,
-      width: 900 / 13,
+      width: 69.231,
       height: 8,
       value: 9,
       index: 1,

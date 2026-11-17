@@ -769,16 +769,20 @@ scene.plots;
 They answer different questions. `scene.points` is the hit-test/label layer:
 one entry per data point with its rounded pixel position, for hover/click
 handlers and labels. `plots` is the rendered-geometry layer: the actual
-marks' geometry at full float precision, with datum identity and the
-resolved color each mark renders with. Points are rounded to 2dp; plots are
-not. Annotations, reference lines, and highlights are overlays with their
+marks' geometry rounded to 3 decimal places, with datum identity and the
+resolved color each mark renders with. Points are rounded to 2dp; plots
+geometry to 3dp. Datum values in plots (`value`, `valueX`, `valueY`,
+`from`/`to` where they are data values, `min`/`max`, frame domains) are
+never rounded. Annotations, reference lines, and highlights are overlays with their
 own channels — they never appear in plots, and plots are identical with
 them on or off. (Axes are layout, not overlays: they move the plot box, so
 plots match the rendered scene with axes shown.)
 
 ### Rules (all charts)
 
-- Geometry is in pixels, at full float precision — no rounding.
+- Geometry is in pixels, rounded to 3 decimal places. Datum values
+  (`value`, `valueX`, `valueY`, `from`/`to` where they are data values,
+  `min`/`max`, frame domains) are never rounded.
 - Every element carries its datum identity (`value`, `index`, `label`,
   `seriesIndex` where it applies) and its resolved `color` — the color its
   mark renders with (`currentColor` stays `currentColor`).
@@ -957,36 +961,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-11-15):**
+**Enforced budgets (measured 2026-11-16):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 5.5 kB  | **5.13 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 5.5 kB  | **5.14 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 18 kB | **16.71 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6.5 kB  | **6.20 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 18 kB | **17.05 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 18 kB | **16.82 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6.5 kB  | **6.22 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 18 kB | **17.15 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 6.07 kB |
-| `area`     | 5.81 kB |
-| `lines`    | 6.05 kB |
-| `bar`      | 7.12 kB |
-| `win-loss` | 3.01 kB |
-| `bullet`   | 2.62 kB |
-| `donut`    | 4.14 kB |
-| `gauge`    | 3.20 kB |
-| `scatter`  | 5.42 kB |
-| `heatmap`  | 5.25 kB |
-| `radar`    | 3.74 kB |
-| `pictogram`| 4.91 kB |
+| `line`     | 6.08 kB |
+| `area`     | 5.83 kB |
+| `lines`    | 6.07 kB |
+| `bar`      | 7.15 kB |
+| `win-loss` | 3.02 kB |
+| `bullet`   | 2.63 kB |
+| `donut`    | 4.17 kB |
+| `gauge`    | 3.22 kB |
+| `scatter`  | 5.43 kB |
+| `heatmap`  | 5.26 kB |
+| `radar`    | 3.76 kB |
+| `pictogram`| 4.96 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2.5–7.1 kB; the whole core library (all twelve charts plus `toSVG`) is 16.7 kB gzipped,
+2.6–7.1 kB; the whole core library (all twelve charts plus `toSVG`) is 16.8 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

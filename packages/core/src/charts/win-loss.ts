@@ -7,7 +7,7 @@ import type {
   WinLossPlots,
   WinLossPlotsBlock,
 } from '../types';
-import { round } from '../core/geometry';
+import { round, round3 } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { paddedBox, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
@@ -56,7 +56,12 @@ export function winLoss<T = number>(
   const plotsFrame = {
     width,
     height,
-    plot: { x: box.left, y: box.top, width: box.right - box.left, height: box.bottom - box.top },
+    plot: {
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
+    },
     ...(datums.length > 0 ? { xDomain: [0, datums.length - 1] as const } : {}),
   };
   if (datums.length === 0) {
@@ -118,11 +123,12 @@ export function winLoss<T = number>(
         index: i,
         value: d.value,
         sign: d.value > 0 ? 'up' : d.value < 0 ? 'down' : 'flat',
-        // Full-precision rect; the marks above round the same values.
-        x: r.x,
-        y: r.y,
-        width: r.w,
-        height: r.h,
+        // Geometry rounded to 3 decimals; the marks above round the same
+        // values to 2dp. `value` is the raw datum and stays exact.
+        x: round3(r.x),
+        y: round3(r.y),
+        width: round3(r.w),
+        height: round3(r.h),
         // The rect's fill (the 0.4 dimming on flat blocks is an opacity,
         // not a different color).
         color: fill,

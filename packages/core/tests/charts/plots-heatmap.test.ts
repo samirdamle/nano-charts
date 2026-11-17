@@ -102,11 +102,11 @@ describe('heatmap plots', () => {
     expect(heatmap([[]], { plots: true }).plots!.cells).toEqual([]);
   });
 
-  it('keeps full float precision where the scene rounds', () => {
+  it('rounds geometry to 3 decimals where the scene rounds to 2', () => {
     const scene = heatmap([[1]], { gap: 0.333, plots: true });
-    // x = 0 + 0.1665; the scene rounds to 0.17, plots keep 0.1665.
-    expect(scene.plots!.cells[0]!.x).toBeCloseTo(0.1665, 12);
-    expect(scene.plots!.cells[0]!.width).toBeCloseTo(7.667, 12);
+    // x = 0 + 0.1665; plots round to 3 decimals (0.167), the scene to 2.
+    expect(scene.plots!.cells[0]!.x).toBe(0.167);
+    expect(scene.plots!.cells[0]!.width).toBe(7.667);
     const rect = scene.marks.find((m) => m.type === 'rect')!;
     expect(rect.x).toBe(0.17);
     expect(rect.width).toBe(7.67);

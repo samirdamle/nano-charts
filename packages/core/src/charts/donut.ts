@@ -9,7 +9,7 @@ import type {
   Scene,
   ScenePoint,
 } from '../types';
-import { arcPath, dialSpan, polar, round } from '../core/geometry';
+import { arcPath, dialSpan, polar, round, round3 } from '../core/geometry';
 import {
   normalizeSeries,
   toFiniteNumber,
@@ -166,12 +166,17 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       frame: {
         width,
         height,
-        plot: { x: cx - rOuter, y: cy - rOuter, width: 2 * rOuter, height: 2 * rOuter },
+        plot: {
+          x: round3(cx - rOuter),
+          y: round3(cy - rOuter),
+          width: round3(2 * rOuter),
+          height: round3(2 * rOuter),
+        },
       },
       segments: [],
-      center: { x: cx, y: cy },
-      innerRadius: rInner,
-      outerRadius: rOuter,
+      center: { x: round3(cx), y: round3(cy) },
+      innerRadius: round3(rInner),
+      outerRadius: round3(rOuter),
     };
     return { ...base, plots: emptyPlots };
   }
@@ -238,10 +243,10 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
         // The raw datum value (datum identity); the sweep uses the clamped
         // value, so a negative segment's fraction is 0 and its arc collapses.
         value: d.value,
-        fraction: swept[i]! / total,
+        fraction: round3(swept[i]! / total),
         // The rendered, gap-inset angles — not the logical sweep bounds.
-        startAngle: segStart,
-        endAngle: segEnd,
+        startAngle: round3(segStart),
+        endAngle: round3(segEnd),
         index: i,
         ...(d.label !== undefined ? { label: d.label } : {}),
         color: segColor,
@@ -271,12 +276,17 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
         frame: {
           width,
           height,
-          plot: { x: cx - rOuter, y: cy - rOuter, width: 2 * rOuter, height: 2 * rOuter },
+          plot: {
+            x: round3(cx - rOuter),
+            y: round3(cy - rOuter),
+            width: round3(2 * rOuter),
+            height: round3(2 * rOuter),
+          },
         },
         segments,
-        center: { x: cx, y: cy },
-        innerRadius: rInner,
-        outerRadius: rOuter,
+        center: { x: round3(cx), y: round3(cy) },
+        innerRadius: round3(rInner),
+        outerRadius: round3(rOuter),
       }
     : undefined;
   return finishScene(base, marks, points, annMarks, annotationPoints, plots);

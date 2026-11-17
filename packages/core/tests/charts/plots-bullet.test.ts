@@ -4,17 +4,16 @@ import { bullet, type BulletOptions } from '../../src/charts/bullet';
 import { toSVG } from '../../src/render/to-svg';
 import type { BulletPlots, BulletPlotsRange, Plots } from '../../src/types';
 
-// Geometry is full-precision floats: the same real number spelled through
-// a different operation order can differ in the last ULP, so fractional
-// fields are compared with toBeCloseTo and discrete fields exactly.
+// Geometry is rounded to 3 decimals, so fractional fields are exact 3dp
+// literals, compared with toBe; discrete fields exactly.
 function expectRangeCloseTo(
   actual: BulletPlotsRange,
   expected: BulletPlotsRange,
 ): void {
   expect(actual.from).toBe(expected.from);
   expect(actual.to).toBe(expected.to);
-  expect(actual.x).toBeCloseTo(expected.x, 12);
-  expect(actual.width).toBeCloseTo(expected.width, 12);
+  expect(actual.x).toBe(expected.x);
+  expect(actual.width).toBe(expected.width);
   expect(actual.color).toBe(expected.color);
 }
 
@@ -40,11 +39,11 @@ describe('bullet plots', () => {
     expectRangeCloseTo(plots!.ranges[1]!, { from: 0, to: 7, x: 1, width: 68.6, color: 'currentColor' });
     expectRangeCloseTo(plots!.ranges[2]!, { from: 0, to: 10, x: 1, width: 98, color: 'currentColor' });
     expect(plots!.value.value).toBe(6);
-    expect(plots!.value.x).toBeCloseTo(1, 12);
-    expect(plots!.value.width).toBeCloseTo(58.8, 12);
+    expect(plots!.value.x).toBe(1);
+    expect(plots!.value.width).toBe(58.8);
     expect(plots!.value.color).toBe('currentColor');
     expect(plots!.target.value).toBe(8);
-    expect(plots!.target.x).toBeCloseTo(79.4, 12);
+    expect(plots!.target.x).toBe(79.4);
     expect(plots!.target.color).toBe('currentColor');
   });
 
@@ -90,12 +89,12 @@ describe('bullet plots', () => {
     expect(target.x1).toBe(99);
   });
 
-  it('keeps full float precision where the scene rounds', () => {
+  it('rounds geometry to 3 decimals where the scene rounds to 2', () => {
     const scene = bullet({ value: 1, target: 1, max: 3 }, { plots: true });
-    // x(1) = 1 + 98/3; the scene rounds to 33.67.
-    expect(scene.plots!.target.x).toBeCloseTo(1 + 98 / 3, 12);
+    // x(1) = 1 + 98/3 = 33.666…; plots round to 3 decimals, the scene to 2.
+    expect(scene.plots!.target.x).toBe(33.667);
     expect(scene.points[0]!.x).toBe(33.67);
-    expect(scene.plots!.value.width).toBeCloseTo(98 / 3, 12);
+    expect(scene.plots!.value.width).toBe(32.667);
     const bars = scene.marks.filter((m) => m.type === 'rect');
     const bar = bars[bars.length - 1]!;
     expect(bar.width).toBe(32.67);
