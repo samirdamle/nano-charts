@@ -13,6 +13,8 @@ export default defineConfig({
     gauge: 'src/charts/gauge.ts',
     scatter: 'src/charts/scatter.ts',
     heatmap: 'src/charts/heatmap.ts',
+    radar: 'src/charts/radar.ts',
+    pictogram: 'src/charts/pictogram.ts',
     'to-svg': 'src/render/to-svg.ts',
   },
   format: ['esm', 'cjs'],

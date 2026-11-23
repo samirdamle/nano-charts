@@ -1,5 +1,13 @@
-import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
-import { extent, round } from '../core/geometry';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  HeatmapPlots,
+  HeatmapPlotsCell,
+  Mark,
+  Scene,
+  ScenePoint,
+} from '../types';
+import { extent, round, round3 } from '../core/geometry';
 import { makeColorScale, type ColorScale } from '../core/color-scale';
 import {
   autoPlotPadding,
@@ -18,6 +26,7 @@ import {
   seriesAwareMapper,
   type AnnotationMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 export interface HeatmapOptions<T = number> extends BaseOptions, AnnotationOptions {
   value?: (cell: T, row: number, col: number) => number;
@@ -35,6 +44,11 @@ export interface HeatmapOptions<T = number> extends BaseOptions, AnnotationOptio
   highlights?: HighlightZones;
 }
 
+export function heatmap<T = number>(
+  matrix: T[][],
+  options: HeatmapOptions<T> & { plots: true },
+): Scene & { plots: HeatmapPlots };
+export function heatmap<T = number>(matrix: T[][], options?: HeatmapOptions<T>): Scene;
 export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = {}): Scene {
   const cell = options.cellSize ?? 8;
   const gap = options.gap ?? 1;
@@ -101,13 +115,33 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     },
     options,
   );
-  if (flat.length === 0) return base;
+  // The frame is the padded plot box; index domains only exist on a
+  // non-empty grid.
+  const plotsFrame = {
+    width,
+    height,
+    plot: {
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
+    },
+    ...(cols > 0 && rows > 0 ? { xDomain: [0, cols - 1] as const, yDomain: [0, rows - 1] as const } : {}),
+  };
+  if (flat.length === 0) {
+    if (options.plots !== true) return base;
+    return { ...base, plots: { kind: 'heatmap', frame: plotsFrame, cells: [] } };
+  }
 
   const domain = extent(flat);
   const scale = makeColorScale(options.colorScale, domain);
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+  // Plots are built only when requested; the cell loop below fills
+  // `cells` from the same geometry as the marks.
+  const plotsOn = options.plots === true;
+  const cells: HeatmapPlotsCell[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cellRaw = matrix[r]?.[c];
@@ -116,6 +150,7 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
       const x = round(box.left + c * cell + gap / 2);
       const y = round(box.top + r * cell + gap / 2);
       const size = round(cell - gap);
+      const fill = scale(value, { min: domain[0], max: domain[1] });
       marks.push({
         type: 'rect',
         class: markClass('cell', points.length),
@@ -123,7 +158,7 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
         y,
         width: size,
         height: size,
-        fill: scale(value, { min: domain[0], max: domain[1] }),
+        fill,
         rx: options.radius,
         // Dense position in the points array (skipped cells emit nothing),
         // matching the circle-mark contract the demo's hover lookup uses.
@@ -141,6 +176,20 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
         w: size,
         h: size,
       });
+      if (plotsOn) {
+        cells.push({
+          row: r,
+          col: c,
+          value,
+          // Geometry rounded to 3 decimals; the marks above round the same
+          // values to 2dp. `value` is the raw datum and stays exact.
+          x: round3(box.left + c * cell + gap / 2),
+          y: round3(box.top + r * cell + gap / 2),
+          width: round3(cell - gap),
+          height: round3(cell - gap),
+          color: fill,
+        });
+      }
     }
   }
 
@@ -164,10 +213,12 @@ export function heatmap<T = number>(matrix: T[][], options: HeatmapOptions<T> = 
     options.color ?? 'currentColor',
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...annMarks],
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks)],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+    plotsOn ? { kind: 'heatmap', frame: plotsFrame, cells } : undefined,
+  );
 }

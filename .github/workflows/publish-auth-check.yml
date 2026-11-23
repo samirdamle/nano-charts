@@ -1,0 +1,31 @@
+name: Publish auth check
+
+# Read-only proof for #194: verifies the NPM_TOKEN secret exists, is valid,
+# and belongs to the expected npm account — without publishing anything.
+# Dispatch from the Actions tab (it runs on the selected branch).
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+      - name: Write npm auth to $HOME/.npmrc
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            cat << EOF > "$HOME/.npmrc"
+          //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          EOF
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Prints the npm username the token belongs to. Fails with E401 /
+      # ENEEDAUTH when the secret is missing, expired, or revoked — which
+      # is exactly the failure npm reports as E404 at publish time.
+      - run: npm whoami
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

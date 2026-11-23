@@ -3,13 +3,13 @@
     "name": "LineNanoChart (standalone)",
     "path": "dist/line.js",
     "import": "{ LineNanoChart }",
-    "limit": "6 kB",
+    "limit": "6.5 kB",
     "gzip": true
   },
   {
     "name": "full barrel",
     "path": "dist/index.js",
-    "limit": "15 kB",
+    "limit": "18 kB",
     "gzip": true
   }
 ]

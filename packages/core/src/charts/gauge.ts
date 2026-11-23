@@ -1,9 +1,19 @@
-import type { AnnotationOptions, BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
-import { arcPath, dialSpan, linearScale, polar, round } from '../core/geometry';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  CenterLabelContext,
+  GaugePlots,
+  GaugePlotsZone,
+  Mark,
+  Scene,
+  ScenePoint,
+} from '../types';
+import { arcPath, dialSpan, linearScale, polar, round, round3 } from '../core/geometry';
 import { toFiniteNumber } from '../core/normalize';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import { finishScene } from '../core/scene';
 import type { DonutTrackOptions } from './donut';
 
 export interface GaugeInput {
@@ -88,6 +98,11 @@ export function pushCenterLabel(
   });
 }
 
+export function gauge(
+  data: GaugeInput,
+  options: GaugeOptions & { plots: true },
+): Scene & { plots: GaugePlots };
+export function gauge(data: GaugeInput, options?: GaugeOptions): Scene;
 export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
   // Gauge defaults to a square 20x20 canvas; otherwise it shares the standard
   // chart shell (width/height/color/padding resolution).
@@ -119,6 +134,10 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
 
   // Dial background: zone bands when given (both modes), else the track ring.
   const zones = options.zones ?? [];
+  // Plots are built only when requested; the zone loop below fills
+  // `zonesPlots` from the same clamped geometry as the marks.
+  const plotsOn = options.plots === true;
+  const zonesPlots: GaugePlotsZone[] = [];
   if (zones.length > 0) {
     let prevTo = min;
     for (const [zi, zone] of zones.entries()) {
@@ -126,6 +145,7 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
       const z1 = Math.min(max, toFiniteNumber(zone.to));
       prevTo = z1;
       if (z1 > z0) {
+        if (plotsOn) zonesPlots.push({ from: z0, to: z1, color: zone.color });
         marks.push({
           type: 'path',
           class: markClass('zone', zi),
@@ -224,8 +244,6 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [min, max]), 0),
     color,
   );
-  marks.push(...annMarks);
-
   points.push({
     id: 0,
     label: `${round(frac * 100)}%`,
@@ -235,8 +253,37 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     y: round(cy),
   });
 
-  return {
-    ...sceneShell(
+  // The frame is the dial's bounding box: the ring touches the canvas
+  // edges on a square canvas, and is centered with side margins otherwise.
+  const plots: GaugePlots | undefined = plotsOn
+    ? {
+        kind: 'gauge',
+        frame: {
+          width,
+          height,
+          plot: {
+            x: round3(cx - rOuter),
+            y: round3(cy - rOuter),
+            width: round3(2 * rOuter),
+            height: round3(2 * rOuter),
+          },
+        },
+        value,
+        min,
+        max,
+        frac: round3(frac),
+        startAngle: round3(startAngle),
+        endAngle: round3(startAngle + span),
+        // Needle angle exists only in needle mode, like the needle itself.
+        ...(mode === 'needle' ? { needleAngle: round3(valueAngle) } : {}),
+        zones: zonesPlots,
+        center: { x: round3(cx), y: round3(cy) },
+        radius: round3(rOuter),
+      }
+    : undefined;
+
+  return finishScene(
+    sceneShell(
       { width, height },
       {
         title: options.title ?? 'gauge chart',
@@ -246,6 +293,8 @@ export function gauge(data: GaugeInput, options: GaugeOptions = {}): Scene {
     ),
     marks,
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+    plots,
+  );
 }

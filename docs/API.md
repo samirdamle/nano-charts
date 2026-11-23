@@ -59,6 +59,7 @@ A single datum with no values renders an empty scene (never throws).
 | `title`   | `string`                                     | per-chart default            | `<title>` for screen readers                          |
 | `desc`    | `string`                                     | per-chart default            | `<desc>` for screen readers                           |
 | `class`   | `string`                                     | —                            | CSS class(es) on the `<svg>` element, merged with the built-in `nc-chart` class — see Styling with CSS |
+| `plots`   | `boolean`                                    | `false`                      | Attach the chart's geometry as a typed `plots` payload on the returned scene — see Plots |
 
 ## Styling with CSS
 
@@ -286,7 +287,9 @@ Notes:
   annotation with the series and defaults its color to that series' color;
   position is unchanged because the scale is shared. On grouped `bar` it
   additionally moves the annotation onto that sub-bar; stacked and single
-  bars keep the category center. On charts without series, any
+  bars keep the category center. On segmented `donut` it tags the
+  annotation with that segment's color and identity; the angle still comes
+  purely from `y`. On charts without series, any
   `seriesIndex` drops the annotation, as does one naming no series on that
   chart (including a series absent from one ragged bar column).
 - Out-of-range annotations are dropped, not clamped: an `x` outside the
@@ -300,8 +303,10 @@ Notes:
   through the shared `Marks` renderer. Only `interactive: true`
   annotations get hit targets, via the `onAnnotationHover` /
   `onAnnotationClick` props (same `hitRadius` as data points, default 4);
-  an interactive annotation's `label` becomes its accessible name. The
-  chart description is unchanged by annotations.
+  an interactive annotation's `label` becomes its accessible name.
+  `onAnnotationHover` fires with the point on enter and with `null` when
+  the pointer leaves the hit target; `onAnnotationClick` never fires
+  `null`. The chart description is unchanged by annotations.
 
 ## Reference lines
 
@@ -740,6 +745,169 @@ Per-block resolution order: series base color → `filled`/empty treatment →
 `blockStyles` rules. Rings on emoji fall back to the dimmed treatment, since
 stroked text renders poorly.
 
+## Plots — geometry in data form
+
+Pass `plots: true` in any chart's options and the returned scene carries a
+`plots` payload: the chart's computed geometry as plain data, alongside the
+SVG. Off by default; when off, the key is absent and the scene is
+byte-identical to before.
+
+```ts
+const scene = line([0, 10, 5], { plots: true });
+scene.plots;
+// { kind: 'line',
+//   frame: { width: 100, height: 20, plot: { x: 0.5, y: 0.5, width: 99, height: 19 },
+//            xDomain: [0, 2], yDomain: [0, 10] },
+//   series: [{ seriesIndex: 0, points: [
+//     { x: 0.5, y: 19.5, value: 0, index: 0, color: 'currentColor' },
+//     { x: 50, y: 0.5, value: 10, index: 1, color: 'currentColor' },
+//     { x: 99.5, y: 10, value: 5, index: 2, color: 'currentColor' } ] }] }
+```
+
+### `scene.points` vs `plots`
+
+They answer different questions. `scene.points` is the hit-test/label layer:
+one entry per data point with its rounded pixel position, for hover/click
+handlers and labels. `plots` is the rendered-geometry layer: the actual
+marks' geometry rounded to 3 decimal places, with datum identity and the
+resolved color each mark renders with. Points are rounded to 2dp; plots
+geometry to 3dp. Datum values in plots (`value`, `valueX`, `valueY`,
+`from`/`to` where they are data values, `min`/`max`, frame domains) are
+never rounded. Annotations, reference lines, and highlights are overlays with their
+own channels — they never appear in plots, and plots are identical with
+them on or off. (Axes are layout, not overlays: they move the plot box, so
+plots match the rendered scene with axes shown.)
+
+### Rules (all charts)
+
+- Geometry is in pixels, rounded to 3 decimal places. Datum values
+  (`value`, `valueX`, `valueY`, `from`/`to` where they are data values,
+  `min`/`max`, frame domains) are never rounded.
+- Every element carries its datum identity (`value`, `index`, `label`,
+  `seriesIndex` where it applies) and its resolved `color` — the color its
+  mark renders with (`currentColor` stays `currentColor`).
+- `frame` makes the payload self-contained: `{ width, height, plot: { x, y,
+  width, height }, xDomain?, yDomain? }` — the chart size, the data area
+  (plot box) in pixels, and the data domains where the chart has them.
+  Both domains are present on the cartesian and grid charts; `xDomain`
+  only on bullet and winLoss; neither on the dial charts (donut, gauge).
+- Angles are in degrees, 0° = east, clockwise positive (the gauge's
+  existing convention).
+- Payloads are plain JSON-serializable values, `readonly` by type. Treat
+  them as read-only — mutating a payload has no effect on the rendered SVG.
+- Overloads: `line(data, { plots: true })` returns `Scene & { plots:
+  LinePlots }`; the default call returns plain `Scene`. One documented
+  limitation: options passed as a widened variable — `const opts:
+  LineOptions = { plots: true }` — do not resolve the overload, so `plots`
+  is then `Plots | undefined`.
+- React: every `…NanoChart` wrapper takes an `onPlots` prop, fired (after
+  mount) with the chart's typed plots when they were computed; never fired
+  otherwise, including for null/undefined data. Donut's is `DonutPlots |
+  GaugePlots`, since gauge-mode input delegates to `gauge()`.
+
+### Per-chart schemas
+
+#### `line` / `lines` / `area` — `LinePlots` / `LinesPlots` / `AreaPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'line'` \| `'lines'` \| `'area'` | |
+| `frame` | `PlotFrame` | |
+| `series` | `{ seriesIndex, label?, points: { x, y, value, index, seriesIndex?, color }[] }[]` | One entry per series; `label` from the series name when given |
+| `baselineY` | `number` (area only, optional) | Pixel y of the baseline the fill sits on; absent when the series has no data |
+
+#### `scatter` — `ScatterPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'scatter'` | |
+| `frame` | `PlotFrame` | |
+| `series` | `{ seriesIndex: 0, label?, points: { x, y, valueX, valueY, index, seriesIndex?, color }[] }[]` | A single series entry — scatter has no multi-series input |
+
+#### `bar` — `BarPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'bar'` | |
+| `frame` | `PlotFrame` | Domains follow the rendered axes (horizontal swaps value/category) |
+| `bars` | `{ x, y, width, height, value, from?, index, seriesIndex?, color }[]` | One entry per rendered sub-bar; `from` is present on waterfall entries only — the segment's start value, `value` being the end. Track rects and waterfall connectors are decorative and excluded |
+
+#### `donut` — `DonutPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'donut'` | |
+| `frame` | `PlotFrame` | The dial bounding box; no domains |
+| `segments` | `{ value, fraction, startAngle, endAngle, index, label?, color }[]` | Angles are the rendered gap-inset angles, not the logical sweep bounds; `fraction` is the swept share of the total |
+| `center` | `{ x, y }` | |
+| `innerRadius` / `outerRadius` | `number` | |
+
+Gauge-mode input (`{ value, max }`) delegates to `gauge()` and yields
+`GaugePlots` instead.
+
+#### `gauge` — `GaugePlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'gauge'` | |
+| `frame` | `PlotFrame` | The dial bounding box; no domains |
+| `value` / `min` / `max` | `number` | `value` is raw; `frac` is the clamped share |
+| `frac` | `number` | |
+| `startAngle` / `endAngle` | `number` | Resolved dial angles, degrees |
+| `needleAngle` | `number` (optional) | Needle mode only |
+| `zones` | `{ from, to, color }[]` | Rendered zones only — clamped, empty ones dropped |
+| `center` | `{ x, y }` | |
+| `radius` | `number` | |
+
+#### `bullet` — `BulletPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'bullet'` | |
+| `frame` | `PlotFrame` | `xDomain: [0, max]`, no `yDomain` |
+| `ranges` | `{ from: 0, to, x, width, color }[]` | Nested bands — each rendered rect spans `[0, to]` from the left edge |
+| `value` | `{ value, x, width, color }` | The value bar |
+| `target` | `{ value, x, color }` | The target marker |
+| `max` | `number` | |
+
+All values are the clamped ones (ranges at `max(0, r)` and sorted ascending,
+`value`/`target` clamped into `[0, max]`), so plots and SVG never disagree.
+
+#### `heatmap` — `HeatmapPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'heatmap'` | |
+| `frame` | `PlotFrame` | Index domains `xDomain: [0, cols-1]`, `yDomain: [0, rows-1]` |
+| `cells` | `{ row, col, value, x, y, width, height, color }[]` | `color` is the resolved scale fill, exactly as the rect renders it; ragged rows omit missing cells |
+
+#### `radar` — `RadarPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'radar'` | |
+| `frame` | `PlotFrame` | The polygon's bounding circle, `xDomain: [0, axisCount-1]`, `yDomain: [0, domainMax]` |
+| `series` | `{ seriesIndex, label?, vertices: { axis, value, x, y, seriesIndex?, color }[] }[]` | `value` is the raw datum value (clamped only for the geometry); a shorter series' missing vertex is value 0 at the center |
+| `center` | `{ x, y }` | |
+| `radius` | `number` | |
+
+#### `pictogram` — `PictogramPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'pictogram'` | |
+| `frame` | `PlotFrame` | The padded plot box; domains are the logical grid in the chart's own orientation (series on x vertical, on y horizontal) |
+| `blocks` | `{ series, blockNumber, x, y, size, filled, empty, partial, color }[]` | `blockNumber` is 1-based; `x`/`y` is the block's top-left corner; `color` is the block's resolved main paint (what connectors continue) |
+| `connectors` | `{ x1, y1, x2, y2 }[]` (optional) | Present when connectors are on — the rendered line endpoints, including per-gap subdivisions of explicit segments — absent when off |
+
+#### `winLoss` — `WinLossPlots`
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `kind` | `'winLoss'` | |
+| `frame` | `PlotFrame` | `xDomain: [0, n-1]`; no value domain — block height is fixed by the sign, not by the value's magnitude |
+| `blocks` | `{ index, value, sign, x, y, width, height, color }[]` | `sign` is `'up'` / `'down'` / `'flat'`; the zero block is the 1px centerline rect |
+
 ## Rendering
 
 ### `toSVG(scene, opts?)`
@@ -763,14 +931,15 @@ its own point index.
 
 ### React components
 
-`LineNanoChart`, `AreaNanoChart`, `BarNanoChart`, `WinLossNanoChart`, `BulletNanoChart`,
-`DonutNanoChart`, `ScatterNanoChart`, `HeatmapNanoChart`, `RadarNanoChart`, `PictogramNanoChart` — each takes the same `data` (`series` for `RadarNanoChart`) and
+`LineNanoChart`, `AreaNanoChart`, `LinesNanoChart`, `BarNanoChart`, `WinLossNanoChart`, `BulletNanoChart`,
+`DonutNanoChart`, `GaugeNanoChart`, `ScatterNanoChart`, `HeatmapNanoChart`, `RadarNanoChart`, `PictogramNanoChart` — each takes the same `data` (`series` for `RadarNanoChart`) and
 options as its core function, plus interactivity props:
 
 | Prop                  | Type                                  | Description                                                           |
 | --------------------- | ------------------------------------- | --------------------------------------------------------------------- |
 | `onPointHover`        | `(point: ScenePoint \| null) => void` | Fires with the point on hover enter, `null` on leave                  |
 | `onPointClick`        | `(point: ScenePoint) => void`         | Fires on click with the point                                         |
+| `onPlots`             | `(plots: <Chart>Plots) => void`       | Fires (after mount) with the chart's typed plots when `plots: true`; never fired otherwise, including for null/undefined data |
 | `hitRadius`           | `number` (default `4`)                | Invisible hover/click target radius around each point, in chart units |
 | `className` / `style` | standard React props                  | Passed to the root `<svg>`                                            |
 
@@ -792,36 +961,36 @@ package. Import one chart per subpath to ship only what you use — the bundler
 tree-shakes the rest. Size budgets are enforced in CI (`pnpm size`, via
 size-limit); all figures below are minified + gzip.
 
-**Enforced budgets (measured 2026-10-26):**
+**Enforced budgets (measured 2026-11-16):**
 
 | Entry                                                    | Budget  | Measured    |
 | -------------------------------------------------------- | ------- | ----------- |
-| `@samirdamle/nano-charts` — `line` standalone            | 5 kB    | **4.84 kB** |
+| `@samirdamle/nano-charts` — `line` standalone            | 5.5 kB  | **5.14 kB** |
 | `@samirdamle/nano-charts` — `toSVG` standalone           | 1.25 kB | **1.05 kB** |
-| `@samirdamle/nano-charts` — full barrel                  | 15.5 kB | **15.25 kB** |
-| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6 kB    | **5.80 kB** |
-| `@samirdamle/nano-charts-react` — full barrel            | 15 kB   | **14.91 kB** |
+| `@samirdamle/nano-charts` — full barrel                  | 18 kB | **16.82 kB** |
+| `@samirdamle/nano-charts-react` — `LineNanoChart` standalone | 6.5 kB  | **6.22 kB** |
+| `@samirdamle/nano-charts-react` — full barrel            | 18 kB | **17.15 kB** |
 
 **One chart + `toSVG` (the realistic per-chart cost):**
 
 | Chart      | Size    |
 | ---------- | ------- |
-| `line`     | 5.79 kB |
-| `area`     | 5.54 kB |
-| `lines`    | 5.77 kB |
-| `bar`      | 6.83 kB |
-| `win-loss` | 2.83 kB |
-| `bullet`   | 2.48 kB |
-| `donut`    | 3.85 kB |
-| `gauge`    | 3.05 kB |
-| `scatter`  | 5.18 kB |
-| `heatmap`  | 5.10 kB |
-| `radar`    | 3.45 kB |
-| `pictogram`| 4.70 kB |
+| `line`     | 6.08 kB |
+| `area`     | 5.83 kB |
+| `lines`    | 6.07 kB |
+| `bar`      | 7.15 kB |
+| `win-loss` | 3.02 kB |
+| `bullet`   | 2.63 kB |
+| `donut`    | 4.17 kB |
+| `gauge`    | 3.22 kB |
+| `scatter`  | 5.43 kB |
+| `heatmap`  | 5.26 kB |
+| `radar`    | 3.76 kB |
+| `pictogram`| 4.96 kB |
 
 Positioning: nano-charts is built for the case where a page renders _hundreds_
 of tiny charts — table cells, metric cards, dashboards of sparklines — where
 per-chart byte cost dominates. A single chart plus its renderer stays around
-2.5–6.8 kB; the whole core library (all twelve charts plus `toSVG`) is 15.3 kB gzipped,
+2.6–7.1 kB; the whole core library (all twelve charts plus `toSVG`) is 16.8 kB gzipped,
 roughly the cost of one small image. The budgets above are hard CI gates, so the
 library can't silently grow past them.

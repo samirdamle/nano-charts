@@ -137,7 +137,38 @@
         "types": "./dist/heatmap.d.cts",
         "default": "./dist/heatmap.cjs"
       }
-    }
+    },
+    "./lines": {
+      "import": {
+        "types": "./dist/lines.d.ts",
+        "default": "./dist/lines.js"
+      },
+      "require": {
+        "types": "./dist/lines.d.cts",
+        "default": "./dist/lines.cjs"
+      }
+    },
+    "./radar": {
+      "import": {
+        "types": "./dist/radar.d.ts",
+        "default": "./dist/radar.js"
+      },
+      "require": {
+        "types": "./dist/radar.d.cts",
+        "default": "./dist/radar.cjs"
+      }
+    },
+    "./pictogram": {
+      "import": {
+        "types": "./dist/pictogram.d.ts",
+        "default": "./dist/pictogram.js"
+      },
+      "require": {
+        "types": "./dist/pictogram.d.cts",
+        "default": "./dist/pictogram.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {

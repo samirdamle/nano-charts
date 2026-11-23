@@ -1,6 +1,6 @@
 'use client';
 
-import type { Scene } from '@samirdamle/nano-charts';
+import type { Plots, Scene } from '@samirdamle/nano-charts';
 import { NanoChartSvg } from './NanoChartSvg';
 import type { InteractionProps } from '../types';
 
@@ -10,22 +10,49 @@ import type { InteractionProps } from '../types';
  * interaction props. Each wrapper splits its own data prop first (`data`,
  * or `series` for radar).
  */
-export function renderNanoChart<D, O>(
+/** The scene a component renders when its data prop is null/undefined:
+ * an empty chart at the requested size, instead of an opaque TypeError
+ * from inside a core chart function (validation finding F4). */
+function emptyScene(options: {
+  width?: number;
+  height?: number;
+  title?: string;
+  desc?: string;
+  class?: string;
+}): Scene {
+  const width = options.width ?? 100;
+  const height = options.height ?? 20;
+  return {
+    width,
+    height,
+    viewBox: `0 0 ${width} ${height}`,
+    marks: [],
+    points: [],
+    a11y: { title: options.title ?? 'Chart', desc: options.desc ?? 'Chart, no data' },
+    ...(options.class !== undefined ? { svgClass: options.class } : {}),
+  };
+}
+
+export function renderNanoChart<D, O, P = Plots>(
   render: (data: D, options?: O) => Scene,
   data: D,
-  props: O & InteractionProps,
+  props: O & InteractionProps<P>,
 ): JSX.Element {
   const {
     onPointHover,
     onPointClick,
     onAnnotationHover,
     onAnnotationClick,
+    onPlots,
     className,
     style,
     hitRadius,
     ...options
   } = props;
-  const scene = render(data, options as O);
+  const scene =
+    data == null
+      ? emptyScene(options as { width?: number; height?: number; title?: string; desc?: string; class?: string })
+      : render(data, options as O);
   return (
     <NanoChartSvg
       scene={scene}
@@ -33,6 +60,7 @@ export function renderNanoChart<D, O>(
       onPointClick={onPointClick}
       onAnnotationHover={onAnnotationHover}
       onAnnotationClick={onAnnotationClick}
+      onPlots={onPlots}
       className={className}
       style={style}
       hitRadius={hitRadius}

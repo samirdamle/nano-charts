@@ -1,5 +1,15 @@
-import type { AnnotationOptions, BaseOptions, CenterLabelContext, Mark, Scene, ScenePoint } from '../types';
-import { arcPath, dialSpan, polar, round } from '../core/geometry';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  CenterLabelContext,
+  DonutPlots,
+  DonutPlotsSegment,
+  GaugePlots,
+  Mark,
+  Scene,
+  ScenePoint,
+} from '../types';
+import { arcPath, dialSpan, polar, round, round3 } from '../core/geometry';
 import {
   normalizeSeries,
   toFiniteNumber,
@@ -11,6 +21,7 @@ import { resolveSegmentColor } from '../core/palette';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 import { annotationMarks, dialAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import { finishScene } from '../core/scene';
 import { gauge, pushCenterLabel } from './gauge';
 
 export interface DonutGauge {
@@ -62,6 +73,15 @@ function isGauge(data: unknown): data is DonutGauge {
   return !Array.isArray(data) && typeof data === 'object' && data !== null && 'max' in data;
 }
 
+export function donut<T = number>(
+  data: DonutGauge,
+  options: DonutOptions<T> & { plots: true },
+): Scene & { plots: GaugePlots };
+export function donut<T = number>(
+  data: SeriesInput<T>,
+  options: DonutOptions<T> & { plots: true },
+): Scene & { plots: DonutPlots };
+export function donut<T = number>(data: DonutInput<T>, options?: DonutOptions<T>): Scene;
 export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> = {}): Scene {
   // Donut defaults to a square 20x20 canvas; otherwise it shares the standard
   // chart shell (width/height/color/padding resolution).
@@ -139,7 +159,27 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
     },
     options,
   );
-  if (datums.length === 0 || total === 0) return base;
+  if (datums.length === 0 || total === 0) {
+    if (options.plots !== true) return base;
+    const emptyPlots: DonutPlots = {
+      kind: 'donut',
+      frame: {
+        width,
+        height,
+        plot: {
+          x: round3(cx - rOuter),
+          y: round3(cy - rOuter),
+          width: round3(2 * rOuter),
+          height: round3(2 * rOuter),
+        },
+      },
+      segments: [],
+      center: { x: round3(cx), y: round3(cy) },
+      innerRadius: round3(rInner),
+      outerRadius: round3(rOuter),
+    };
+    return { ...base, plots: emptyPlots };
+  }
 
   // Opt-in track ring behind the segments: same radii and thickness as the
   // segments, so it reads as the "100%" reference. Decorative: no points.
@@ -161,17 +201,26 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
   // color (field/accessor) > options.colors[i] > uniform options.color (only
   // if the caller passed it) > categorical palette.
   const hasUniformColor = options.color !== undefined;
-  let angle = startAngle;
-  datums.forEach((d, i) => {
-    const sweep = (swept[i]! / total) * span;
-    const explicitColor = d.color ?? options.colors?.[i];
-    const segmentColor = resolveSegmentColor({
-      explicit: explicitColor,
+  // Shared by the segment loop below and the annotation mapper: one
+  // definition of a segment's colour, so a series-targeted annotation
+  // always matches the segment it names.
+  const segmentColor = (i: number) =>
+    resolveSegmentColor({
+      explicit: datums[i]!.color ?? options.colors?.[i],
       uniform: color,
       usePalette: !hasUniformColor,
       paletteIndex: i,
       paletteTotal: datums.length,
     });
+  let angle = startAngle;
+  // Plots are built only when requested; the segment loop below fills
+  // `segments` from the same geometry as the marks.
+  const plotsOn = options.plots === true;
+  const segments: DonutPlotsSegment[] = [];
+  datums.forEach((d, i) => {
+    const sweep = (swept[i]! / total) * span;
+    const explicitColor = d.color ?? options.colors?.[i];
+    const segColor = segmentColor(i);
     const useStripe = explicitColor === undefined && hasUniformColor;
     // Inset both ends by half the gap; a segment narrower than the full gap
     // collapses to a zero-length arc rather than inverting.
@@ -182,26 +231,63 @@ export function donut<T = number>(data: DonutInput<T>, options: DonutOptions<T> 
       class: markClass('segment', i),
       d: arcPath(cx, cy, rMid, segStart, segEnd),
       fill: 'none',
-      stroke: segmentColor,
+      stroke: segColor,
       strokeWidth: round(thickness),
       strokeOpacity: useStripe ? (i % 2 === 0 ? 1 : 0.55) : 1,
       strokeLinecap: options.strokeLinecap,
     });
     const [px, py] = polar(cx, cy, rMid, angle + sweep / 2);
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x: round(px), y: round(py) });
+    if (plotsOn) {
+      segments.push({
+        // The raw datum value (datum identity); the sweep uses the clamped
+        // value, so a negative segment's fraction is 0 and its arc collapses.
+        value: d.value,
+        fraction: round3(swept[i]! / total),
+        // The rendered, gap-inset angles — not the logical sweep bounds.
+        startAngle: round3(segStart),
+        endAngle: round3(segEnd),
+        index: i,
+        ...(d.label !== undefined ? { label: d.label } : {}),
+        color: segColor,
+      });
+    }
     angle += sweep;
   });
   pushCenterLabel(marks, options.centerLabel, { value: total, min: 0, max: total, frac: 1 }, cx, cy, rInner);
   // Annotations sit on top of everything, on the ring at mid-thickness
-  // radius; `y` is the value across [0, total] (x is ignored). Gauge mode
-  // needs nothing here: it delegates to gauge(), which applies the same
-  // mapping with [0, max] and these same startAngle/span values.
+  // radius; `y` is the value across [0, total] (x is ignored). A
+  // `seriesIndex` tags the annotation with that segment — its colour and
+  // identity — but never moves it: the angle still comes purely from `y`.
+  // Gauge mode needs nothing here: it delegates to gauge(), which applies
+  // the same mapping with [0, max] and these same startAngle/span values.
   const { marks: annMarks, annotationPoints } = annotationMarks(
     options.annotations,
-    seriesAwareMapper(dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]), 0),
+    seriesAwareMapper(
+      dialAnnotationMapper(cx, cy, rMid, startAngle, span, [0, total]),
+      datums.length,
+      (si) => segmentColor(si),
+    ),
     color,
   );
-  marks.push(...annMarks);
-
-  return { ...base, marks, points, ...(annotationPoints.length > 0 ? { annotationPoints } : {}) };
+  const plots: DonutPlots | undefined = plotsOn
+    ? {
+        kind: 'donut',
+        frame: {
+          width,
+          height,
+          plot: {
+            x: round3(cx - rOuter),
+            y: round3(cy - rOuter),
+            width: round3(2 * rOuter),
+            height: round3(2 * rOuter),
+          },
+        },
+        segments,
+        center: { x: round3(cx), y: round3(cy) },
+        innerRadius: round3(rInner),
+        outerRadius: round3(rOuter),
+      }
+    : undefined;
+  return finishScene(base, marks, points, annMarks, annotationPoints, plots);
 }

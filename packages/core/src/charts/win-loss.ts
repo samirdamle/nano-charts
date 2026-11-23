@@ -1,5 +1,13 @@
-import type { AnnotationOptions, BaseOptions, Mark, Scene, ScenePoint } from '../types';
-import { round } from '../core/geometry';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Mark,
+  Scene,
+  ScenePoint,
+  WinLossPlots,
+  WinLossPlotsBlock,
+} from '../types';
+import { round, round3 } from '../core/geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core/normalize';
 import { paddedBox, slotLayout } from '../core/plot';
 import { resolveChartShell, resolveA11y, sceneShell } from '../core/series-chart';
@@ -10,6 +18,7 @@ import {
   seriesAwareMapper,
   type AnnotationMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 export interface WinLossOptions<T = number>
   extends BaseOptions,
@@ -20,6 +29,11 @@ export interface WinLossOptions<T = number>
   lossColor?: string;
 }
 
+export function winLoss<T = number>(
+  data: SeriesInput<T>,
+  options: WinLossOptions<T> & { plots: true },
+): Scene & { plots: WinLossPlots };
+export function winLoss<T = number>(data: SeriesInput<T>, options?: WinLossOptions<T>): Scene;
 export function winLoss<T = number>(
   data: SeriesInput<T>,
   options: WinLossOptions<T> = {},
@@ -35,9 +49,26 @@ export function winLoss<T = number>(
 
   const a11y = resolveA11y('win/loss', datums, options);
   const base = sceneShell({ width, height }, a11y, options);
-  if (datums.length === 0) return base;
-
   const box = paddedBox({ width, height, padding });
+  // The frame is the padded plot box. The x domain is the data index;
+  // there is no value domain — block height is fixed by the sign, not
+  // by the value's magnitude.
+  const plotsFrame = {
+    width,
+    height,
+    plot: {
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
+    },
+    ...(datums.length > 0 ? { xDomain: [0, datums.length - 1] as const } : {}),
+  };
+  if (datums.length === 0) {
+    if (options.plots !== true) return base;
+    return { ...base, plots: { kind: 'winLoss', frame: plotsFrame, blocks: [] } };
+  }
+
   const center = (box.top + box.bottom) / 2;
   const barHeight = center - box.top;
   const { barWidth: barW, x: slotX } = slotLayout(datums.length, box.left, box.right, gap);
@@ -54,6 +85,10 @@ export function winLoss<T = number>(
 
   const marks: Mark[] = [];
   const points: ScenePoint[] = [];
+  // Plots are built only when requested, from the same block rects as
+  // the marks.
+  const plotsOn = options.plots === true;
+  const plotsBlocks: WinLossPlotsBlock[] = [];
 
   datums.forEach((d, i) => {
     const r = blockRect(i);
@@ -83,6 +118,22 @@ export function winLoss<T = number>(
       fillOpacity,
     });
     points.push({ id: d.id, label: d.label, value: d.value, index: i, x, y, w, h });
+    if (plotsOn) {
+      plotsBlocks.push({
+        index: i,
+        value: d.value,
+        sign: d.value > 0 ? 'up' : d.value < 0 ? 'down' : 'flat',
+        // Geometry rounded to 3 decimals; the marks above round the same
+        // values to 2dp. `value` is the raw datum and stays exact.
+        x: round3(r.x),
+        y: round3(r.y),
+        width: round3(r.w),
+        height: round3(r.h),
+        // The rect's fill (the 0.4 dimming on flat blocks is an opacity,
+        // not a different color).
+        color: fill,
+      });
+    }
   });
 
   // Annotations sit on top of everything, centered on their index's
@@ -93,7 +144,7 @@ export function winLoss<T = number>(
   // (integer), `y` ignored — the mark centers on that index's block.
   const winLossMapper: AnnotationMapper = (a) => {
     if (!inIndex(a.x, datums.length)) return null;
-    const r = blockRect(a.x);
+    const r = blockRect(a.x as number);
     return { x: round(r.x) + round(r.w) / 2, y: r.y + r.h / 2 };
   };
   const { marks: annMarks, annotationPoints } = annotationMarks(
@@ -102,10 +153,8 @@ export function winLoss<T = number>(
     options.color ?? 'currentColor',
   );
 
-  return {
-    ...base,
-    marks: [...marks, ...annMarks],
-    points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+  const plots: WinLossPlots | undefined = plotsOn
+    ? { kind: 'winLoss', frame: plotsFrame, blocks: plotsBlocks }
+    : undefined;
+  return finishScene(base, marks, points, annMarks, annotationPoints, plots);
 }

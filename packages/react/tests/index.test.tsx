@@ -3,17 +3,20 @@ import { render } from '@testing-library/react';
 import * as api from '../src/index';
 
 describe('public API', () => {
-  it('exports all nine chart components', () => {
+  it('exports all twelve chart components', () => {
     for (const name of [
       'LineNanoChart',
+      'LinesNanoChart',
       'AreaNanoChart',
       'BarNanoChart',
       'WinLossNanoChart',
       'BulletNanoChart',
       'DonutNanoChart',
+      'GaugeNanoChart',
       'ScatterNanoChart',
       'HeatmapNanoChart',
       'RadarNanoChart',
+      'PictogramNanoChart',
     ]) {
       expect(typeof (api as Record<string, unknown>)[name]).toBe('function');
     }

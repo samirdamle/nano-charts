@@ -1,9 +1,10 @@
-import type { AnnotationOptions, BaseOptions, Mark, Scene } from '../types';
-import { linearScale, round } from '../core/geometry';
+import type { AnnotationOptions, BaseOptions, BulletPlots, Mark, Scene } from '../types';
+import { linearScale, round, round3 } from '../core/geometry';
 import { paddedBox } from '../core/plot';
 import { resolveChartShell, sceneShell } from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 import { annotationMarks, bulletAnnotationMapper, seriesAwareMapper } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 export interface BulletData {
   value: number;
@@ -16,6 +17,11 @@ export interface BulletData {
 
 export type BulletOptions = BaseOptions & AnnotationOptions;
 
+export function bullet(
+  data: BulletData,
+  options: BulletOptions & { plots: true },
+): Scene & { plots: BulletPlots };
+export function bullet(data: BulletData, options?: BulletOptions): Scene;
 export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
   const { width, height, color, padding } = resolveChartShell(options);
   // Clamp policy: bullet geometry lives on [0, max]. Negative inputs are
@@ -82,10 +88,37 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
     seriesAwareMapper(bulletAnnotationMapper(xScale, max, centerY), 0),
     color,
   );
-  marks.push(...annMarks);
-
-  return {
-    ...sceneShell(
+  const plots: BulletPlots | undefined =
+    options.plots === true
+      ? {
+          kind: 'bullet',
+          frame: {
+            width,
+            height,
+            plot: {
+              x: round3(left),
+              y: round3(top),
+              width: round3(right - left),
+              height: round3(bottom - top),
+            },
+            xDomain: [0, max],
+          },
+          // Bands are nested: each spans [0, to] from the left edge, so
+          // `from` is 0 for every band and the plots mirror the rects.
+          ranges: ranges.map((r) => ({
+            from: 0,
+            to: r,
+            x: round3(left),
+            width: round3(xScale(r) - left),
+            color,
+          })),
+          value: { value, x: round3(left), width: round3(xScale(value) - left), color },
+          target: { value: target, x: round3(xScale(target)), color },
+          max,
+        }
+      : undefined;
+  return finishScene(
+    sceneShell(
       { width, height },
       {
         title: options.title ?? 'bullet chart',
@@ -94,7 +127,7 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
       options,
     ),
     marks,
-    points: [
+    [
       {
         id: data.id ?? 0,
         label: data.label ?? String(value),
@@ -104,6 +137,8 @@ export function bullet(data: BulletData, options: BulletOptions = {}): Scene {
         y: round(centerY),
       },
     ],
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+    plots,
+  );
 }

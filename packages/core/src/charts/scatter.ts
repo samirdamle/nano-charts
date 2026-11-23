@@ -5,16 +5,24 @@ import type {
   ReferenceLineOptions,
   Scene,
   ScenePoint,
+  ScatterPlots,
+  ScatterPlotsPoint,
 } from '../types';
-import { extent, linearScale, round } from '../core/geometry';
+import { extent, linearScale, round, round3 } from '../core/geometry';
 import {
   autoPlotPadding,
   paddedBox,
+  resolvePadding,
   type PaddedBox,
   type ResolvedPadding,
 } from '../core/plot';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
-import { resolveChartShell, sceneShell } from '../core/series-chart';
+import {
+  emptySeriesPlotsFrame,
+  resolveChartShell,
+  sceneShell,
+  seriesPlotsFrame,
+} from '../core/series-chart';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
 import {
   annotationMarks,
@@ -22,6 +30,7 @@ import {
   seriesAwareMapper,
   xyAnnotationMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 import { markClass } from '../core/css-classes';
 
 export interface ScatterPoint {
@@ -98,6 +107,36 @@ function toXY<T>(data: ScatterInput<T>, options: ScatterOptions<T>): XY[] {
   }));
 }
 
+/** The plots payload for a scatter chart: one point per datum, in the same
+ * order as the input, with pixel coordinates rounded to 3 decimals. A scatter has
+ * no multi-series input, so there is exactly one series entry
+ * (`seriesIndex: 0`). Each point's color is the fill its circle renders
+ * with — the per-point color when one is set, the chart color otherwise. */
+function scatterPlotsPoints(
+  pts: XY[],
+  xScale: (v: number) => number,
+  yScale: (v: number) => number,
+  color: string,
+): ScatterPlotsPoint[] {
+  return pts.map((p) => ({
+    x: round3(xScale(p.x)),
+    y: round3(yScale(p.y)),
+    valueX: p.x,
+    valueY: p.y,
+    index: p.index,
+    seriesIndex: 0,
+    color: p.color ?? color,
+  }));
+}
+
+export function scatter<T = ScatterPoint>(
+  data: ScatterInput<T>,
+  options: ScatterOptions<T> & { plots: true },
+): Scene & { plots: ScatterPlots };
+export function scatter<T = ScatterPoint>(
+  data: ScatterInput<T>,
+  options?: ScatterOptions<T>,
+): Scene;
 export function scatter<T = ScatterPoint>(
   data: ScatterInput<T>,
   options: ScatterOptions<T> = {},
@@ -113,7 +152,15 @@ export function scatter<T = ScatterPoint>(
       (pts.length === 0 ? 'scatter chart, no data' : `scatter chart, ${pts.length} points`),
   };
   const base: Scene = sceneShell({ width, height }, a11y, options);
-  if (pts.length === 0) return base;
+  if (pts.length === 0) {
+    if (options.plots !== true) return base;
+    const emptyPlots: ScatterPlots = {
+      kind: 'scatter',
+      frame: emptySeriesPlotsFrame(width, height, resolvePadding(options.padding)),
+      series: [{ seriesIndex: 0, points: [] }],
+    };
+    return { ...base, plots: emptyPlots };
+  }
 
   const xDomain = extent(pts.map((p) => p.x));
   const yDomain = extent(pts.map((p) => p.y));
@@ -185,10 +232,21 @@ export function scatter<T = ScatterPoint>(
     color,
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+  const plots: ScatterPlots | undefined =
+    options.plots === true
+      ? {
+          kind: 'scatter',
+          frame: seriesPlotsFrame(width, height, box, xDomain, yDomain),
+          series: [{ seriesIndex: 0, points: scatterPlotsPoints(pts, xScale, yScale, color) }],
+        }
+      : undefined;
+
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+    plots,
+  );
 }

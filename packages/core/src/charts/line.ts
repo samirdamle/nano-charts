@@ -1,4 +1,4 @@
-import type { Mark, Scene } from '../types';
+import type { LinePlots, Mark, Scene } from '../types';
 import { splinePath, toDasharray } from '../core/geometry';
 import { type SeriesInput } from '../core/normalize';
 import { lineMarkExtent, renderSeriesChart, type SeriesChartOptions, singlePointDot } from '../core/series-chart';
@@ -14,6 +14,11 @@ export interface LineOptions<T = number> extends SeriesChartOptions<T> {
   strokeLinecap?: 'butt' | 'round' | 'square';
 }
 
+export function line<T = number>(
+  data: SeriesInput<T>,
+  options: LineOptions<T> & { plots: true },
+): Scene & { plots: LinePlots };
+export function line<T = number>(data: SeriesInput<T>, options?: LineOptions<T>): Scene;
 export function line<T = number>(data: SeriesInput<T>, options: LineOptions<T> = {}): Scene {
   const strokeWidth = options.strokeWidth ?? 1;
   const dotRadius = options.dotRadius ?? 1;

@@ -1,13 +1,15 @@
 'use client';
 
-import { winLoss, type WinLossOptions, type SeriesInput } from '@samirdamle/nano-charts';
+import { winLoss, type WinLossOptions, type WinLossPlots, type SeriesInput } from '@samirdamle/nano-charts';
 import { renderNanoChart } from '../render/renderNanoChart';
 import type { InteractionProps } from '../types';
 
-export interface WinLossNanoChartProps<T = number> extends WinLossOptions<T>, InteractionProps {
+export interface WinLossNanoChartProps<T = number> extends WinLossOptions<T>, InteractionProps<WinLossPlots> {
   data: SeriesInput<T>;
 }
 
 export function WinLossNanoChart<T = number>({ data, ...rest }: WinLossNanoChartProps<T>): JSX.Element {
-  return renderNanoChart(winLoss, data, rest);
+  // Explicit type arguments: the overloaded core fn can't carry T through
+  // inference (it would resolve to `unknown`), so pin D and O here.
+  return renderNanoChart<SeriesInput<T>, WinLossOptions<T>, WinLossPlots>(winLoss, data, rest);
 }

@@ -3,6 +3,13 @@ export function round(n: number, precision = 2): number {
   return Math.round(n * f) / f;
 }
 
+/** Plots payloads round geometry to 3 decimal places: 0.001px is far finer
+ * than any screen needs, and it keeps recurring decimals (e.g. 11.111…)
+ * out of the plots object. Datum values are never passed through this. */
+export function round3(n: number): number {
+  return round(n, 3);
+}
+
 export function toDasharray(d: string | number[] | undefined): string | undefined {
   return Array.isArray(d) ? d.join(' ') : d;
 }

@@ -1,8 +1,18 @@
-import type { AnnotationOptions, BaseOptions, Datum, Mark, Scene, ScenePoint } from '../types';
-import { round } from '../core/geometry';
+import type {
+  AnnotationOptions,
+  BaseOptions,
+  Datum,
+  Mark,
+  PictogramPlots,
+  PictogramPlotsBlock,
+  PictogramPlotsConnector,
+  Scene,
+  ScenePoint,
+} from '../types';
+import { round, round3 } from '../core/geometry';
 import {
+  normalizeDatum,
   normalizeSeries,
-  toFiniteNumber,
   type SeriesAccessors,
   type SeriesColorAccessor,
   type SeriesInput,
@@ -19,6 +29,7 @@ import {
   seriesAwareMapper,
   type AnnotationMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 /** The repeated unit block. Defined once in `<defs>`, stamped with `<use>`. */
 export type PictogramBlock =
@@ -210,6 +221,11 @@ function resolveBlockShape(b: PictogramBlock | undefined): BlockShapeParts | nul
 
 export function pictogram<T = number>(
   data: PictogramInput<T>,
+  options: PictogramOptions<T> & { plots: true },
+): Scene & { plots: PictogramPlots };
+export function pictogram<T = number>(data: PictogramInput<T>, options?: PictogramOptions<T>): Scene;
+export function pictogram<T = number>(
+  data: PictogramInput<T>,
   options: PictogramOptions<T> = {},
 ): Scene {
   const padding = resolvePadding(options.padding, 0);
@@ -245,17 +261,12 @@ export function pictogram<T = number>(
   // in one array (normalizeSeries branches on the first element's type).
   // Unlike the single-call form, this keeps the real category index for
   // accessor callbacks.
-  const normalizeDatum = (d: SeriesInput<T>, j: number): ResolvedDatum => {
+  const resolveDatum = (d: SeriesInput<T>, j: number): ResolvedDatum => {
     if (accessors) {
       const row = d as T;
-      const value = accessors.value(row, j);
       const f = accessors.filledAccessor ? accessors.filledAccessor(row, j) : undefined;
       return {
-        id: accessors.id ? accessors.id(row, j) : j,
-        label: accessors.label ? accessors.label(row, j) : String(value),
-        value: toFiniteNumber(value),
-        index: j,
-        ...(accessors.colorAccessor ? { color: accessors.colorAccessor(row, j) } : {}),
+        ...normalizeDatum(row, j, accessors),
         filledRaw: typeof f === 'number' ? f : undefined,
       };
     }
@@ -273,7 +284,7 @@ export function pictogram<T = number>(
       blockStyles: Array.isArray(obj?.blockStyles) ? obj.blockStyles : undefined,
     };
   };
-  const datums: ResolvedDatum[] = (data as SeriesInput<T>[]).map((d, j) => normalizeDatum(d, j));
+  const datums: ResolvedDatum[] = (data as SeriesInput<T>[]).map((d, j) => resolveDatum(d, j));
 
   const n = datums.length;
   const pitch = s + g;
@@ -322,12 +333,37 @@ export function pictogram<T = number>(
     { title, desc },
     options,
   );
-  if (n === 0) return base;
+  // The frame is the padded plot box. Domains are the logical grid in the
+  // chart's own orientation: series on x (vertical) or on y (horizontal).
+  const plotsFrame = {
+    width: round(width + padding.left + padding.right),
+    height: round(height + padding.top + padding.bottom),
+    plot: {
+      x: round3(padding.left),
+      y: round3(padding.top),
+      width: round3(width),
+      height: round3(height),
+    },
+    ...(n > 0
+      ? horizontal
+        ? { xDomain: [0, maxSlots - 1] as const, yDomain: [0, n - 1] as const }
+        : { xDomain: [0, n - 1] as const, yDomain: [0, maxSlots - 1] as const }
+      : {}),
+  };
+  if (n === 0) {
+    if (options.plots !== true) return base;
+    return { ...base, plots: { kind: 'pictogram', frame: plotsFrame, blocks: [] } };
+  }
 
   const marks: Mark[] = [
     { type: 'defs', id: blockId, shape: chartShape.shape, size: s, radius: chartShape.radius, emoji: chartShape.emoji },
   ];
   const points: ScenePoint[] = [];
+  // Plots are built only when requested; the loops below fill `blocks` and
+  // `connectors` from the same geometry as the marks.
+  const plotsOn = options.plots === true;
+  const plotsBlocks: PictogramPlotsBlock[] = [];
+  const plotsConnectors: PictogramPlotsConnector[] = [];
   let clipCounter = 0;
   let pointIndex = 0;
 
@@ -527,10 +563,22 @@ export function pictogram<T = number>(
           strokeLinecap: d.linecap,
         };
         const connectorCls = markClass('connector', d.from);
+        const line = horizontal
+          ? { x1: round(p1), y1: fixed, x2: round(p2), y2: fixed }
+          : { x1: fixed, y1: round(p1), x2: fixed, y2: round(p2) };
+        // The plots carry their own connector object at 3 decimals; the
+        // marks above share `line` at 2dp, so the plots never reuse it.
+        if (plotsOn) {
+          plotsConnectors.push(
+            horizontal
+              ? { x1: round3(p1), y1: round3(fixed), x2: round3(p2), y2: round3(fixed) }
+              : { x1: round3(fixed), y1: round3(p1), x2: round3(fixed), y2: round3(p2) },
+          );
+        }
         marks.push(
           horizontal
-            ? { type: 'line', class: connectorCls, x1: round(p1), y1: fixed, x2: round(p2), y2: fixed, ...attrs }
-            : { type: 'line', class: connectorCls, x1: fixed, y1: round(p1), x2: fixed, y2: round(p2), ...attrs },
+            ? { type: 'line', class: connectorCls, ...line, ...attrs }
+            : { type: 'line', class: connectorCls, ...line, ...attrs },
         );
       }
     }
@@ -605,6 +653,24 @@ export function pictogram<T = number>(
         partial: isPartial ? true : undefined,
         empty: b.state === 'empty' ? true : undefined,
       });
+      if (plotsOn) {
+        plotsBlocks.push({
+          series: j,
+          blockNumber: k + 1,
+          // Geometry rounded to 3 decimals; the marks above round the same
+          // values to 2dp. `partial` is a boolean flag, not a number.
+          x: round3(bx),
+          y: round3(by),
+          size: round3(s),
+          filled: b.state === 'filled',
+          empty: b.state === 'empty',
+          partial: isPartial,
+          // The block's resolved main color (what connectors continue);
+          // a ring block's stroke and a solid empty block's dimmed fill
+          // both carry this same paint.
+          color: b.paint,
+        });
+      }
       pointIndex++;
     }
   });
@@ -626,10 +692,15 @@ export function pictogram<T = number>(
     options.color ?? 'currentColor',
   );
 
-  return {
-    ...base,
-    marks: [...marks, ...annMarks],
-    points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+  const plots: PictogramPlots | undefined = plotsOn
+    ? {
+        kind: 'pictogram',
+        frame: plotsFrame,
+        blocks: plotsBlocks,
+        // Present whenever connectors are on (even when nothing renders),
+        // absent when they are off.
+        ...(options.connector !== undefined ? { connectors: plotsConnectors } : {}),
+      }
+    : undefined;
+  return finishScene(base, marks, points, annMarks, annotationPoints, plots);
 }

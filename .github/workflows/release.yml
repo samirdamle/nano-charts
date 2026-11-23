@@ -16,6 +16,20 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm size
+      # pnpm + changesets publish has a documented failure mode where the
+      # setup-node project .npmrc auth never reaches the registry PUT and
+      # npm answers 404 (a bad/missing token also surfaces as 404, not
+      # 401). Writing the token into $HOME/.npmrc makes the auth explicit
+      # for both npm and pnpm. The runner is ephemeral, so nothing persists.
+      - name: Write npm auth to $HOME/.npmrc
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            cat << EOF > "$HOME/.npmrc"
+          //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          EOF
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - uses: changesets/action@v1
         with: { publish: pnpm exec changeset publish }
         env:

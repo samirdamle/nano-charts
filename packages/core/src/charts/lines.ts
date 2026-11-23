@@ -1,6 +1,7 @@
 import type {
   AnnotationOptions,
   BaseOptions,
+  LinesPlots,
   Mark,
   ReferenceLineOptions,
   Scene,
@@ -11,11 +12,20 @@ import { normalizeSeries, type SeriesAccessors, type SeriesInput } from '../core
 import { resolveSegmentColor } from '../core/palette';
 import {
   autoPlotPadding,
+  resolvePadding,
   seriesLayout,
   type ResolvedPadding,
   type SeriesLayout,
 } from '../core/plot';
-import { lineMarkExtent, resolveChartShell, sceneShell, singlePointDot } from '../core/series-chart';
+import {
+  emptySeriesPlotsFrame,
+  lineMarkExtent,
+  resolveChartShell,
+  sceneShell,
+  seriesPlotsFrame,
+  seriesPlotsPoints,
+  singlePointDot,
+} from '../core/series-chart';
 import { markClass } from '../core/css-classes';
 import { axisLayout, axisMarks, axisSpace, layerMarks, type AxisLayout, type AxisOptions } from '../core/axis';
 import { highlightMarks, type HighlightZones } from '../core/highlight';
@@ -26,6 +36,7 @@ import {
   referenceLineMarks,
   seriesAwareMapper,
 } from '../core/annotations';
+import { finishScene } from '../core/scene';
 
 export interface LineSeries<T = number> extends Partial<SeriesAccessors<T>> {
   data: SeriesInput<T>;
@@ -50,6 +61,11 @@ export interface LinesOptions extends BaseOptions, AnnotationOptions, ReferenceL
   highlights?: HighlightZones;
 }
 
+export function lines<T = number>(
+  series: LineSeries<T>[],
+  options: LinesOptions & { plots: true },
+): Scene & { plots: LinesPlots };
+export function lines<T = number>(series: LineSeries<T>[], options?: LinesOptions): Scene;
 export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions = {}): Scene {
   const { width, height, color: defaultColor } = resolveChartShell(options);
   // Precedence: explicit per-series color > uniform options.color (only if the
@@ -67,7 +83,19 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
   const base = sceneShell({ width, height }, { title, desc }, options);
 
   const allValues = perSeries.flatMap((s) => s.datums.map((d) => d.value));
-  if (allValues.length === 0) return base;
+  if (allValues.length === 0) {
+    if (options.plots !== true) return base;
+    const plots: LinesPlots = {
+      kind: 'lines',
+      frame: emptySeriesPlotsFrame(width, height, resolvePadding(options.padding)),
+      series: perSeries.map(({ input }, seriesIndex) => ({
+        seriesIndex,
+        ...(input.name !== undefined ? { label: input.name } : {}),
+        points: [],
+      })),
+    };
+    return { ...base, plots };
+  }
 
   const valueDomain = extent(allValues);
   const indexDomain: [number, number] = [0, count - 1];
@@ -193,10 +221,25 @@ export function lines<T = number>(series: LineSeries<T>[], options: LinesOptions
     defaultColor,
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+  const plots: LinesPlots | undefined =
+    options.plots === true
+      ? {
+          kind: 'lines',
+          frame: seriesPlotsFrame(width, height, layout, indexDomain, valueDomain),
+          series: perSeries.map(({ input, datums }, seriesIndex) => ({
+            seriesIndex,
+            ...(input.name !== undefined ? { label: input.name } : {}),
+            points: seriesPlotsPoints(datums, layout, seriesColors[seriesIndex]!, seriesIndex),
+          })),
+        }
+      : undefined;
+
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+    plots,
+  );
 }

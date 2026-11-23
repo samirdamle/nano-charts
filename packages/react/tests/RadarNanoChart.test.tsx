@@ -59,3 +59,33 @@ describe('RadarNanoChart', () => {
     );
   });
 });
+
+describe('RadarNanoChart data alias + missing input (F4)', () => {
+  it('accepts `data` as an alias for `series`, rendering identical marks', () => {
+    const { container } = render(<RadarNanoChart data={series} />);
+    const scene = radar(series);
+    expect(container.querySelectorAll('svg > polyline')).toHaveLength(
+      scene.marks.filter((m) => m.type === 'polyline').length,
+    );
+    expect(container.querySelectorAll('svg > path')).toHaveLength(
+      scene.marks.filter((m) => m.type === 'path').length,
+    );
+  });
+
+  it('prefers `series` when both props are given', () => {
+    const other = [{ data: [1, 1, 1], name: 'other' }];
+    const { container } = render(<RadarNanoChart series={series} data={other} />);
+    const scene = radar(series);
+    expect(container.querySelectorAll('svg > polyline')).toHaveLength(
+      scene.marks.filter((m) => m.type === 'polyline').length,
+    );
+  });
+
+  it('renders the empty scene when neither prop is given instead of throwing', () => {
+    const { container } = render(<RadarNanoChart width={140} height={90} />);
+    const svg = container.querySelector('svg');
+    expect(svg).not.toBeNull();
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 140 90');
+    expect(container.querySelectorAll('svg > polyline')).toHaveLength(0);
+  });
+});

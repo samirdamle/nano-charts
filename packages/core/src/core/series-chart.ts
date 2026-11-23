@@ -1,18 +1,24 @@
 import type {
   AnnotationOptions,
+  AreaPlots,
   BaseOptions,
   Datum,
+  LinePlots,
   Mark,
+  PlotFrame,
+  PlotsPoint,
   ReferenceLineOptions,
   Scene,
   ScenePoint,
 } from '../types';
-import { extent, round } from './geometry';
+import { extent, round, round3 } from './geometry';
 import { normalizeSeries, type SeriesAccessors, type SeriesInput } from './normalize';
 import {
   autoPlotPadding,
+  paddedBox,
   resolvePadding,
   seriesLayout,
+  type PaddedBox,
   type ResolvedPadding,
   type SeriesLayout,
 } from './plot';
@@ -26,6 +32,7 @@ import {
   referenceLineMarks,
   seriesAwareMapper,
 } from './annotations';
+import { finishScene } from './scene';
 
 type CircleMark = Extract<Mark, { type: 'circle' }>;
 
@@ -104,6 +111,74 @@ export interface SeriesChartOptions<T>
   highlights?: HighlightZones;
 }
 
+/** Builds one series' plots points with geometry rounded to 3 decimals —
+ * unlike the 2dp-rounded ScenePoints the marks are drawn from. `value` is
+ * the raw datum and stays exact. `color` is the series color the marks
+ * render with. */
+export function seriesPlotsPoints(
+  datums: Datum[],
+  layout: SeriesLayout,
+  color: string,
+  seriesIndex: number,
+): PlotsPoint[] {
+  return datums.map((d) => ({
+    x: round3(layout.x(d.index)),
+    y: round3(layout.y(d.value)),
+    value: d.value,
+    index: d.index,
+    seriesIndex,
+    color,
+  }));
+}
+
+/** The frame for a plots payload: chart size, plot box, and data domains.
+ * Takes the plot box, not the full layout — `SeriesLayout` extends
+ * `PaddedBox`, so series charts pass their layout and other charts (e.g.
+ * scatter) pass their box. */
+export function seriesPlotsFrame(
+  width: number,
+  height: number,
+  box: PaddedBox,
+  xDomain: [number, number],
+  yDomain: [number, number],
+): PlotFrame {
+  return {
+    width,
+    height,
+    plot: {
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
+    },
+    xDomain,
+    yDomain,
+  };
+}
+
+/**
+ * The frame for an empty plots payload: the plot box from the resolved
+ * padding, no domains (there is no data to domain over). Used when a chart
+ * short-circuits on empty data.
+ */
+export function emptySeriesPlotsFrame(
+  width: number,
+  height: number,
+  padding: ResolvedPadding,
+): PlotFrame {
+  const box = paddedBox({ width, height, padding });
+  return {
+    width,
+    height,
+    plot: {
+      x: round3(box.left),
+      y: round3(box.top),
+      width: round3(box.right - box.left),
+      height: round3(box.bottom - box.top),
+    },
+  };
+}
+
 /**
  * Shared scaffold for single-series, index-based charts (line, area):
  * resolves defaults, normalizes input, builds the a11y summary, early-returns
@@ -127,7 +202,15 @@ export function renderSeriesChart<T>(
 
   const a11y = resolveA11y(kind, datums, options);
   const base = sceneShell({ width, height }, a11y, options);
-  if (datums.length === 0) return base;
+  if (datums.length === 0) {
+    if (options.plots !== true) return base;
+    const frame = emptySeriesPlotsFrame(width, height, resolvePadding(options.padding));
+    const plots: LinePlots | AreaPlots =
+      kind === 'area'
+        ? { kind: 'area', frame, series: [{ seriesIndex: 0, points: [] }] }
+        : { kind: 'line', frame, series: [{ seriesIndex: 0, points: [] }] };
+    return { ...base, plots };
+  }
 
   const extentPx = markExtent(datums.length);
   const valueDomain = extent(datums.map((d) => d.value));
@@ -182,12 +265,30 @@ export function renderSeriesChart<T>(
     color,
   );
 
-  return {
-    ...base,
-    marks: [...layerMarks(hl, xA, yA, marks), ...referenceLines, ...annMarks],
+  const plots: LinePlots | AreaPlots | undefined =
+    options.plots === true
+      ? kind === 'area'
+        ? {
+            kind: 'area',
+            frame: seriesPlotsFrame(width, height, layout, indexDomain, valueDomain),
+            series: [{ seriesIndex: 0, points: seriesPlotsPoints(datums, layout, color, 0) }],
+            baselineY: round3(layout.bottom),
+          }
+        : {
+            kind: 'line',
+            frame: seriesPlotsFrame(width, height, layout, indexDomain, valueDomain),
+            series: [{ seriesIndex: 0, points: seriesPlotsPoints(datums, layout, color, 0) }],
+          }
+      : undefined;
+
+  return finishScene(
+    base,
+    [...layerMarks(hl, xA, yA, marks), ...referenceLines],
     points,
-    ...(annotationPoints.length > 0 ? { annotationPoints } : {}),
-  };
+    annMarks,
+    annotationPoints,
+    plots,
+  );
 }
 
 /**
