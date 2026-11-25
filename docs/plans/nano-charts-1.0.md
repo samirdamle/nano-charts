@@ -53,7 +53,7 @@ test suites + byte-identical differential scene snapshots.
 
 | Issue | Work |
 | --- | --- |
-| #194 | Fix CI publishing (NPM_TOKEN auth) so 1.0 does not depend on one Mac |
+| #194 (closed) | CI publishing — closed by Samir's decision 2026-11-25; manual publishing accepted (0.8.0 hand-published 2026-11-23), not a 1.0 blocker |
 | #195 | Migration guide for the React 0.1.5 → 0.2.0 rename |
 | #196 | Close stale issues for already-merged work (#173, #175–#181, #184) |
 | #197 | Audit docs/API.md for the annotations + reference-line surface |
@@ -69,10 +69,11 @@ test suites + byte-identical differential scene snapshots.
 1. **#189 hygiene** — immediate, clears the tree.
 2. **#190 validation** — start now, judge later. This is the gate.
 3. **#191 hit-targets** — Strong rating plus barrel-headroom relief.
-4. **#194 CI publish** — required before 1.0 ships.
+4. **#194 CI publish** — dropped 2026-11-25: Samir accepted manual publishing; not required before 1.0 ships.
 5. **#192, #193, #195, #197, #196** — hardening, docs, hygiene; any order.
-6. **#198 1.0.0** — capstone. Blocked at minimum by #190 (validation verdict)
-   and #194 (CI publish); the rest recommended.
+6. **#198 1.0.0** — capstone. Blocked at minimum by #190 (validation verdict
+   — closed 2026-11-08); the rest recommended. (#194 CI publish dropped as
+   a blocker 2026-11-25: manual publishing accepted.)
 
 ## Explicit non-goals
 
